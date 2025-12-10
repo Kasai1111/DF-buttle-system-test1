@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DUSTFALL Prototype (Animated + Initiative)</title>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --panel-bg: #1e1e1e;
+        --text-color: #e0e0e0;
+        --accent-color: #ff9800;
+        --atk-color: #e57373;
+        --grd-color: #64b5f6;
+        --brk-color: #fff176;
+        --sp-color: #ba68c8;
+        --secret-color: #90a4ae;
+      }
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding: 10px;
+      }
+      h1 {
+        margin: 10px 0;
+        font-size: 1.2rem;
+        border-bottom: 2px solid var(--accent-color);
+      }
+
+      .game-container {
+        width: 100%;
+        max-width: 600px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .panel {
+        background: var(--panel-bg);
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #333;
+        position: relative;
+        transition: border-color 0.3s;
+      }
+
+      /* 先攻表示用のスタイル */
+      .panel.initiative {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 10px rgba(255, 152, 0, 0.2);
+      }
+      .initiative-badge {
+        position: absolute;
+        top: -10px;
+        right: 10px;
+        background: var(--accent-color);
+        color: #000;
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        display: none;
+      }
+      .panel.initiative .initiative-badge {
+        display: block;
+      }
+
+      /* 敵の予告情報 (INTEL) */
+      .intel-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px dashed #555;
+        padding: 5px;
+        margin-top: 5px;
+        font-size: 0.85rem;
+        color: #aaa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .intel-val {
+        color: #fff;
+        font-weight: bold;
+        font-size: 1rem;
+      }
+
+      /* Status Bars */
+      .status-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+      }
+      .bar-wrap {
+        width: 100%;
+        background: #444;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 5px;
+      }
+      .hp-bar {
+        background: #d32f2f;
+        height: 100%;
+        width: 100%;
+        transition: width 0.3s;
+      }
+      .pos-bar {
+        background: #fbc02d;
+        height: 100%;
+        width: 100%;
+        transition: width 0.3s;
+      }
+
+      .resource-box {
+        display: flex;
+        gap: 10px;
+        font-weight: bold;
+        font-size: 0.9rem;
+      }
+      .ep-val {
+        color: var(--grd-color);
+      }
+      .sp-val {
+        color: var(--sp-color);
+      }
+      .burnout-tag {
+        color: red;
+        font-weight: bold;
+        animation: blink 1s infinite;
+        display: none;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* Card UI */
+      .card-area {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+        min-height: 90px;
+        flex-wrap: wrap;
+      }
+      .card {
+        width: 70px;
+        height: 100px;
+        border-radius: 6px;
+        border: 2px solid #555;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        cursor: pointer;
+        position: relative;
+        background: #333;
+        user-select: none;
+        transition: transform 0.2s;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        border-color: #888;
+      }
+      .card.selected {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 8px var(--accent-color);
+        /* 選択されていることがわかりやすいように少し上にずらす */
+        transform: translateY(-10px);
+      }
+      .card.disabled {
+        opacity: 0.5;
+        filter: grayscale(1);
+      }
+
+      /* Types */
+      .type-Attack {
+        border-top: 4px solid var(--atk-color);
+      }
+      .type-Guard {
+        border-top: 4px solid var(--grd-color);
+      }
+      .type-Break {
+        border-top: 4px solid var(--brk-color);
+        color: #ffffaa;
+      }
+      .type-SP {
+        border-top: 4px solid var(--sp-color);
+        background: #301b30;
+      }
+      .type-Secret {
+        border-top: 4px solid var(--secret-color);
+        background: #263238;
+      }
+
+      .card-cost {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin: 2px 0;
+      }
+      .card-type {
+        font-weight: bold;
+      }
+
+      /* Slots */
+      .slots-wrapper {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin: 5px 0;
+      }
+      .slot {
+        width: 80px;
+        height: 110px;
+        border: 2px dashed #666;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        color: #888;
+        position: relative;
+        transition: all 0.3s ease;
+        cursor: pointer; /* クリックできることを示唆 */
+      }
+      .slot:hover {
+        border-color: #999;
+      }
+
+      .active-battle-slot {
+        border: 2px solid #fff !important;
+        box-shadow: 0 0 15px var(--accent-color);
+        transform: scale(1.1);
+        background-color: #2a2a2a;
+        z-index: 10;
+        color: #fff;
+      }
+
+      .slot-result-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: bold;
+        border-radius: 4px;
+        animation: popIn 0.3s forwards;
+        z-index: 20;
+      }
+      .res-win {
+        color: #66bb6a;
+        text-shadow: 0 0 5px #66bb6a;
+      }
+      .res-lose {
+        color: #ef5350;
+        text-shadow: 0 0 5px #ef5350;
+      }
+      .res-draw {
+        color: #bdbdbd;
+      }
+
+      @keyframes popIn {
+        0% {
+          transform: scale(0);
+          opacity: 0;
+        }
+        80% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      /* Controls */
+      .controls {
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      #btn-commit {
+        background: var(--accent-color);
+        color: #000;
+      }
+      #btn-commit:disabled {
+        background: #555;
+        cursor: not-allowed;
+      }
+      #btn-counter {
+        background: #7b1fa2;
+        color: #fff;
+      }
+      #btn-counter.active {
+        background: #e1bee7;
+        color: #4a148c;
+        border: 2px solid #fff;
+      }
+
+      /* Log */
+      #log {
+        height: 120px;
+        overflow-y: auto;
+        background: #000;
+        color: #0f0;
+        padding: 8px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        border-radius: 4px;
+      }
+
+      /* Type Chart */
+      .type-chart-container {
+        position: fixed;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(30, 30, 30, 0.95);
+        border: 1px solid #444;
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        z-index: 100;
+        width: 100px;
+      }
+      .tc-title {
+        font-size: 0.75rem;
+        color: #888;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .tc-node {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+        color: #222;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        position: relative;
+        z-index: 2;
+      }
+      .tc-atk {
+        background: var(--atk-color);
+        border: 2px solid #ef9a9a;
+      }
+      .tc-brk {
+        background: var(--brk-color);
+        border: 2px solid #fff59d;
+      }
+      .tc-grd {
+        background: var(--grd-color);
+        border: 2px solid #90caf9;
+      }
+      .tc-arrow {
+        font-size: 1.5rem;
+        color: #666;
+        line-height: 0.8;
+      }
+      .tc-loop-arrow {
+        font-size: 0.7rem;
+        color: #666;
+        margin-top: -5px;
+      }
+
+      @media (max-width: 900px) {
+        .type-chart-container {
+          position: static;
+          transform: none;
+          flex-direction: row;
+          width: 100%;
+          max-width: 600px;
+          margin-top: 20px;
+          justify-content: center;
+          background: transparent;
+          border: none;
+          box-shadow: none;
+        }
+        .tc-arrow {
+          transform: rotate(-90deg);
+          margin: 0 5px;
+        }
+        .tc-loop-arrow {
+          display: none;
+        }
+        .tc-node {
+          width: 60px;
+          height: 60px;
+          font-size: 0.7rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>DUSTFALL - Battle Prototype (Initiative)</h1>
+
+    <div class="game-container">
+      <div class="panel" id="e-panel">
+        <div class="initiative-badge">FIRST MOVE</div>
+        <div class="status-row">
+          <strong>ENEMY</strong>
+          <span class="burnout-tag" id="e-burnout">BURNOUT</span>
+        </div>
+        <div class="bar-wrap"><div class="hp-bar" id="e-hp-bar"></div></div>
+        <div class="bar-wrap"><div class="pos-bar" id="e-pos-bar"></div></div>
+        <div class="resource-box">
+          <span>HP: <span id="e-hp"></span></span>
+          <span class="ep-val">EP: <span id="e-ep"></span></span>
+          <span class="sp-val">SP: <span id="e-sp"></span></span>
+        </div>
+
+        <div class="intel-box" id="e-intel-box" style="display: none">
+          <span>⚠ PENDING COST:</span>
+          <span class="intel-val" id="e-pending-cost">0</span>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
+        <div style="font-size: 0.8rem; text-align: center; color: #888">
+          ENEMY HAND (公開情報)
+        </div>
+        <div class="card-area" id="enemy-hand-view"></div>
+      </div>
+
+      <div style="text-align: center">
+        <div class="slots-wrapper">
+          <div class="slot" id="e-slot1">Enemy<br />Slot 1</div>
+          <div class="slot" id="e-slot2">Enemy<br />Slot 2</div>
+        </div>
+        <div style="font-weight: bold; color: #888; margin: 5px 0">VS</div>
+        <div class="slots-wrapper">
+          <div class="slot" id="p-slot1" onclick="clearSlot(1)">
+            Tap Card<br />to Set
+          </div>
+          <div class="slot" id="p-slot2" onclick="clearSlot(2)">
+            Tap Card<br />to Set
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="p-panel">
+        <div class="initiative-badge">FIRST MOVE</div>
+        <div class="status-row">
+          <strong>PLAYER</strong>
+          <span class="burnout-tag" id="p-burnout">BURNOUT</span>
+        </div>
+        <div class="bar-wrap"><div class="hp-bar" id="p-hp-bar"></div></div>
+        <div class="bar-wrap"><div class="pos-bar" id="p-pos-bar"></div></div>
+        <div class="resource-box">
+          <span>HP: <span id="p-hp"></span></span>
+          <span class="ep-val">EP: <span id="p-ep"></span></span>
+          <span class="sp-val">SP: <span id="p-sp"></span></span>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
+        <div class="card-area" id="player-hand-view"></div>
+      </div>
+
+      <div class="controls">
+        <button id="btn-counter" onclick="toggleCounter()">COUNTER: OFF</button>
+        <button id="btn-commit" onclick="commitTurn()">BATTLE START</button>
+      </div>
+
+      <div id="log">Game Initialized...</div>
+    </div>
+
+    <div class="type-chart-container">
+      <div class="tc-title">RULE</div>
+      <div class="tc-node tc-atk"><span>Attack</span></div>
+      <div class="tc-arrow">↓</div>
+      <div class="tc-node tc-brk"><span>Break</span></div>
+      <div class="tc-arrow">↓</div>
+      <div class="tc-node tc-grd"><span>Guard</span></div>
+      <div class="tc-arrow">↓</div>
+      <div class="tc-loop-arrow">(to Attack)</div>
+    </div>
+
+    <script>
+      /**
+       * DUSTFALL Logic Implementation
+       */
+
+      const MAX_HP = 50;
+      const MAX_POSTURE = 20;
+      const MAX_EP = 9;
+      const MAX_SP = 5;
+
+      const TYPE = {
+        ATTACK: "Attack",
+        GUARD: "Guard",
+        BREAK: "Break",
+        SP: "SP",
+      };
+
+      const WIN_MAP = {
+        [TYPE.ATTACK]: TYPE.BREAK,
+        [TYPE.BREAK]: TYPE.GUARD,
+        [TYPE.GUARD]: TYPE.ATTACK,
+      };
+
+      const BASE_DECK = [
+        { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2 },
+        { type: TYPE.ATTACK, cost: 3, dmg: 10, pos: 3 },
+        { type: TYPE.BREAK, cost: 2, dmg: 4, pos: 6 },
+        { type: TYPE.BREAK, cost: 3, dmg: 6, pos: 8 },
+        { type: TYPE.GUARD, cost: 1, arm: 4 },
+        { type: TYPE.GUARD, cost: 2, arm: 7 },
+        { type: TYPE.GUARD, cost: 3, arm: 10 },
+        { type: TYPE.ATTACK, cost: 1, dmg: 5, pos: 1 },
+        { type: TYPE.BREAK, cost: 1, dmg: 3, pos: 5 },
+      ];
+
+      const SP_CARD = { type: TYPE.SP, cost: 5, dmg: 25, pos: 15, isSP: true };
+
+      // --- Global State ---
+      let turn = 1;
+      let player, enemy;
+      let pSlots = [null, null];
+      let isCounterMode = false;
+      let hasUsedCounter = false;
+      let isAnimating = false;
+
+      // Initiative State
+      let isEnemyFirst = false; // true = Enemy is First (reveals cost), false = Player is First
+      let pendingEnemySlots = [null, null]; // Stores the enemy's decision at start of turn
+
+      // Helper for sleep
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      function getDeck(includeSP) {
+        const deck = JSON.parse(JSON.stringify(BASE_DECK));
+        if (includeSP) deck.push(JSON.parse(JSON.stringify(SP_CARD)));
+        shuffle(deck);
+        return deck;
+      }
+
+      function createEntity(name) {
+        const deck = getDeck(true);
+        const secret = deck.pop();
+        return {
+          name,
+          hp: MAX_HP,
+          maxHp: MAX_HP,
+          pos: MAX_POSTURE,
+          maxPos: MAX_POSTURE,
+          ep: 6,
+          sp: 0,
+          deck,
+          hand: [],
+          secret,
+          burnout: false,
+          breakState: false,
+        };
+      }
+
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      function init() {
+        player = createEntity("Player");
+        enemy = createEntity("Enemy");
+        // ランダムに最初の先攻を決める
+        isEnemyFirst = Math.random() < 0.5;
+        startTurn();
+      }
+
+      function startTurn() {
+        pSlots = [null, null];
+        isCounterMode = false;
+        isAnimating = false;
+
+        // ターンごとに先攻後攻を交代
+        isEnemyFirst = !isEnemyFirst;
+
+        [player, enemy].forEach((e) => {
+          if (e.burnout && e.ep > 0) e.burnout = false;
+          if (e.breakState) {
+            e.breakState = false;
+            e.pos = Math.floor(e.maxPos / 2);
+            log(`${e.name} recovered from Break.`);
+          }
+
+          e.ep = Math.min(MAX_EP, e.ep + 3);
+          e.sp = Math.min(MAX_SP, e.sp + 1);
+
+          while (e.hand.length < 4 && (e.deck.length > 0 || true)) {
+            if (e.deck.length === 0) {
+              const freshDeck = getDeck(false);
+              e.deck = freshDeck;
+              log(`[System] ${e.name}'s Deck Recycled`);
+            }
+            e.hand.push(e.deck.pop());
+            if (e.hand.length >= 4) break;
+          }
+        });
+
+        // スロット表示のリセット
+        updateSlotUI("e", [null, null]);
+        document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
+        document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
+
+        // ★ここで敵の動きを事前計算する
+        pendingEnemySlots = calculateEnemyMove();
+
+        log(`--- TURN ${turn} START ---`);
+        if (isEnemyFirst) log("Enemy has Initiative (Moves First)");
+        else log("Player has Initiative (Moves First)");
+
+        render();
+      }
+
+      function selectCard(card, isSecret, handIndex) {
+        if (isAnimating) return;
+        if (isCounterMode) {
+          alert("カウンターモード中はカードを選択できません。");
+          return;
+        }
+
+        const srcId = isSecret ? "secret" : handIndex;
+
+        // --- 修正: トグル機能の実装 ---
+
+        // 1. 既にスロットにあるカードをクリックした場合は「解除」する
+        if (pSlots[0] && pSlots[0]._src === srcId) {
+          pSlots[0] = null;
+          render();
+          return;
+        }
+        if (pSlots[1] && pSlots[1]._src === srcId) {
+          pSlots[1] = null;
+          render();
+          return;
+        }
+
+        // --- ここまで修正 ---
+
+        if (card.isSP) {
+          if (player.sp < MAX_SP) {
+            alert(`SP技を使用するにはSPゲージが最大(${MAX_SP})必要です。`);
+            return;
+          }
+          if (player.ep < 5) {
+            alert(`SP技の発動にはEPが5必要です。`);
+            return;
+          }
+        }
+
+        if (player.burnout && card.type === TYPE.GUARD) {
+          alert("BURNOUT中はガードカードを使用できません！");
+          return;
+        }
+
+        // コストチェック
+        let currentCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
+        if (currentCost + card.cost > player.ep) {
+          alert(`EPが足りません！`);
+          return;
+        }
+
+        // 空きスロットへ追加
+        if (!pSlots[0]) {
+          pSlots[0] = { ...card, _src: srcId };
+        } else if (!pSlots[1]) {
+          pSlots[1] = { ...card, _src: srcId };
+        } else {
+          // スロットが満杯のときに、選択されていないカードをクリックした場合
+          alert(
+            "スロットがいっぱいです。選択済みのカードをタップして解除するか、スロットをタップして空けてください。"
+          );
+          return;
+        }
+        render();
+      }
+
+      function clearSlot(num) {
+        if (isAnimating) return;
+        pSlots[num - 1] = null;
+        render();
+      }
+
+      function toggleCounter() {
+        if (isAnimating) return;
+        if (hasUsedCounter) {
+          alert("カウンターは1試合に1回しか使用できません。");
+          return;
+        }
+        isCounterMode = !isCounterMode;
+        if (isCounterMode) pSlots = [null, null];
+        render();
+      }
+
+      // 名前変更: getEnemyMove -> calculateEnemyMove (即時実行用)
+      function calculateEnemyMove() {
+        let eSlots = [null, null];
+        let budget = enemy.ep;
+        let hand = [...enemy.hand];
+
+        // 1. SP技
+        const spCard = hand.find((c) => c.isSP);
+        if (spCard && enemy.sp >= MAX_SP && budget >= 5) {
+          eSlots[0] = spCard;
+          return eSlots;
+        }
+
+        hand.sort((a, b) => b.cost - a.cost);
+
+        // 2. Slot 1
+        for (let c of hand) {
+          if (
+            c.cost <= budget &&
+            !(enemy.burnout && c.type === TYPE.GUARD) &&
+            !c.isSP
+          ) {
+            eSlots[0] = c;
+            budget -= c.cost;
+            hand = hand.filter((x) => x !== c);
+            break;
+          }
+        }
+
+        // 3. Slot 2
+        if (eSlots[0]) {
+          for (let c of hand) {
+            if (
+              c.cost <= budget &&
+              !(enemy.burnout && c.type === TYPE.GUARD) &&
+              !c.isSP
+            ) {
+              eSlots[1] = c;
+              break;
+            }
+          }
+        }
+        return eSlots;
+      }
+
+      // --- Main Battle Logic (Async) ---
+      async function commitTurn() {
+        if (isAnimating) return;
+
+        const pCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
+        if (!isCounterMode && !pSlots[0] && !pSlots[1]) {
+          alert("カードを選択するか、カウンターを選択してください。");
+          return;
+        }
+
+        // 開始処理
+        isAnimating = true;
+        render(); // ボタン無効化
+
+        // ★事前計算済みの敵の手を使用
+        const eSlots = pendingEnemySlots;
+        const eCost = (eSlots[0]?.cost || 0) + (eSlots[1]?.cost || 0);
+
+        // コスト消費
+        player.ep -= pCost;
+        enemy.ep -= eCost;
+
+        // 手札消費処理
+        processHandUsage(player, pSlots);
+        processHandUsage(enemy, eSlots);
+
+        render(); // コスト減反映
+        log(`Battle Start! Cost P:${pCost} / E:${eCost}`);
+
+        await sleep(600);
+
+        let pCards = [...pSlots];
+        let eCards = [...eSlots];
+
+        // --- SP / Counter Phase ---
+        const pSP = pCards.some((c) => c?.isSP);
+        const eSP = eCards.some((c) => c?.isSP);
+
+        if (pSP && eSP) {
+          log("!!! SP CLASH !!! 相殺されました！");
+          pCards = [null, null];
+          eCards = [null, null];
+          await sleep(1000);
+        } else if (eSP && isCounterMode) {
+          log("!!! COUNTER SUCCESS !!!");
+          hasUsedCounter = true;
+          eCards = [null, null];
+          await sleep(1000);
+        } else if (isCounterMode) {
+          log("Counter Missed...");
+          hasUsedCounter = true;
+          await sleep(800);
+        }
+
+        let pMul = 1.0;
+        let eMul = 1.0;
+
+        // --- Step-by-Step Resolution ---
+        log("--- SLOT 1 ---");
+        const res1 = await resolveStep(1, pCards[0], eCards[0], 1.0, 1.0);
+
+        if (res1 === "WIN") {
+          pMul = 1.7;
+          eMul = 0.25;
+          log(">> WIN Bonus: Next x1.7");
+        } else if (res1 === "LOSE") {
+          pMul = 0.25;
+          eMul = 1.7;
+          log(">> LOSE Penalty: Next x0.25");
+        }
+
+        log("--- SLOT 2 ---");
+        await resolveStep(2, pCards[1], eCards[1], pMul, eMul);
+
+        checkBurnout(player);
+        checkBurnout(enemy);
+
+        turn++;
+        render();
+
+        if (player.hp <= 0 || enemy.hp <= 0) {
+          await sleep(500);
+          alert(player.hp <= 0 ? "YOU LOSE..." : "YOU WIN!");
+          location.reload();
+          return;
+        }
+
+        setTimeout(startTurn, 1000);
+      }
+
+      async function resolveStep(slotNum, pCard, eCard, pMul, eMul) {
+        const pSlotEl = document.getElementById(`p-slot${slotNum}`);
+        const eSlotEl = document.getElementById(`e-slot${slotNum}`);
+
+        pSlotEl.classList.add("active-battle-slot");
+        eSlotEl.classList.add("active-battle-slot");
+
+        if (eCard) {
+          eSlotEl.className = `slot type-${eCard.type} active-battle-slot`;
+          eSlotEl.innerHTML = renderCardContent(eCard);
+        } else {
+          eSlotEl.className = `slot active-battle-slot`;
+          eSlotEl.innerHTML = "Empty";
+        }
+
+        if (pCard) {
+          pSlotEl.className = `slot type-${pCard.type} active-battle-slot`;
+          pSlotEl.innerHTML = renderCardContent(pCard);
+        } else {
+          pSlotEl.className = `slot active-battle-slot`;
+          pSlotEl.innerHTML = "Empty";
+        }
+
+        await sleep(1600);
+
+        let result = "DRAW";
+        if (!pCard && !eCard) result = "DRAW";
+        else if (!pCard) {
+          applyDmg(player, eCard, eMul);
+          result = "LOSE";
+        } else if (!eCard) {
+          applyDmg(enemy, pCard, pMul);
+          result = "WIN";
+        } else {
+          if (pCard.type === eCard.type) {
+            if (pCard.cost > eCard.cost) result = "WIN";
+            else if (eCard.cost > pCard.cost) result = "LOSE";
+          } else {
+            if (WIN_MAP[pCard.type] === eCard.type) result = "WIN";
+            else result = "LOSE";
+          }
+
+          if (result === "WIN") applyDmg(enemy, pCard, pMul);
+          else if (result === "LOSE") applyDmg(player, eCard, eMul);
+          else {
+            player.hp -= 2;
+            enemy.hp -= 2;
+            log("Draw! Both take 2 dmg.");
+          }
+        }
+
+        render();
+        showResultOverlay(pSlotEl, result);
+        showResultOverlay(
+          eSlotEl,
+          result === "WIN" ? "LOSE" : result === "LOSE" ? "WIN" : "DRAW"
+        );
+
+        await sleep(1200);
+
+        pSlotEl.classList.remove("active-battle-slot");
+        eSlotEl.classList.remove("active-battle-slot");
+        clearOverlays(pSlotEl);
+        clearOverlays(eSlotEl);
+
+        return result;
+      }
+
+      function showResultOverlay(el, text) {
+        const div = document.createElement("div");
+        div.className = "slot-result-overlay";
+        if (text === "WIN") div.classList.add("res-win");
+        if (text === "LOSE") div.classList.add("res-lose");
+        if (text === "DRAW") div.classList.add("res-draw");
+        div.innerText = text;
+        el.appendChild(div);
+      }
+
+      function clearOverlays(el) {
+        const overs = el.querySelectorAll(".slot-result-overlay");
+        overs.forEach((o) => o.remove());
+      }
+
+      function processHandUsage(entity, slots) {
+        slots.forEach((s) => {
+          if (!s) return;
+          if (s._src === "secret") {
+            if (entity.deck.length > 0) entity.secret = entity.deck.pop();
+            else entity.secret = null;
+          } else {
+            const idx = entity.hand.findIndex(
+              (c) => c.type === s.type && c.cost === s.cost
+            );
+            if (idx !== -1) entity.hand.splice(idx, 1);
+          }
+        });
+      }
+
+      function applyDmg(target, card, mul) {
+        if (!card) return;
+        let finalMul = mul;
+        if (target.breakState) finalMul *= 2.0;
+        if (target.burnout) finalMul *= 1.5;
+
+        let dmg = Math.floor((card.dmg || 0) * finalMul);
+        let pos = Math.floor((card.pos || 0) * finalMul);
+
+        target.hp -= dmg;
+        target.pos -= pos;
+        log(`${target.name} takes ${dmg} Dmg`);
+
+        if (target.pos <= 0 && !target.breakState) {
+          target.breakState = true;
+          target.pos = 0;
+          log(`!!! ${target.name} BREAK !!!`);
+        }
+      }
+
+      function checkBurnout(e) {
+        if (e.ep === 0) {
+          e.burnout = true;
+          log(`${e.name} enters BURNOUT!`);
+        }
+      }
+
+      // UI
+      function render() {
+        ["p", "e"].forEach((prefix) => {
+          const e = prefix === "p" ? player : enemy;
+          document.getElementById(`${prefix}-hp`).innerText = e.hp;
+          document.getElementById(`${prefix}-ep`).innerText = e.ep;
+          document.getElementById(`${prefix}-sp`).innerText = e.sp;
+          document.getElementById(`${prefix}-hp-bar`).style.width = `${Math.max(
+            0,
+            (e.hp / MAX_HP) * 100
+          )}%`;
+          document.getElementById(
+            `${prefix}-pos-bar`
+          ).style.width = `${Math.max(0, (e.pos / MAX_POSTURE) * 100)}%`;
+          document.getElementById(`${prefix}-burnout`).style.display = e.burnout
+            ? "inline"
+            : "none";
+
+          const epEl = document.getElementById(`${prefix}-ep`);
+          epEl.style.color = e.ep < 3 ? "red" : "var(--grd-color)";
+        });
+
+        // ★ イニシアチブ（先攻・後攻）表示の切り替え
+        const ePanel = document.getElementById("e-panel");
+        const pPanel = document.getElementById("p-panel");
+        if (isEnemyFirst) {
+          ePanel.classList.add("initiative");
+          pPanel.classList.remove("initiative");
+
+          // ★ 敵が先攻の場合、予告コストを表示
+          const intelBox = document.getElementById("e-intel-box");
+          intelBox.style.display = "flex";
+          const cost =
+            (pendingEnemySlots[0]?.cost || 0) +
+            (pendingEnemySlots[1]?.cost || 0);
+          document.getElementById("e-pending-cost").innerText = cost + " EP";
+        } else {
+          pPanel.classList.add("initiative");
+          ePanel.classList.remove("initiative");
+          document.getElementById("e-intel-box").style.display = "none";
+        }
+
+        // Enemy Hand (Secret)
+        const eZone = document.getElementById("enemy-hand-view");
+        eZone.innerHTML = "";
+        eZone.innerHTML += `<div class="card type-Secret"><div class="card-type">SECRET</div><div class="card-cost">?</div></div>`;
+        enemy.hand.forEach((c) => {
+          eZone.innerHTML += `<div class="card type-${c.type}"><div class="card-type">${c.type}</div><div class="card-cost">${c.cost}</div></div>`;
+        });
+
+        // Player Hand
+        const pZone = document.getElementById("player-hand-view");
+        pZone.innerHTML = "";
+
+        if (player.secret) {
+          pZone.appendChild(createCardDiv(player.secret, true, -1));
+        }
+        player.hand.forEach((c, i) => {
+          pZone.appendChild(createCardDiv(c, false, i));
+        });
+
+        if (!isAnimating) {
+          updateSlotUI("p", pSlots);
+        }
+
+        const btnC = document.getElementById("btn-counter");
+        btnC.innerText = hasUsedCounter
+          ? "COUNTER: USED"
+          : isCounterMode
+          ? "COUNTER: READY"
+          : "COUNTER: OFF";
+        btnC.className = isCounterMode ? "active" : "";
+        btnC.disabled = hasUsedCounter || isAnimating;
+
+        const currentCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
+        const btnCommit = document.getElementById("btn-commit");
+        if (isAnimating) {
+          btnCommit.innerText = "BATTLE IN PROGRESS...";
+          btnCommit.disabled = true;
+        } else {
+          btnCommit.innerText = `BATTLE START (Cost: ${currentCost})`;
+          btnCommit.disabled = currentCost > player.ep;
+        }
+      }
+
+      function createCardDiv(card, isSecret, idx) {
+        const div = document.createElement("div");
+        div.className = `card type-${card.type}`;
+
+        let disabled = false;
+        if (player.burnout && card.type === TYPE.GUARD) disabled = true;
+        if (card.isSP && (player.sp < MAX_SP || player.ep < 5)) disabled = true;
+
+        if (disabled) div.classList.add("disabled");
+
+        const isSel =
+          pSlots[0]?._src === (isSecret ? "secret" : idx) ||
+          pSlots[1]?._src === (isSecret ? "secret" : idx);
+        if (isSel) {
+          div.classList.add("selected");
+          div.classList.remove("disabled");
+        }
+
+        div.innerHTML = `<div class="card-type">${
+          isSecret ? "SECRET" : card.type
+        }</div>
+                     <div class="card-cost">${card.cost}</div>
+                     <div style="font-size:0.7rem">${card.type}</div>`;
+
+        div.onclick = () => selectCard(card, isSecret, idx);
+        return div;
+      }
+
+      function updateSlotUI(prefix, slots) {
+        for (let i = 1; i <= 2; i++) {
+          const el = document.getElementById(`${prefix}-slot${i}`);
+          const c = slots[i - 1];
+          if (c) {
+            el.className = `slot type-${c.type}`;
+            el.innerHTML = renderCardContent(c);
+          } else {
+            el.className = "slot";
+            // プレイヤー側のスロットはタップで外せることを明示
+            if (prefix === "p") {
+              el.innerHTML = `Tap Card<br>to Set`;
+            } else {
+              el.innerHTML = `Slot ${i}`;
+            }
+          }
+        }
+      }
+
+      function renderCardContent(c) {
+        if (!c) return "Empty";
+        return `<div style="font-weight:bold">${c.type}</div><div style="font-size:1.2rem">${c.cost}</div>`;
+      }
+
+      function log(msg) {
+        const l = document.getElementById("log");
+        l.innerHTML += `<div>${msg}</div>`;
+        l.scrollTop = l.scrollHeight;
+      }
+
+      window.onload = init;
+    </script>
+  </body>
+</html>

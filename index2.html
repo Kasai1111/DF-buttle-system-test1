@@ -1,0 +1,2762 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DUST FALL Ver.38.2 - Craft & Equip Fix</title>
+    <style>
+      /* --- CSS Reset & Base Styles --- */
+      :root {
+        --bg-color: #0a0a0a;
+        --text-color: #e0e0e0;
+        --accent-color: #c3073f;
+        --ui-bg: #1f1f1f;
+        --ui-border: #444;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: "Segoe UI", monospace;
+        user-select: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #game-container {
+        width: 1024px;
+        height: 768px;
+        position: relative;
+        background: #000;
+        border: 2px solid #333;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+      }
+
+      /* --- Screen Management --- */
+      .screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        flex-direction: column;
+        background: var(--bg-color);
+        z-index: 10;
+      }
+      .screen.active {
+        display: flex;
+        z-index: 20;
+      }
+
+      /* --- UI Components --- */
+      .title-text {
+        font-size: 100px;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        padding: 5px;
+        color: #ffd700;
+        text-shadow: 1px 1px 0 #000;
+      }
+      button {
+        background: #333;
+        color: #fff;
+        border: 1px solid #666;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: 0.2s;
+      }
+      button:hover {
+        background: #555;
+        border-color: #fff;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* --- Title Screen --- */
+      #title-screen {
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(45deg, #232324, rgb(0, 0, 0));
+      }
+
+      /* --- Base Screen --- */
+      #base-screen {
+        padding: 20px;
+      }
+      .base-layout {
+        display: flex;
+        height: 80%;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .panel {
+        flex: 1;
+        border: 1px solid var(--ui-border);
+        background: var(--ui-bg);
+        padding: 10px;
+        overflow-y: auto;
+      }
+      .item-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px;
+        border-bottom: 1px dashed #444;
+        cursor: pointer;
+        font-size: 14px;
+        align-items: center;
+      }
+      .item-row:hover {
+        background: #333;
+      }
+      /* 装備アイテム強調 */
+      .item-row.equipped {
+        background: #152;
+        color: #0f0;
+        font-weight: bold;
+        border-left: 5px solid #0f0;
+        box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+      }
+      .item-row.locked {
+        color: #666;
+        opacity: 0.5;
+        cursor: default;
+      }
+      .item-buyable {
+        background: #242;
+        border-left: 5px solid #0f0;
+      }
+      .item-buyable:hover {
+        background: #353;
+      }
+      .item-cost {
+        font-size: 10px;
+        color: #aaa;
+      }
+
+      /* --- Explore Screen --- */
+      #explore-screen {
+        position: relative;
+      }
+      canvas {
+        display: block;
+        background: #000;
+      }
+      #explore-ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        pointer-events: none;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border: 1px solid #555;
+      }
+      #stealth-indicator {
+        font-weight: bold;
+        color: #444;
+      }
+      #stealth-indicator.active {
+        color: #0ff;
+        text-shadow: 0 0 5px #0ff;
+      }
+      #explore-log {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        width: 400px;
+        height: 120px;
+        background: rgba(0, 0, 0, 0.6);
+        font-size: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column-reverse;
+        pointer-events: none;
+      }
+      .log-msg {
+        padding: 2px;
+        border-bottom: 1px solid #333;
+      }
+
+      /* --- Explore Equipment Panel --- */
+      #explore-panel {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 350px;
+        max-height: 600px;
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid #555;
+        padding: 10px;
+        overflow-y: auto;
+        display: none;
+        z-index: 100;
+        pointer-events: auto;
+      }
+      #explore-panel.visible {
+        display: block;
+      }
+      #explore-panel-toggle {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 101;
+        pointer-events: auto;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      .deck-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .deck-card {
+        background: #2a2a2a;
+        border: 1px solid #555;
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        color: #fff;
+      }
+      .deck-card-name {
+        font-weight: bold;
+      }
+      .deck-card-type {
+        font-size: 9px;
+        color: #aaa;
+        text-transform: uppercase;
+      }
+
+      /* --- Battle Screen --- */
+      #battle-screen {
+        padding: 10px;
+        background: #221;
+      }
+      #battle-area {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        padding: 40px;
+        align-items: center;
+      }
+
+      .unit-display {
+        text-align: center;
+        width: 200px;
+        position: relative;
+      }
+      .sprite {
+        width: 100px;
+        height: 100px;
+        background: #444;
+        margin: 0 auto 10px;
+        border: 2px solid #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        position: relative;
+      }
+      .sprite.enemy {
+        border-color: #f55;
+        background: #311;
+      }
+
+      .intent-icon {
+        position: absolute;
+        top: -30px;
+        right: -10px;
+        background: #222;
+        border: 1px solid #fff;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #fff;
+        min-width: 50px;
+      }
+      .intent-icon.atk {
+        background: #a33;
+        border-color: #f00;
+      }
+      .intent-icon.def {
+        background: #33a;
+        border-color: #00f;
+      }
+      .intent-icon.debuff {
+        background: #333;
+        border-color: #888;
+      }
+
+      .bar-bg {
+        width: 100%;
+        height: 10px;
+        background: #333;
+        margin: 2px 0;
+      }
+      .hp-fill {
+        height: 100%;
+        background: #d44;
+        width: 100%;
+        transition: width 0.3s;
+      }
+      .pos-fill {
+        height: 100%;
+        background: #eb2;
+        width: 100%;
+        transition: width 0.3s;
+      }
+
+      #p-blk-text {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: #007bff;
+        color: #fff;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 2px solid #fff;
+        font-size: 16px;
+      }
+
+      #enemy-status {
+        margin-top: 5px;
+        min-height: 20px;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        margin-right: 5px;
+        border-radius: 3px;
+        font-size: 10px;
+        color: #fff;
+        font-weight: bold;
+      }
+
+      #hand-container {
+        height: 180px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 10px;
+        padding-bottom: 10px;
+      }
+      .card {
+        width: 100px;
+        height: 140px;
+        background: #eee;
+        color: #000;
+        border-radius: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 5px;
+        cursor: pointer;
+        transition: 0.2s;
+        position: relative;
+        box-shadow: 0 5px 15px #000;
+      }
+      .card:hover {
+        transform: translateY(-20px);
+        z-index: 100;
+      }
+      .card-cost {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        width: 25px;
+        height: 25px;
+        background: #007bff;
+        color: #fff;
+        border-radius: 50%;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fff;
+      }
+      .card-type {
+        font-size: 10px;
+        color: #555;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+      }
+      .card-name {
+        font-weight: bold;
+        font-size: 12px;
+        text-align: center;
+        margin-bottom: auto;
+      }
+      .card-desc {
+        font-size: 10px;
+        text-align: center;
+      }
+      .unplayable {
+        filter: grayscale(1);
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      /* リザルト画面用のスタイル */
+      #result-screen h1 {
+        font-size: 60px;
+        margin-bottom: 20px;
+      }
+      .result-stat {
+        font-size: 24px;
+        margin: 10px 0;
+        color: #ddd;
+      }
+      .score-text {
+        font-size: 40px;
+        color: #ffd700; /* 金色 */
+        margin-top: 20px;
+        font-weight: bold;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      }
+      .game-over-text {
+        font-size: 80px;
+        color: #f00;
+        font-family: "Courier New", monospace;
+        text-shadow: 0 0 20px #f00;
+      }
+      /* --- 追加・修正 CSS --- */
+
+      /* Flux Gauge (熱量) */
+      .flux-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        text-align: center;
+        z-index: 50;
+        pointer-events: none; /* クリックを邪魔しない */
+        display: none; /* 戦闘中のみ表示 */
+      }
+      .flux-container.active {
+        display: block;
+      }
+
+      .flux-bar-bg {
+        width: 100%;
+        height: 20px;
+        background: #222;
+        border: 2px solid #555;
+        margin-top: 5px;
+        position: relative;
+      }
+      .flux-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0af, #fa0, #f00);
+        width: 0%;
+        transition: width 0.1s linear;
+      }
+      .flux-danger {
+        animation: pulse-red 0.5s infinite;
+      }
+      @keyframes pulse-red {
+        0% {
+          box-shadow: 0 0 5px #f00;
+        }
+        50% {
+          box-shadow: 0 0 20px #f00;
+        }
+        100% {
+          box-shadow: 0 0 5px #f00;
+        }
+      }
+
+      /* AIS Probability Display (読み合いUI) */
+      .ais-panel {
+        position: absolute;
+        top: 60px;
+        right: 20px;
+        width: 180px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #777;
+        padding: 10px;
+        font-size: 12px;
+        color: #fff;
+      }
+      .ais-bar-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .ais-label {
+        width: 40px;
+      }
+      .ais-bar-track {
+        flex: 1;
+        height: 8px;
+        background: #333;
+        margin-left: 5px;
+      }
+      .ais-bar-val {
+        height: 100%;
+        background: #fff;
+      }
+
+      /* Command Slots (旧ハンドエリアの刷新) */
+      #command-container {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        width: 90%;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .cmd-btn {
+        width: 80px;
+        height: 100px;
+        background: #333;
+        border: 2px solid #555;
+        color: #fff;
+        font-size: 11px;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        transition: 0.1s;
+      }
+      .cmd-btn:hover {
+        border-color: #fff;
+        background: #444;
+      }
+      .cmd-btn.disabled {
+        opacity: 0.4;
+        pointer-events: none;
+        filter: grayscale(1);
+      }
+      .cmd-btn.active-chain {
+        border-color: #0ff;
+        box-shadow: 0 0 10px #0ff;
+      }
+
+      .cmd-tag {
+        font-size: 9px;
+        color: #aaa;
+        margin-bottom: 2px;
+      }
+      .cmd-flux {
+        color: #f55;
+        font-weight: bold;
+      }
+      .cmd-durability {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        font-size: 10px;
+        color: #0f0;
+      }
+      .cmd-type-atk {
+        border-top: 3px solid #d44;
+      }
+      .cmd-type-def {
+        border-top: 3px solid #44d;
+      }
+      .cmd-type-skill {
+        border-top: 3px solid #ea0;
+      }
+
+      /* Chain Mode Overlay */
+      .chain-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.2);
+        pointer-events: none;
+        z-index: 40;
+        display: none;
+        box-shadow: inset 0 0 50px #0ff;
+      }
+      .chain-overlay.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <!-- 1. TITLE SCREEN -->
+      <div id="title-screen" class="screen">
+        <h1 class="title-text">THREE DAYS⚔</h1>
+        <p>Ver.38.2 - Craft Fix</p>
+        <p>3日後に対峙する巨大な敵を倒せ。</p>
+        <p>それまでに探索、クラフトを繰り返して準備せよ。</p>
+        <button
+          onclick="game.startNewGame()"
+          style="font-size: 20px; padding: 15px 40px; margin-top: 20px"
+        >
+          START GAME
+        </button>
+      </div>
+
+      <!-- 2. BASE SCREEN -->
+      <div id="base-screen" class="screen">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h2>拠点 (DAY <span id="base-day">1</span>)</h2>
+          <div id="base-nav">
+            <button onclick="game.startExplore()">探索に出る</button>
+            <button onclick="game.rest()">休憩 (次の日に進む)</button>
+          </div>
+        </div>
+        <div class="base-layout">
+          <div class="panel">
+            <h3>装備</h3>
+            <div id="loadout-list">
+              <!-- Loadout items will be rendered here -->
+            </div>
+          </div>
+          <div class="panel">
+            <h3>ステータス & 手荷物</h3>
+            <div style="padding: 10px">
+              <p>
+                HP: <span id="base-hp"></span>/<span id="base-maxhp"></span>
+              </p>
+              <p>素材: <span id="base-mats"></span></p>
+              <p>デッキサイズ: <span id="base-decksize"></span> 枚</p>
+              <p style="margin-top: 10px; color: #ffd700">
+                手荷物: <span id="inventory-count">0</span>/25
+              </p>
+            </div>
+            <div
+              style="
+                margin-top: 20px;
+                border-top: 1px solid #555;
+                padding: 10px;
+              "
+            >
+              <h4 style="margin: 0 0 10px 0; color: #ffd700">デッキ</h4>
+              <div id="base-deck-list" class="deck-list"></div>
+            </div>
+            <div
+              style="
+                margin-top: 20px;
+                border-top: 1px solid #555;
+                padding: 10px;
+              "
+            >
+              <h4 style="margin: 0 0 10px 0; color: #ffd700">手荷物</h4>
+              <div
+                id="inventory-list"
+                style="max-height: 150px; overflow-y: auto"
+              ></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>倉庫</h3>
+            <div
+              style="
+                padding: 10px;
+                font-size: 12px;
+                color: #aaa;
+                margin-bottom: 10px;
+              "
+            >
+              ここに保管したものは、次回起動時にも保持されます
+            </div>
+            <div
+              id="storage-list"
+              style="max-height: 400px; overflow-y: auto"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. EXPLORE SCREEN -->
+      <div
+        id="explore-screen"
+        class="screen"
+        style="justify-content: center; align-items: center"
+      >
+        <canvas id="dungeonCanvas" width="984" height="728"></canvas>
+        <button id="explore-panel-toggle" onclick="game.toggleExplorePanel()">
+          装備 (E)
+        </button>
+        <div id="explore-ui">
+          <div>強制帰還まで: <span id="exp-time">180</span>s</div>
+          <div>
+            HP: <span id="exp-hp"></span> | スタミナ: <span id="exp-st"></span>
+          </div>
+          <div id="stealth-indicator">ステルスモード (Shift)</div>
+        </div>
+        <div id="explore-log"></div>
+        <div id="explore-panel">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+            "
+          >
+            <h3 style="margin: 0">装備 & デッキ</h3>
+            <button
+              onclick="game.toggleExplorePanel()"
+              style="padding: 4px 8px; font-size: 11px"
+            >
+              × Close
+            </button>
+          </div>
+          <div
+            style="
+              margin-bottom: 10px;
+              padding: 8px;
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 4px;
+              font-size: 11px;
+            "
+          >
+            <div><strong>素材:</strong> <span id="explore-mats"></span></div>
+          </div>
+          <div id="explore-loadout-list"></div>
+          <div
+            style="
+              margin-top: 20px;
+              border-top: 1px solid #555;
+              padding-top: 10px;
+            "
+          >
+            <h4 style="margin: 0 0 10px 0; color: #ffd700">デッキ</h4>
+            <div id="explore-deck-list" class="deck-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. BATTLE SCREEN -->
+      <div id="battle-screen" class="screen">
+        <div style="text-align: right">
+          <button onclick="battle.endTurn()" style="background: #c33">
+            自分のターンを終了する
+          </button>
+        </div>
+        <div id="battle-area">
+          <!-- PLAYER -->
+          <div class="unit-display">
+            <div class="sprite" style="border-color: #4f4; color: #4f4">
+              🤖
+              <span id="p-blk-text">0</span>
+            </div>
+            <div>PLAYER</div>
+            <div class="bar-bg"><div class="hp-fill" id="p-hp-bar"></div></div>
+            <div>HP: <span id="p-hp-text"></span></div>
+            <div style="color: #0ff; font-weight: bold; font-size: 20px">
+              ⚡ <span id="p-en-text">3/3</span>
+            </div>
+            <div
+              id="player-equipped"
+              style="font-size: 11px; margin-top: 5px; color: #aaa"
+            >
+              W: <span id="p-eq-w" style="color: #fff"></span> | A:
+              <span id="p-eq-a" style="color: #fff"></span>
+            </div>
+          </div>
+          <!-- ENEMY -->
+          <div class="unit-display">
+            <div class="sprite enemy">
+              👾
+              <div class="intent-icon" id="e-intent">?</div>
+            </div>
+            <div id="e-name">Enemy</div>
+            <div class="bar-bg"><div class="hp-fill" id="e-hp-bar"></div></div>
+            <div class="bar-bg">
+              <div class="pos-fill" id="e-pos-bar"></div>
+            </div>
+            <div style="font-size: 15px; color: #ea0">体幹</div>
+            <div id="enemy-status"></div>
+          </div>
+        </div>
+        <div id="hand-container"></div>
+        <div
+          style="
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #888;
+          "
+        >
+          山札: <span id="deck-num">20</span> | 手札:
+          <span id="disc-num">0</span>
+        </div>
+      </div>
+      <div
+        id="result-screen"
+        class="screen"
+        style="justify-content: center; align-items: center; text-align: center"
+      >
+        <div id="result-content"></div>
+        <button
+          onclick="location.reload()"
+          style="margin-top: 30px; padding: 10px 20px"
+        >
+          タイトルに戻る
+        </button>
+      </div>
+    </div>
+
+    <script>
+      /* --- 1. DATA DEFINITIONS --- */
+      const CARDS = {
+        punch: {
+          name: "パンチ",
+          cost: 1,
+          type: "atk",
+          val: 6,
+          pos: 5,
+          desc: "6 Dmg / 5 Posture",
+        },
+        guard: {
+          name: "ガード",
+          cost: 1,
+          type: "def",
+          val: 5,
+          desc: "Gain 5 Block",
+        },
+        focus: {
+          name: "集中",
+          cost: 1,
+          type: "skill",
+          val: 0,
+          desc: "Draw 1 Card",
+        },
+        slash: {
+          name: "斬撃",
+          cost: 2,
+          type: "atk",
+          val: 14,
+          pos: 8,
+          desc: "14 Dmg / 8 Posture",
+        },
+        parry: {
+          name: "パリィ",
+          cost: 1,
+          type: "def",
+          val: 8,
+          desc: "Gain 8 Block",
+        },
+        smash: {
+          name: "スマッシュ",
+          cost: 2,
+          type: "atk",
+          val: 20,
+          pos: 25,
+          desc: "20 Dmg, High Break",
+        },
+        bash: {
+          name: "バッシュ",
+          cost: 1,
+          type: "atk",
+          val: 8,
+          pos: 15,
+          desc: "8 Dmg, Medium Break",
+        },
+        snipe: {
+          name: "狙撃",
+          cost: 2,
+          type: "atk",
+          val: 18,
+          pos: 2,
+          desc: "18 Dmg / Low Posture",
+        },
+        mark: {
+          name: "照準",
+          cost: 1,
+          type: "skill",
+          status: "mark",
+          val: 3,
+          desc: "MARK (1.5x Dmg)",
+        },
+        dodge: {
+          name: "ダッシュ",
+          cost: 1,
+          type: "def",
+          val: 6,
+          desc: "6 Block + Draw 1",
+        },
+        brace: {
+          name: "ブレース",
+          cost: 2,
+          type: "def",
+          val: 15,
+          desc: "15 Block",
+        },
+        clunk: {
+          name: "クランク",
+          cost: 1,
+          type: "curse",
+          val: 0,
+          desc: "Useless",
+        },
+        stim: {
+          name: "スタミナパック",
+          cost: 0,
+          type: "skill",
+          status: "energy",
+          val: 1,
+          desc: "Gain 1 Energy",
+          exhaust: true,
+        },
+        decoy: {
+          name: "誘導器",
+          cost: 1,
+          type: "skill",
+          status: "stun",
+          val: 1,
+          desc: "Stun 1 turn",
+          exhaust: true,
+        },
+      };
+
+      const WEAPONS = {
+        sword: {
+          name: "剣",
+          cards: [
+            "slash",
+            "slash",
+            "slash",
+            "slash",
+            "parry",
+            "parry",
+            "parry",
+            "punch",
+            "punch",
+            "focus",
+          ],
+          type: "w",
+          noise: 0,
+          craft_cost: { scrap: 2 },
+        },
+        hammer: {
+          name: "ハンマー",
+          cards: [
+            "smash",
+            "smash",
+            "bash",
+            "bash",
+            "bash",
+            "bash",
+            "guard",
+            "guard",
+            "clunk",
+            "clunk",
+          ],
+          type: "w",
+          noise: 2,
+          craft_cost: { scrap: 3 },
+        },
+        sniper: {
+          name: "スナイパー",
+          cards: [
+            "snipe",
+            "snipe",
+            "snipe",
+            "mark",
+            "mark",
+            "mark",
+            "mark",
+            "punch",
+            "guard",
+            "focus",
+          ],
+          type: "w",
+          noise: 1,
+          craft_cost: { chip: 2 },
+        },
+      };
+      const ARMORS = {
+        light: {
+          name: "軽装甲",
+          cards: [
+            "dodge",
+            "dodge",
+            "dodge",
+            "dodge",
+            "guard",
+            "guard",
+            "guard",
+            "focus",
+          ],
+          type: "a",
+          noise: 0,
+          craft_cost: { chip: 1 },
+        },
+        heavy: {
+          name: "重装甲",
+          cards: [
+            "brace",
+            "brace",
+            "brace",
+            "guard",
+            "guard",
+            "guard",
+            "clunk",
+            "clunk",
+          ],
+          type: "a",
+          noise: 2,
+          craft_cost: { scrap: 2 },
+        },
+      };
+      const GADGETS = {
+        none: {
+          name: "なし",
+          cards: ["focus", "focus"],
+          type: "g",
+          noise: 0,
+          craft_cost: {},
+        },
+        stim: {
+          name: "スタミナパック",
+          cards: ["stim", "stim"],
+          type: "g",
+          noise: -1,
+          craft_cost: { herb: 1 },
+        },
+        decoy: {
+          name: "誘導器",
+          cards: ["decoy", "decoy"],
+          type: "g",
+          noise: 0,
+          craft_cost: { chip: 1 },
+        },
+      };
+
+      const ENEMY_INTENTS = {
+        ATTACK: {
+          name: "攻撃",
+          icon: "⚔️",
+          css: "atk",
+          dmg: 10,
+          posRegen: 10,
+        },
+        DEFEND: {
+          name: "防御",
+          icon: "🛡️",
+          css: "def",
+          block: 8,
+          posRegen: 5,
+        },
+        DEBUFF: {
+          name: "デバフ",
+          icon: "💀",
+          css: "debuff",
+          effect: "WEAK",
+          posRegen: 0,
+        },
+      };
+
+      /* --- 2. GAME ENGINE --- */
+      const game = {
+        state: "INIT",
+        day: 1,
+        player: {
+          hp: 100,
+          maxHp: 100,
+          stamina: 100,
+          maxStamina: 100,
+          playerBlock: 0,
+          loadout: { weapon: "sword", armor: "light", gadget: "none" },
+          mats: { scrap: 5, chip: 2, herb: 1, data: 0 },
+          unlocked: { weapon: ["sword"], armor: ["light"], gadget: ["none"] },
+          inventory: [], // 探索中の所持品（最大25個）
+        },
+        storage: {
+          materials: { scrap: 0, chip: 0, herb: 0, data: 0 },
+          equipment: [], // 保管庫の装備リスト
+        },
+        MAX_INVENTORY_SIZE: 25,
+
+        init() {
+          this.loadStorage(); // 保管庫を読み込み
+          this.showScreen("title-screen");
+        },
+        // 保管庫をlocalStorageから読み込み
+        loadStorage() {
+          const saved = localStorage.getItem("dustfall_storage");
+          if (saved) {
+            try {
+              this.storage = JSON.parse(saved);
+            } catch (e) {
+              console.error("Failed to load storage:", e);
+            }
+          }
+        },
+        // 保管庫をlocalStorageに保存
+        saveStorage() {
+          try {
+            localStorage.setItem(
+              "dustfall_storage",
+              JSON.stringify(this.storage)
+            );
+          } catch (e) {
+            console.error("Failed to save storage:", e);
+          }
+        },
+        // 所持品数の計算
+        getInventoryCount() {
+          let count = 0;
+          // 素材の数をカウント
+          for (const [mat, amount] of Object.entries(this.player.mats)) {
+            count += amount;
+          }
+          // インベントリ内の装備数をカウント
+          count += this.player.inventory.length;
+          return count;
+        },
+        showScreen(id) {
+          document
+            .querySelectorAll(".screen")
+            .forEach((el) => el.classList.remove("active"));
+          const target = document.getElementById(id);
+          if (target) target.classList.add("active");
+        },
+        startNewGame() {
+          this.day = 1;
+          this.player.hp = 100;
+          this.updateBaseUI();
+          this.showScreen("base-screen");
+          this.state = "BASE";
+        },
+        startExplore() {
+          try {
+            dungeon.init(this.day);
+            this.showScreen("explore-screen");
+            this.state = "EXPLORE";
+            dungeon.start();
+          } catch (error) {
+            console.error("Error in startExplore:", error);
+            alert("マップ生成に失敗しました: " + error.message);
+          }
+        },
+        rest() {
+          this.day++;
+          this.player.hp = this.player.maxHp;
+          this.updateBaseUI();
+          alert(`休憩を終えました。DAY ${this.day} が始まります。`);
+        },
+        // rest() メソッドの下あたりに追加じゃ
+        startBossBattle() {
+          if (!confirm("準備はいいか？ これが最後の戦いだ。")) return;
+
+          // ボスのステータスを定義（かなり強く設定するぞ）
+          const boss = {
+            hp: 300, // 通常敵の3倍
+            maxHp: 300,
+            pos: 200, // 体幹も強い
+            maxPos: 200,
+            isBroken: false,
+            brokenTurns: 0,
+            enemyBlock: 0,
+            status: { mark: 0 },
+            nextIntent: null,
+            // ボス専用の特別なフラグや名前を持たせてもよいが、今回はシンプルに
+            // 名前表示などは battle.updateUI で "Enemy" となるが、後で変えることも可能
+          };
+
+          // 状態をBATTLEに変更
+          this.state = "BATTLE";
+          dungeon.stop(); // 念のためダンジョンタイマー停止
+          battle.isBossBattle = true;
+          // 戦闘開始！
+          // 第1引数はダンジョン上のエンティティだが、ボスはマップにいないので null を渡す
+          // 第2引数は奇襲フラグ。ボス戦で奇襲はできないので false
+          battle.start(null, false);
+
+          // battle.startの中で作られる this.enemy をボスデータで上書きする
+          // (battle.start は通常の敵HP100で作ってしまうため)
+          battle.enemy = boss;
+          battle.selectIntent(); // ボスの最初の行動を決定
+
+          // 画面切り替え
+          this.showScreen("battle-screen");
+
+          // ボス戦であることをログに出す
+          this.log("⚠️ BOSS BATTLE START ⚠️");
+        },
+        returnToDungeon(enemyKilled) {
+          this.log(enemyKilled ? "敵を倒しました！" : "戦闘から逃れました。");
+          this.player.playerBlock = 0;
+          this.showScreen("explore-screen");
+          this.state = "EXPLORE";
+          dungeon.start();
+        },
+        returnToBase(success) {
+          dungeon.stop();
+          this.day++;
+          if (!success) {
+            this.player.hp = Math.max(1, this.player.hp * 0.1);
+            alert(
+              `強制帰還。現在の手荷物は全て喪失します。\n(DAY ${this.day} になりました)`
+            );
+          } else {
+            alert(`安全に帰還しました。\n(DAY ${this.day} になりました)`);
+          }
+          this.player.playerBlock = 0;
+          this.updateBaseUI();
+          this.showScreen("base-screen");
+          this.state = "BASE";
+        },
+        log(message) {
+          const logEl = document.getElementById("explore-log");
+          if (logEl) {
+            const msgEl = document.createElement("div");
+            msgEl.className = "log-msg";
+            msgEl.innerText = message;
+            logEl.prepend(msgEl);
+            while (logEl.children.length > 20)
+              logEl.removeChild(logEl.lastChild);
+          }
+        },
+        buyAndEquip(itemKey, type, itemCost) {
+          // 修正点: itemCost (craft_cost) を正しくチェック
+          // 探索中の素材のみをチェック（保管庫の素材は使用不可）
+          for (const [mat, amount] of Object.entries(itemCost)) {
+            if (this.player.mats[mat] < amount) {
+              alert("資材が足りない。\n(保管庫の素材は探索中は使用できません)");
+              return false;
+            }
+          }
+          for (const [mat, amount] of Object.entries(itemCost)) {
+            this.player.mats[mat] -= amount;
+          }
+
+          // 既にアンロック済みでない場合のみ追加
+          if (!this.player.unlocked[type].includes(itemKey)) {
+            this.player.unlocked[type].push(itemKey);
+          }
+          this.player.loadout[type] = itemKey; // 装備更新
+          this.updateBaseUI();
+          // 探索中の場合、パネルも更新
+          if (this.state === "EXPLORE") {
+            this.updateExplorePanel();
+          }
+          this.log(`【${itemKey}】を作成し、装備した。`);
+          return true;
+        },
+        buildDeck() {
+          const l = this.player.loadout;
+          const deck = [];
+          deck.push(...WEAPONS[l.weapon].cards);
+          deck.push(...ARMORS[l.armor].cards);
+          deck.push(...GADGETS[l.gadget].cards);
+          return deck;
+        },
+        renderDeckList(containerId) {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+          container.innerHTML = "";
+          const deck = this.buildDeck();
+          const cardCounts = {};
+          deck.forEach((cardId) => {
+            cardCounts[cardId] = (cardCounts[cardId] || 0) + 1;
+          });
+          Object.keys(cardCounts).forEach((cardId) => {
+            const card = CARDS[cardId];
+            const count = cardCounts[cardId];
+            const el = document.createElement("div");
+            el.className = "deck-card";
+            el.innerHTML = `<div class="deck-card-name">${card.name}${
+              count > 1 ? ` x${count}` : ""
+            }</div><div class="deck-card-type">${card.type}</div>`;
+            container.appendChild(el);
+          });
+        },
+        renderLoadoutList(listElement, onUpdate) {
+          listElement.innerHTML = "";
+
+          // ヘルパー関数：見出しを追加
+          const addHeader = (text) => {
+            const h3 = document.createElement("h3");
+            h3.textContent = text;
+            h3.style.fontSize = "14px";
+            h3.style.marginTop = "10px";
+            listElement.appendChild(h3);
+          };
+
+          const renderCat = (db, currentKey, type) => {
+            Object.keys(db).forEach((key) => {
+              const item = db[key];
+              const isEq = currentKey === key;
+              const isUnlocked = this.player.unlocked[type].includes(key);
+              let canAfford = true;
+              if (item.craft_cost && !isUnlocked) {
+                for (const [mat, amount] of Object.entries(item.craft_cost)) {
+                  if (this.player.mats[mat] < amount) {
+                    canAfford = false;
+                    break;
+                  }
+                }
+              }
+              let statusText = isEq
+                ? "✓ 装備中"
+                : isUnlocked
+                ? "装備する"
+                : canAfford
+                ? "作成する"
+                : "作成不可能";
+              let statusClass = isEq
+                ? "equipped"
+                : isUnlocked
+                ? ""
+                : canAfford
+                ? "item-buyable"
+                : "locked";
+              const costDisplay =
+                !isUnlocked && item.craft_cost
+                  ? ` (${Object.entries(item.craft_cost)
+                      .map(([k, v]) => `${v} ${k}`)
+                      .join(", ")})`
+                  : "";
+
+              const el = document.createElement("div");
+              el.className = `item-row ${statusClass}`;
+              el.style.fontSize = "12px";
+              el.innerHTML = `<span>${item.name}</span><span class="item-cost">${costDisplay}</span><span>${statusText}</span>`;
+              el.onclick = () => {
+                if (isEq) return;
+                if (isUnlocked) {
+                  this.player.loadout[type] = key;
+                  if (onUpdate) onUpdate();
+                  this.log(`Equipped ${item.name}`);
+                } else if (canAfford) {
+                  this.buyAndEquip(key, type, item.craft_cost);
+                  if (onUpdate) onUpdate();
+                }
+              };
+              listElement.appendChild(el);
+            });
+          };
+
+          addHeader("- 武器 -");
+          renderCat(WEAPONS, this.player.loadout.weapon, "weapon");
+          addHeader("- 防具 -");
+          renderCat(ARMORS, this.player.loadout.armor, "armor");
+          addHeader("- アビリティ -");
+          renderCat(GADGETS, this.player.loadout.gadget, "gadget");
+        },
+        toggleExplorePanel() {
+          const panel = document.getElementById("explore-panel");
+          if (panel) {
+            panel.classList.toggle("visible");
+            if (panel.classList.contains("visible")) {
+              this.updateExplorePanel();
+            }
+          }
+        },
+        updateExplorePanel() {
+          const list = document.getElementById("explore-loadout-list");
+          if (list) {
+            this.renderLoadoutList(list, () => {
+              this.updateExplorePanel();
+            });
+          }
+          this.renderDeckList("explore-deck-list");
+
+          // 素材情報を更新
+          const matsEl = document.getElementById("explore-mats");
+          if (matsEl) {
+            const m = this.player.mats;
+            matsEl.innerText = `Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${m.data}`;
+          }
+        },
+        updateBaseUI() {
+          document.getElementById("base-day").innerText = this.day;
+          document.getElementById("base-hp").innerText = this.player.hp;
+          document.getElementById("base-maxhp").innerText = this.player.maxHp;
+          const m = this.player.mats;
+          document.getElementById(
+            "base-mats"
+          ).innerText = `Scrap:${m.scrap} Chip:${m.chip} Herb:${m.herb} Data:${m.data}`;
+          document.getElementById("base-decksize").innerText =
+            this.buildDeck().length;
+
+          const nav = document.getElementById("base-nav");
+          if (nav) {
+            // DAYが4以上（3日目の探索終了後）なら、ボス戦モードへ
+            if (this.day > 3) {
+              nav.innerHTML = `
+                <button 
+                  onclick="game.startBossBattle()" 
+                  style="background: #c3073f; border-color: #f00; width: 100%; font-size: 18px; font-weight: bold;">
+                  ⚠️ 決戦に挑む (FINAL BATTLE) ⚠️
+                </button>
+              `;
+            } else {
+              // 通常時はいつものボタンを表示
+              nav.innerHTML = `
+                <button onclick="game.startExplore()">探索に出る</button>
+                <button onclick="game.rest()">休憩 (次の日に進む)</button>
+              `;
+            }
+          }
+
+          // インベントリ数の表示
+          const invCount = this.getInventoryCount();
+          const invCountEl = document.getElementById("inventory-count");
+          if (invCountEl) invCountEl.innerText = invCount;
+
+          const list = document.getElementById("loadout-list");
+          if (list) {
+            this.renderLoadoutList(list, () => {
+              this.updateBaseUI();
+            });
+          }
+          this.renderDeckList("base-deck-list");
+
+          // インベントリと保管庫の表示
+          this.renderInventory();
+          this.renderStorage();
+        },
+        // インベントリの表示
+        renderInventory() {
+          const container = document.getElementById("inventory-list");
+          if (!container) return;
+          container.innerHTML = "";
+
+          // 素材を表示
+          const matTypes = ["scrap", "chip", "herb", "data"];
+          matTypes.forEach((mat) => {
+            const amount = this.player.mats[mat] || 0;
+            if (amount > 0) {
+              const el = document.createElement("div");
+              el.className = "item-row";
+              el.style.fontSize = "12px";
+              el.innerHTML = `<span>${mat.toUpperCase()}: ${amount}</span><button onclick="game.moveToStorage('${mat}', ${amount})" style="padding: 2px 6px; font-size: 10px;">→ Storage</button>`;
+              container.appendChild(el);
+            }
+          });
+
+          // インベントリ内の装備を表示（現在は装備をインベントリに保存する機能がないため、将来の拡張用）
+          if (this.player.inventory.length > 0) {
+            this.player.inventory.forEach((item, idx) => {
+              const el = document.createElement("div");
+              el.className = "item-row";
+              el.style.fontSize = "12px";
+              el.innerHTML = `<span>${
+                item.name || item
+              }</span><button onclick="game.moveToStorage('equip', ${idx})" style="padding: 2px 6px; font-size: 10px;">→ Storage</button>`;
+              container.appendChild(el);
+            });
+          }
+
+          if (container.children.length === 0) {
+            container.innerHTML =
+              '<div style="color: #666; font-size: 11px; padding: 5px;">Empty</div>';
+          }
+        },
+        // 保管庫の表示
+        renderStorage() {
+          const container = document.getElementById("storage-list");
+          if (!container) return;
+          container.innerHTML = "";
+
+          // 保管庫の素材を表示
+          const matTypes = ["scrap", "chip", "herb", "data"];
+          matTypes.forEach((mat) => {
+            const amount = this.storage.materials[mat] || 0;
+            if (amount > 0) {
+              const el = document.createElement("div");
+              el.className = "item-row";
+              el.style.fontSize = "12px";
+              el.innerHTML = `<span>${mat.toUpperCase()}: ${amount}</span><div><button onclick="game.moveFromStorage('${mat}', 1)" style="padding: 2px 6px; font-size: 10px; margin-right: 2px;">← 1</button><button onclick="game.takeFromStorage('${mat}')" style="padding: 2px 6px; font-size: 10px;">← All</button></div>`;
+              container.appendChild(el);
+            }
+          });
+
+          // 保管庫の装備を表示
+          if (this.storage.equipment && this.storage.equipment.length > 0) {
+            this.storage.equipment.forEach((item, idx) => {
+              const el = document.createElement("div");
+              el.className = "item-row";
+              el.style.fontSize = "12px";
+              el.innerHTML = `<span>${
+                item.name || item
+              }</span><button onclick="game.moveFromStorage('equip', ${idx})" style="padding: 2px 6px; font-size: 10px;">← Take</button>`;
+              container.appendChild(el);
+            });
+          }
+
+          if (container.children.length === 0) {
+            container.innerHTML =
+              '<div style="color: #666; font-size: 11px; padding: 5px;">Empty</div>';
+          }
+        },
+        // 素材を保管庫に移動
+        moveToStorage(type, amountOrIndex) {
+          if (type === "equip") {
+            // 装備を保管庫に移動（将来の拡張用）
+            if (this.player.inventory[amountOrIndex]) {
+              this.storage.equipment.push(this.player.inventory[amountOrIndex]);
+              this.player.inventory.splice(amountOrIndex, 1);
+              this.saveStorage();
+              this.updateBaseUI();
+            }
+          } else {
+            // 素材を保管庫に移動
+            const amount = Math.min(amountOrIndex, this.player.mats[type] || 0);
+            if (amount > 0) {
+              this.player.mats[type] -= amount;
+              this.storage.materials[type] =
+                (this.storage.materials[type] || 0) + amount;
+              this.saveStorage();
+              this.updateBaseUI();
+            }
+          }
+        },
+        // 保管庫から素材を取り出す
+        moveFromStorage(type, amountOrIndex) {
+          if (type === "equip") {
+            // 装備を取り出す（所持品数のチェック）
+            if (this.getInventoryCount() >= this.MAX_INVENTORY_SIZE) {
+              alert("手荷物が一杯です。(最大25個)");
+              return;
+            }
+            if (this.storage.equipment[amountOrIndex]) {
+              this.player.inventory.push(this.storage.equipment[amountOrIndex]);
+              this.storage.equipment.splice(amountOrIndex, 1);
+              this.saveStorage();
+              this.updateBaseUI();
+            }
+          } else {
+            // 素材を取り出す（所持品数のチェック）
+            const available = this.storage.materials[type] || 0;
+            if (available === 0) return;
+
+            const currentInvCount = this.getInventoryCount();
+            const spaceAvailable = this.MAX_INVENTORY_SIZE - currentInvCount;
+            if (spaceAvailable <= 0) {
+              alert("手荷物が一杯です。(最大25個)");
+              return;
+            }
+
+            // 全部取り出すか、一部だけ取り出すかを選択
+            const takeAmount = Math.min(
+              amountOrIndex,
+              available,
+              spaceAvailable
+            );
+            if (takeAmount > 0) {
+              this.storage.materials[type] -= takeAmount;
+              this.player.mats[type] =
+                (this.player.mats[type] || 0) + takeAmount;
+              this.saveStorage();
+              this.updateBaseUI();
+            }
+          }
+        },
+        // 保管庫から素材を一部取り出す（ダイアログで数量入力）
+        takeFromStorage(type) {
+          const available = this.storage.materials[type] || 0;
+          if (available === 0) return;
+
+          const currentInvCount = this.getInventoryCount();
+          const spaceAvailable = this.MAX_INVENTORY_SIZE - currentInvCount;
+          if (spaceAvailable <= 0) {
+            alert("手荷物が一杯です。(最大25個)");
+            return;
+          }
+
+          const maxTake = Math.min(available, spaceAvailable);
+          const input = prompt(
+            `How many ${type.toUpperCase()} to take? (Available: ${available}, Space: ${spaceAvailable})`,
+            maxTake
+          );
+          if (input === null) return;
+
+          const takeAmount = parseInt(input);
+          if (isNaN(takeAmount) || takeAmount <= 0 || takeAmount > maxTake) {
+            alert("Invalid amount!");
+            return;
+          }
+
+          this.storage.materials[type] -= takeAmount;
+          this.player.mats[type] = (this.player.mats[type] || 0) + takeAmount;
+          this.saveStorage();
+          this.updateBaseUI();
+        },
+        enterBattle(enemy, isAmbush) {
+          dungeon.stop();
+          this.state = "BATTLE";
+          battle.start(enemy, isAmbush);
+          this.showScreen("battle-screen");
+        },
+        // ... gameオブジェクトの中に追加 ...
+
+        // スコア計算ロジック
+        calculateScore(turns) {
+          const hpBonus = this.player.hp * 20;
+          // 50ターンを基準に、早ければ早いほど高得点（マイナスにはしない）
+          const speedBonus = Math.max(0, (50 - turns) * 30);
+          // 所持している素材の総
+          return hpBonus + speedBonus;
+        },
+
+        // リザルト画面を表示する処理
+        showResult(isWin, turns) {
+          const container = document.getElementById("result-content");
+
+          if (isWin) {
+            // 勝利時：詳細を表示
+            const score = this.calculateScore(turns);
+            container.innerHTML = `
+              <h1 style="color: #4f4;">GAME CLEAR</h1>
+              <div class="result-stat">撃破ターン数: <strong>${turns}</strong></div>
+              <div class="result-stat">残りHP: <strong>${this.player.hp}</strong></div>
+              <div class="score-text">総合ポイント: ${score}点</div>
+            `;
+          } else {
+            // 敗北時：シンプルにGAME OVER
+            container.innerHTML = `
+              <div class="game-over-text">GAME OVER</div>
+            `;
+          }
+
+          this.showScreen("result-screen");
+        },
+      };
+
+      /* --- 3. DUNGEON LOGIC --- */
+      const MAP_WIDTH = 50;
+      const MAP_HEIGHT = 50;
+      const TILE_SIZE = 15;
+      const dungeon = {
+        canvas: null,
+        ctx: null,
+        gridX: MAP_WIDTH,
+        gridY: MAP_HEIGHT,
+        tile: TILE_SIZE,
+        map: [],
+        entities: [],
+        p: { x: 1, y: 1 },
+        timer: null,
+        timeLeft: 180,
+        lastTime: 0,
+        enemyMoveTimer: 0,
+        init(difficulty) {
+          this.canvas = document.getElementById("dungeonCanvas");
+          this.ctx = this.canvas.getContext("2d");
+          this.map = [];
+          for (let y = 0; y < this.gridY; y++) {
+            let row = [];
+            for (let x = 0; x < this.gridX; x++) row.push(1);
+            this.map.push(row);
+          }
+
+          // Room-and-Corridor 方式のマップ生成
+          const rooms = [];
+          const minRoomSize = 4;
+          const maxRoomSize = 8;
+          const roomAttempts = 50;
+
+          // 1. 部屋を生成
+          for (let i = 0; i < roomAttempts; i++) {
+            const width =
+              minRoomSize +
+              Math.floor(Math.random() * (maxRoomSize - minRoomSize + 1));
+            const height =
+              minRoomSize +
+              Math.floor(Math.random() * (maxRoomSize - minRoomSize + 1));
+
+            // 境界チェック
+            const maxX = Math.max(2, this.gridX - width - 4);
+            const maxY = Math.max(2, this.gridY - height - 4);
+            if (maxX <= 2 || maxY <= 2) continue; // マップが小さすぎる場合スキップ
+
+            const x = 2 + Math.floor(Math.random() * (maxX - 2));
+            const y = 2 + Math.floor(Math.random() * (maxY - 2));
+
+            // 他の部屋と重なっていないかチェック
+            let overlaps = false;
+            for (const room of rooms) {
+              if (
+                x < room.x + room.width + 2 &&
+                x + width + 2 > room.x &&
+                y < room.y + room.height + 2 &&
+                y + height + 2 > room.y
+              ) {
+                overlaps = true;
+                break;
+              }
+            }
+
+            if (!overlaps) {
+              rooms.push({ x, y, width, height });
+              // 部屋を描画（壁を含めて）
+              for (let ry = y; ry < y + height; ry++) {
+                for (let rx = x; rx < x + width; rx++) {
+                  if (
+                    ry >= 1 &&
+                    ry < this.gridY - 1 &&
+                    rx >= 1 &&
+                    rx < this.gridX - 1
+                  ) {
+                    this.map[ry][rx] = 0;
+                  }
+                }
+              }
+            }
+          }
+
+          // 2. 部屋同士を通路で繋ぐ（Minimum Spanning Tree風）
+          if (rooms.length > 1) {
+            // 各部屋の中心点を計算
+            const centers = rooms.map((room) => ({
+              x: Math.floor(room.x + room.width / 2),
+              y: Math.floor(room.y + room.height / 2),
+            }));
+
+            // 近い部屋同士を繋ぐ（全ペアではなく、近いものだけ）
+            for (let i = 0; i < centers.length - 1; i++) {
+              // 最も近い部屋を探す
+              let closestIdx = i + 1;
+              let closestDist = Infinity;
+              for (let j = i + 1; j < centers.length; j++) {
+                const dist =
+                  Math.abs(centers[i].x - centers[j].x) +
+                  Math.abs(centers[i].y - centers[j].y);
+                if (dist < closestDist) {
+                  closestDist = dist;
+                  closestIdx = j;
+                }
+              }
+
+              // 通路を作る（幅1マス、L字型）
+              this.createLShapedCorridor(
+                centers[i].x,
+                centers[i].y,
+                centers[closestIdx].x,
+                centers[closestIdx].y
+              );
+            }
+
+            // 追加の通路をランダムに追加（分岐点を増やす、一部は幅2マス）
+            for (let i = 0; i < Math.floor(rooms.length / 3); i++) {
+              const r1 = Math.floor(Math.random() * centers.length);
+              const r2 = Math.floor(Math.random() * centers.length);
+              if (r1 !== r2) {
+                // 30%の確率で幅2マス、それ以外は1マス
+                if (Math.random() < 0.3) {
+                  this.createCorridor(
+                    centers[r1].x,
+                    centers[r1].y,
+                    centers[r2].x,
+                    centers[r2].y,
+                    1.5
+                  );
+                } else {
+                  this.createLShapedCorridor(
+                    centers[r1].x,
+                    centers[r1].y,
+                    centers[r2].x,
+                    centers[r2].y
+                  );
+                }
+              }
+            }
+          }
+
+          // 3. スタート地点とゴール地点を設定
+          this.startRoom = null; // スタート部屋を保存（敵のスポーンを避けるため）
+          if (rooms.length > 0) {
+            // スタート地点（最初の部屋）
+            const startRoom = rooms[0];
+            this.startRoom = startRoom; // スタート部屋を保存
+            this.p = {
+              x: Math.floor(startRoom.x + startRoom.width / 2),
+              y: Math.floor(startRoom.y + startRoom.height / 2),
+            };
+
+            // ゴール地点（最後の部屋）
+            const endRoom = rooms[rooms.length - 1];
+            const endX = Math.floor(endRoom.x + endRoom.width / 2);
+            const endY = Math.floor(endRoom.y + endRoom.height / 2);
+            this.map[endY][endX] = 2;
+          } else {
+            // フォールバック：部屋が生成できなかった場合
+            this.p = { x: 2, y: 2 };
+            this.map[2][2] = 0;
+            this.map[this.gridY - 3][this.gridX - 3] = 2;
+            this.startRoom = { x: 1, y: 1, width: 3, height: 3 }; // フォールバック用
+          }
+
+          // 4. 通路の拡張は無効化（迷路構造を保つため）
+          // this.expandCorridors();
+
+          // 5. プレイヤー位置の確認（フォールバック）
+          if (!this.p || this.map[this.p.y][this.p.x] !== 0) {
+            // プレイヤー位置が無効な場合、最初の空きマスを探す
+            let found = false;
+            for (let y = 1; y < this.gridY - 1 && !found; y++) {
+              for (let x = 1; x < this.gridX - 1 && !found; x++) {
+                if (this.map[y][x] === 0) {
+                  this.p = { x, y };
+                  found = true;
+                }
+              }
+            }
+            if (!found) {
+              this.p = { x: 1, y: 1 };
+              this.map[1][1] = 0;
+            }
+          }
+
+          // 6. プレイヤーとエンティティの初期化
+          game.player.stamina = 100;
+          this.timeLeft = 180;
+          this.entities = [];
+          // 敵の数を減らす（8 + difficulty）
+          for (let i = 0; i < 8 + difficulty; i++) this.spawnEntity("enemy");
+          // ルートアイテムの数も少し減らす
+          for (let i = 0; i < 12; i++) this.spawnEntity("loot");
+          window.onkeydown = (e) => {
+            if (game.state !== "EXPLORE") return;
+            const k = e.key.toLowerCase();
+
+            // Eキーで装備パネルを開閉
+            if (k === "e") {
+              game.toggleExplorePanel();
+              return;
+            }
+
+            // パネルが開いているときは移動を無効化
+            const panel = document.getElementById("explore-panel");
+            if (panel && panel.classList.contains("visible")) return;
+
+            if (e.shiftKey) game.player.isStealth = true;
+            let dx = 0,
+              dy = 0;
+            if (k === "w" || k === "arrowup") dy = -1;
+            if (k === "s" || k === "arrowdown") dy = 1;
+            if (k === "a" || k === "arrowleft") dx = -1;
+            if (k === "d" || k === "arrowright") dx = 1;
+            if (dx !== 0 || dy !== 0) this.movePlayer(dx, dy);
+          };
+          window.onkeyup = (e) => {
+            if (e.key === "Shift") game.player.isStealth = false;
+          };
+        },
+        // L字型の通路を作る関数（より迷路らしく）
+        createLShapedCorridor(x1, y1, x2, y2) {
+          // ランダムに横→縦または縦→横を選択
+          if (Math.random() < 0.5) {
+            // 横→縦: (x1,y1) → (x2,y1) → (x2,y2)
+            const startX = Math.min(x1, x2);
+            const endX = Math.max(x1, x2);
+            for (let x = startX; x <= endX; x++) {
+              if (
+                x >= 1 &&
+                x < this.gridX - 1 &&
+                y1 >= 1 &&
+                y1 < this.gridY - 1
+              ) {
+                this.map[y1][x] = 0;
+              }
+            }
+            const startY = Math.min(y1, y2);
+            const endY = Math.max(y1, y2);
+            for (let y = startY; y <= endY; y++) {
+              if (
+                x2 >= 1 &&
+                x2 < this.gridX - 1 &&
+                y >= 1 &&
+                y < this.gridY - 1
+              ) {
+                this.map[y][x2] = 0;
+              }
+            }
+          } else {
+            // 縦→横: (x1,y1) → (x1,y2) → (x2,y2)
+            const startY = Math.min(y1, y2);
+            const endY = Math.max(y1, y2);
+            for (let y = startY; y <= endY; y++) {
+              if (
+                x1 >= 1 &&
+                x1 < this.gridX - 1 &&
+                y >= 1 &&
+                y < this.gridY - 1
+              ) {
+                this.map[y][x1] = 0;
+              }
+            }
+            const startX = Math.min(x1, x2);
+            const endX = Math.max(x1, x2);
+            for (let x = startX; x <= endX; x++) {
+              if (
+                x >= 1 &&
+                x < this.gridX - 1 &&
+                y2 >= 1 &&
+                y2 < this.gridY - 1
+              ) {
+                this.map[y2][x] = 0;
+              }
+            }
+          }
+        },
+        // 通路を作る関数（幅指定可能、主に分岐点用）
+        createCorridor(x1, y1, x2, y2, width = 1) {
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const steps = Math.max(Math.abs(dx), Math.abs(dy));
+
+          for (let i = 0; i <= steps; i++) {
+            const t = steps === 0 ? 0 : i / steps;
+            const cx = Math.floor(x1 + dx * t);
+            const cy = Math.floor(y1 + dy * t);
+
+            // 通路の幅分、周辺も開ける（1.5の場合は2マス幅）
+            const halfWidth = width >= 1.5 ? 1 : 0;
+            for (let wy = -halfWidth; wy <= halfWidth; wy++) {
+              for (let wx = -halfWidth; wx <= halfWidth; wx++) {
+                const nx = cx + wx;
+                const ny = cy + wy;
+                if (
+                  nx >= 1 &&
+                  nx < this.gridX - 1 &&
+                  ny >= 1 &&
+                  ny < this.gridY - 1
+                ) {
+                  this.map[ny][nx] = 0;
+                }
+              }
+            }
+          }
+        },
+        // 通路を少し拡張する（より広い印象にする）
+        expandCorridors() {
+          // マップのコピーを作成
+          const expanded = [];
+          for (let y = 0; y < this.gridY; y++) {
+            expanded.push([]);
+            for (let x = 0; x < this.gridX; x++) {
+              expanded[y].push(this.map[y][x]);
+            }
+          }
+
+          for (let y = 1; y < this.gridY - 1; y++) {
+            for (let x = 1; x < this.gridX - 1; x++) {
+              if (this.map[y][x] === 0) {
+                // 通路の周辺を少し開ける（確率的に）
+                if (Math.random() < 0.3) {
+                  const dirs = [
+                    [0, 1],
+                    [0, -1],
+                    [1, 0],
+                    [-1, 0],
+                  ];
+                  for (const [dx, dy] of dirs) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (
+                      nx >= 1 &&
+                      nx < this.gridX - 1 &&
+                      ny >= 1 &&
+                      ny < this.gridY - 1
+                    ) {
+                      if (this.map[ny][nx] === 1 && Math.random() < 0.4) {
+                        expanded[ny][nx] = 0;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // 拡張したマップを適用
+          for (let y = 1; y < this.gridY - 1; y++) {
+            for (let x = 1; x < this.gridX - 1; x++) {
+              this.map[y][x] = expanded[y][x];
+            }
+          }
+        },
+        spawnEntity(type) {
+          let x, y;
+          let attempts = 0;
+          let isValid = false;
+          do {
+            x = Math.floor(Math.random() * (this.gridX - 2)) + 1;
+            y = Math.floor(Math.random() * (this.gridY - 2)) + 1;
+            attempts++;
+            if (attempts > 1000) {
+              // 1000回試行しても見つからない場合はスキップ
+              console.warn(`Could not spawn ${type} after 1000 attempts`);
+              return;
+            }
+
+            // チェック条件
+            const isWalkable = this.map[y][x] === 0;
+            const isPlayerPos = x === this.p.x && y === this.p.y;
+
+            // スタート部屋内かチェック（マージン付き）
+            let isInStartRoom = false;
+            if (this.startRoom) {
+              const margin = 2; // 周辺2マスも安全地帯
+              isInStartRoom =
+                x >= this.startRoom.x - margin &&
+                x < this.startRoom.x + this.startRoom.width + margin &&
+                y >= this.startRoom.y - margin &&
+                y < this.startRoom.y + this.startRoom.height + margin;
+            }
+
+            // プレイヤーから一定距離以内かチェック（敵のみ）
+            const distFromPlayer =
+              Math.abs(x - this.p.x) + Math.abs(y - this.p.y);
+            const tooCloseToPlayer = type === "enemy" && distFromPlayer < 8; // 8マス以内は敵を配置しない
+
+            isValid =
+              isWalkable && !isPlayerPos && !isInStartRoom && !tooCloseToPlayer;
+          } while (!isValid);
+          let visionRange = 4;
+          let armorNoise = ARMORS[game.player.loadout.armor].noise;
+          if (type === "enemy") visionRange = 4 + armorNoise;
+          this.entities.push({
+            x,
+            y,
+            type,
+            active: true,
+            facing: Math.floor(Math.random() * 4),
+            aggro: false,
+            vision: visionRange,
+            lastSeenPlayer: null,
+            aggroTimer: 0,
+          });
+        },
+        start() {
+          this.lastTime = Date.now();
+          if (this.timer) clearInterval(this.timer);
+          this.timer = setInterval(() => this.loop(), 50);
+        },
+        stop() {
+          if (this.timer) clearInterval(this.timer);
+        },
+        loop() {
+          if (game.state !== "EXPLORE") return;
+          const now = Date.now();
+          const dt = (now - this.lastTime) / 1000;
+          this.lastTime = now;
+          this.timeLeft -= dt;
+          if (this.timeLeft <= 0) {
+            this.timeLeft = 0;
+            game.returnToBase(false);
+            return;
+          }
+          this.enemyMoveTimer += dt;
+          if (this.enemyMoveTimer >= 0.65) {
+            this.updateEnemies();
+            this.enemyMoveTimer = 0;
+          }
+          if (!game.player.isStealth && game.player.stamina < 100)
+            game.player.stamina += 0.5;
+          this.draw();
+          this.updateUI();
+        },
+        movePlayer(dx, dy) {
+          let cost = 0;
+          if (game.player.isStealth) {
+            const currentArmor = ARMORS[game.player.loadout.armor];
+            const currentWeapon = WEAPONS[game.player.loadout.weapon];
+            cost = 1 + currentArmor.noise + currentWeapon.noise;
+            if (game.player.stamina < cost) {
+              game.player.isStealth = false;
+              cost = 0;
+            } else {
+              game.player.stamina -= cost;
+            }
+          }
+          const nx = this.p.x + dx;
+          const ny = this.p.y + dy;
+          if (this.map[ny][nx] === 1) return;
+          if (this.map[ny][nx] === 2) {
+            game.returnToBase(true);
+            return;
+          }
+          const hit = this.entities.find(
+            (e) => e.x === nx && e.y === ny && e.active
+          );
+          if (hit) {
+            if (hit.type === "enemy") {
+              let pDir = -1;
+              if (dy === -1) pDir = 0;
+              if (dx === 1) pDir = 1;
+              if (dy === 1) pDir = 2;
+              if (dx === -1) pDir = 3;
+              const isFrontal = Math.abs(pDir - hit.facing) === 2;
+              let isAmbush = game.player.isStealth && !isFrontal;
+              game.enterBattle(hit, isAmbush);
+              return;
+            } else if (hit.type === "loot") {
+              hit.active = false;
+              // 所持品数のチェック
+              if (game.getInventoryCount() >= game.MAX_INVENTORY_SIZE) {
+                game.log("Inventory full! Cannot pick up Scrap.");
+                return;
+              }
+              game.player.mats.scrap++;
+              game.log("Found Scrap!");
+            }
+          }
+          this.p.x = nx;
+          this.p.y = ny;
+          if (!game.player.isStealth) {
+            this.entities.forEach((e) => {
+              if (e.type === "enemy" && e.active && !e.aggro) {
+                const dist = Math.abs(e.x - nx) + Math.abs(e.y - ny);
+                if (dist <= 4) {
+                  e.aggro = true;
+                  if (Math.abs(e.x - nx) > Math.abs(e.y - ny))
+                    e.facing = e.x > nx ? 3 : 1;
+                  else e.facing = e.y > ny ? 0 : 2;
+                }
+              }
+            });
+          }
+        },
+        // プレイヤーまでの距離を計算（マンハッタン距離）
+        getDistance(x1, y1, x2, y2) {
+          return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+        },
+        // 幅優先探索（BFS）でターゲットまでのパスを計算（最大深度制限付き）
+        findPath(startX, startY, targetX, targetY, maxDepth = 25) {
+          const queue = [[startX, startY, []]];
+          const visited = new Set();
+          visited.add(`${startX},${startY}`);
+          const directions = [
+            [0, -1],
+            [1, 0],
+            [0, 1],
+            [-1, 0],
+          ];
+
+          while (queue.length > 0) {
+            const [x, y, path] = queue.shift();
+
+            // 最大深度チェック
+            if (path.length >= maxDepth) continue;
+
+            // ターゲットに到達
+            if (x === targetX && y === targetY) {
+              return path;
+            }
+
+            // 4方向を探索
+            for (const [dx, dy] of directions) {
+              const nx = x + dx;
+              const ny = y + dy;
+              const key = `${nx},${ny}`;
+
+              if (!visited.has(key) && this.isWalkable(nx, ny)) {
+                visited.add(key);
+                queue.push([nx, ny, [...path, [dx, dy]]]);
+              }
+            }
+          }
+
+          // パスが見つからない場合、nullを返す
+          return null;
+        },
+        // 最良の移動方向を選択（パスファインディングを使用）
+        findBestMove(e, targetX, targetY) {
+          const directions = [
+            [0, -1, 0], // 上
+            [1, 0, 1], // 右
+            [0, 1, 2], // 下
+            [-1, 0, 3], // 左
+          ];
+
+          // パスファインディングで最短経路を探す
+          const path = this.findPath(e.x, e.y, targetX, targetY);
+
+          if (path && path.length > 0) {
+            // パスが存在する場合、最初のステップを実行
+            const [dx, dy] = path[0];
+            const facing = directions.findIndex(
+              (d) => d[0] === dx && d[1] === dy
+            );
+            const nx = e.x + dx;
+            const ny = e.y + dy;
+
+            if (this.isWalkable(nx, ny)) {
+              return {
+                x: nx,
+                y: ny,
+                facing: facing >= 0 ? facing : e.facing,
+                dx: dx,
+                dy: dy,
+              };
+            }
+          }
+
+          // パスが見つからない場合、直接距離で最良の方向を選ぶ（フォールバック）
+          let bestMove = null;
+          let bestDistance = Infinity;
+          const currentDist = this.getDistance(e.x, e.y, targetX, targetY);
+
+          // 各方向を評価（2ステップ先も考慮）
+          for (const [dx, dy, facing] of directions) {
+            const nx = e.x + dx;
+            const ny = e.y + dy;
+
+            if (this.isWalkable(nx, ny)) {
+              const newDist = this.getDistance(nx, ny, targetX, targetY);
+
+              // さらに2ステップ先を見て、移動可能な経路があるか確認
+              let hasPathAhead = false;
+              for (const [dx2, dy2] of directions) {
+                const nx2 = nx + dx2;
+                const ny2 = ny + dy2;
+                if (this.isWalkable(nx2, ny2)) {
+                  hasPathAhead = true;
+                  break;
+                }
+              }
+
+              // より近づける方向、または行き詰まりでない方向を優先
+              const score = newDist - (hasPathAhead ? 0.5 : -10);
+              if (score < bestDistance) {
+                bestDistance = score;
+                bestMove = { x: nx, y: ny, facing: facing, dx: dx, dy: dy };
+              }
+            }
+          }
+
+          // どの方向も移動できない場合、現在位置を維持
+          if (!bestMove) {
+            return { x: e.x, y: e.y, facing: e.facing, dx: 0, dy: 0 };
+          }
+
+          return bestMove;
+        },
+        updateEnemies() {
+          this.entities.forEach((e) => {
+            if (e.type !== "enemy" || !e.active) return;
+            const dx = this.p.x - e.x;
+            const dy = this.p.y - e.y;
+            const dist = Math.abs(dx) + Math.abs(dy);
+
+            // 視界判定（より広い視野角）
+            let inSight = false;
+            if (dist <= e.vision) {
+              // 視野角を広げる（左右90度）
+              if (e.facing === 0 && dy < 0 && Math.abs(dx) <= Math.abs(dy) * 2)
+                inSight = true;
+              if (e.facing === 1 && dx > 0 && Math.abs(dy) <= Math.abs(dx) * 2)
+                inSight = true;
+              if (e.facing === 2 && dy > 0 && Math.abs(dx) <= Math.abs(dy) * 2)
+                inSight = true;
+              if (e.facing === 3 && dx < 0 && Math.abs(dy) <= Math.abs(dx) * 2)
+                inSight = true;
+            }
+
+            // プレイヤーが視界内でステルス状態でない場合、aggro状態にする
+            if (inSight && !game.player.isStealth) {
+              e.aggro = true;
+              e.lastSeenPlayer = { x: this.p.x, y: this.p.y };
+              e.aggroTimer = 30; // 30ターン追跡を継続
+            }
+
+            // 一定距離以内なら追跡を継続（視界外でも）
+            if (e.aggro && dist <= e.vision * 4 && !game.player.isStealth) {
+              e.lastSeenPlayer = { x: this.p.x, y: this.p.y };
+              e.aggroTimer = Math.max(e.aggroTimer, 15);
+            }
+
+            // aggro状態の処理
+            if (e.aggro) {
+              // タイマーを減らす（プレイヤーを見失った場合の追跡時間）
+              if (e.aggroTimer) e.aggroTimer--;
+
+              // 現在プレイヤーが見えているかチェック（ステルスでなく、視界内）
+              const currentlyVisible =
+                !game.player.isStealth && dist <= e.vision && inSight;
+
+              // ターゲット位置を決定
+              let targetX = this.p.x;
+              let targetY = this.p.y;
+
+              if (currentlyVisible) {
+                // プレイヤーが見えている場合は直接追跡
+                e.lastSeenPlayer = { x: this.p.x, y: this.p.y };
+                e.aggroTimer = Math.max(e.aggroTimer, 30);
+                targetX = this.p.x;
+                targetY = this.p.y;
+              } else if (e.lastSeenPlayer) {
+                // プレイヤーが見えない場合
+                const distToLastSeen = this.getDistance(
+                  e.x,
+                  e.y,
+                  e.lastSeenPlayer.x,
+                  e.lastSeenPlayer.y
+                );
+
+                // 最後に見た位置に到達している、またはプレイヤーが近い場合はプレイヤーを直接追跡
+                if (distToLastSeen <= 2 || dist <= e.vision * 3) {
+                  // プレイヤーへのパスがあるか試す
+                  const pathToPlayer = this.findPath(
+                    e.x,
+                    e.y,
+                    this.p.x,
+                    this.p.y,
+                    20
+                  );
+                  if (pathToPlayer && pathToPlayer.length > 0) {
+                    targetX = this.p.x;
+                    targetY = this.p.y;
+                    e.lastSeenPlayer = { x: this.p.x, y: this.p.y };
+                  } else {
+                    // パスがない場合は最後に見た位置へ
+                    targetX = e.lastSeenPlayer.x;
+                    targetY = e.lastSeenPlayer.y;
+                  }
+                } else {
+                  // まだ最後に見た位置に到達していない
+                  targetX = e.lastSeenPlayer.x;
+                  targetY = e.lastSeenPlayer.y;
+                }
+              }
+
+              // 最良の移動方向を選択（パスファインディング使用）
+              const bestMove = this.findBestMove(e, targetX, targetY);
+
+              // 移動が成功した場合のみ位置を更新
+              if (bestMove.x !== e.x || bestMove.y !== e.y) {
+                e.x = bestMove.x;
+                e.y = bestMove.y;
+                e.facing = bestMove.facing;
+              }
+
+              // プレイヤーと同じ位置になったら戦闘開始
+              if (e.x === this.p.x && e.y === this.p.y) {
+                game.enterBattle(e, false);
+              }
+
+              // タイマー切れで追跡をやめる（距離が遠すぎる場合のみ）
+              if (e.aggroTimer <= 0 && dist > e.vision * 5) {
+                e.aggro = false;
+                e.lastSeenPlayer = null;
+              }
+            } else {
+              // aggroでない場合の通常行動
+              if (Math.random() < 0.3) {
+                const dirs = [
+                  [0, -1, 0],
+                  [1, 0, 1],
+                  [0, 1, 2],
+                  [-1, 0, 3],
+                ];
+                const dIdx = Math.floor(Math.random() * 4);
+                const d = dirs[dIdx];
+                const nx = e.x + d[0];
+                const ny = e.y + d[1];
+                e.facing = d[2];
+                if (this.isWalkable(nx, ny)) {
+                  e.x = nx;
+                  e.y = ny;
+                }
+              }
+            }
+          });
+        },
+        isWalkable(x, y) {
+          if (y < 0 || y >= this.gridY || x < 0 || x >= this.gridX)
+            return false;
+          if (this.map[y][x] === 1) return false;
+          if (
+            this.entities.some(
+              (e) => e.active && e.x === x && e.y === y && e.type !== "loot"
+            )
+          )
+            return false;
+          return true;
+        },
+        draw() {
+          const ctx = this.ctx;
+          const ts = this.tile;
+          const cw = this.canvas.width;
+          const ch = this.canvas.height;
+          ctx.fillStyle = "#000";
+          ctx.fillRect(0, 0, cw, ch);
+          const offsetX = Math.floor(cw / 2 / ts) - this.p.x;
+          const offsetY = Math.floor(ch / 2 / ts) - this.p.y;
+          for (let y = 0; y < this.gridY; y++) {
+            for (let x = 0; x < this.gridX; x++) {
+              const drawX = (x + offsetX) * ts;
+              const drawY = (y + offsetY) * ts;
+              if (drawX < -ts || drawX > cw || drawY < -ts || drawY > ch)
+                continue;
+              const dist = Math.sqrt((x - this.p.x) ** 2 + (y - this.p.y) ** 2);
+              if (dist < 10) {
+                if (this.map[y][x] === 1) {
+                  ctx.fillStyle = "#444";
+                  ctx.fillRect(drawX, drawY, ts, ts);
+                } else if (this.map[y][x] === 2) {
+                  ctx.fillStyle = "#0f0";
+                  ctx.fillRect(drawX, drawY, ts, ts);
+                } else {
+                  ctx.fillStyle = "#222";
+                  ctx.fillRect(drawX, drawY, ts - 1, ts - 1);
+                }
+              }
+            }
+          }
+          this.entities.forEach((e) => {
+            if (!e.active) return;
+            const dist = Math.sqrt(
+              (e.x - this.p.x) ** 2 + (e.y - this.p.y) ** 2
+            );
+            if (dist < 10) {
+              const drawX = (e.x + offsetX) * ts;
+              const drawY = (e.y + offsetY) * ts;
+              if (e.type === "enemy") {
+                ctx.fillStyle = e.aggro ? "#f00" : "#d44";
+                ctx.fillRect(drawX + 2, drawY + 2, ts - 4, ts - 4);
+                ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+                ctx.beginPath();
+                ctx.moveTo(drawX + ts / 2, drawY + ts / 2);
+                let startAng = 0;
+                if (e.facing === 0) startAng = 1.5 * Math.PI;
+                if (e.facing === 1) startAng = 0;
+                if (e.facing === 2) startAng = 0.5 * Math.PI;
+                if (e.facing === 3) startAng = Math.PI;
+                ctx.arc(
+                  drawX + ts / 2,
+                  drawY + ts / 2,
+                  6 * ts,
+                  startAng - 0.5,
+                  startAng + 0.5
+                );
+                ctx.lineTo(drawX + ts / 2, drawY + ts / 2);
+                ctx.fill();
+              } else {
+                ctx.fillStyle = "#ff0";
+                ctx.beginPath();
+                ctx.arc(drawX + ts / 2, drawY + ts / 2, 3, 0, 6.28);
+                ctx.fill();
+              }
+            }
+          });
+          const pDrawX = Math.floor(cw / 2 - ts / 2);
+          const pDrawY = Math.floor(ch / 2 - ts / 2);
+          ctx.fillStyle = game.player.isStealth ? "#00f" : "#0ff";
+          ctx.beginPath();
+          ctx.arc(pDrawX + ts / 2, pDrawY + ts / 2, 5, 0, 6.28);
+          ctx.fill();
+        },
+        updateUI() {
+          document.getElementById("exp-hp").innerText = game.player.hp;
+          document.getElementById("exp-st").innerText = Math.floor(
+            game.player.stamina
+          );
+          document.getElementById("exp-time").innerText = Math.floor(
+            this.timeLeft
+          );
+          const stInd = document.getElementById("stealth-indicator");
+          if (game.player.isStealth) stInd.className = "active";
+          else stInd.className = "";
+        },
+      };
+
+      /* --- 4. BATTLE LOGIC --- */
+      const battle = {
+        enemy: null,
+        deck: [],
+        hand: [],
+        discard: [],
+        energy: 3,
+        maxEnergy: 3,
+        turn: 0,
+        drawCount: 4,
+        dungeonEnemyReference: null,
+        shuffle(arr) {
+          arr.sort(() => Math.random() - 0.5);
+        },
+        selectIntent() {
+          if (this.enemy.isBroken) {
+            this.enemy.nextIntent = null;
+            return;
+          }
+          const availableIntents = [
+            ENEMY_INTENTS.ATTACK,
+            ENEMY_INTENTS.DEFEND,
+            ENEMY_INTENTS.DEBUFF,
+          ];
+          this.enemy.nextIntent =
+            availableIntents[
+              Math.floor(Math.random() * availableIntents.length)
+            ];
+        },
+        start(dungeonEnemy, isAmbush) {
+          if (dungeonEnemy) this.isBossBattle = false;
+          this.dungeonEnemyReference = dungeonEnemy;
+          this.enemy = {
+            hp: 100,
+            maxHp: 100,
+            pos: 50,
+            maxPos: 50,
+            isBroken: false,
+            brokenTurns: 0,
+            enemyBlock: 0,
+            status: { mark: 0 },
+            nextIntent: null,
+            damageValue: 10,
+          };
+          this.turn = 0;
+          game.player.playerBlock = 0;
+          if (isAmbush) {
+            this.enemy.hp -= 20;
+            game.log("Ambush! Enemy took 20 dmg.");
+          }
+          this.deck = game.buildDeck();
+          this.discard = [];
+          this.hand = [];
+          // ★修正点1: 初期デッキはシャッフルしない（固定順）か、ゲーム開始時にシャッフルするか。ここでは初期シャッフルのみ。
+          this.shuffle(this.deck);
+          this.selectIntent();
+          this.startTurn();
+        },
+        startTurn() {
+          this.energy = this.maxEnergy;
+          this.turn++;
+          game.player.playerBlock = 0;
+          // ★修正点1: 手札の残りは捨てず、不足分だけ補充するキュー方式
+          // this.discard.push(...this.hand); this.hand = []; // 削除
+          const need = this.drawCount - this.hand.length;
+          for (let i = 0; i < need; i++) {
+            if (this.deck.length === 0) break; // デッキ切れで止まる（補充はターン終了時などに検討だが、今回はシンプルに切れっぱなし）
+            this.hand.push(this.deck.shift()); // 先頭から引く
+          }
+          this.updateUI();
+        },
+        endBattle(playerWon) {
+          if (this.isBossBattle) {
+            if (playerWon) {
+              // ボスに勝った！ -> 勝利リザルトへ (ターン数を渡す)
+              game.showResult(true, this.turn);
+            } else {
+              // ボスに負けた… -> 敗北リザルトへ
+              game.showResult(false, this.turn);
+            }
+            return; // ここで処理終了（ダンジョンには戻らない）
+          }
+          this.enemy = null;
+          game.player.playerBlock = 0;
+          if (playerWon && this.dungeonEnemyReference) {
+            this.dungeonEnemyReference.active = false;
+            game.log("Enemy was eliminated.");
+          }
+          this.dungeonEnemyReference = null;
+          this.deck = [];
+          this.hand = [];
+          this.discard = [];
+          game.returnToDungeon(playerWon);
+        },
+        playCard(idx) {
+          if (!this.enemy) return;
+          const cardId = this.hand[idx];
+          const card = CARDS[cardId];
+          if (this.energy < card.cost) return;
+          this.energy -= card.cost;
+          this.hand.splice(idx, 1);
+          // ★修正点1: 使ったカードはデッキの最後尾へ
+          if (!card.exhaust) this.deck.push(cardId);
+          // --- Effect Logic ---
+          if (card.type === "atk") {
+            let dmg = card.val;
+            if (this.enemy.isBroken) dmg *= 2;
+            if (this.enemy.status.mark > 0) {
+              dmg *= 1.5;
+              game.log(`Mark triggered! x1.5 Dmg.`);
+            }
+            let finalDmg = Math.max(0, Math.round(dmg) - this.enemy.enemyBlock);
+            this.enemy.enemyBlock = Math.max(
+              0,
+              this.enemy.enemyBlock - Math.round(dmg)
+            );
+            this.enemy.hp -= finalDmg;
+            if (!this.enemy.isBroken && card.pos) {
+              this.enemy.pos -= card.pos;
+              if (this.enemy.pos <= 0) {
+                this.enemy.pos = 0;
+                this.enemy.isBroken = true;
+                this.enemy.brokenTurns = 2;
+                game.log("ENEMY BREAK!");
+              }
+            }
+          } else if (card.type === "def") {
+            game.player.playerBlock += card.val;
+            if (cardId === "dodge") {
+              if (this.deck.length > 0) this.hand.push(this.deck.shift());
+            }
+          } else if (card.type === "skill") {
+            if (card.status === "energy")
+              this.energy = Math.min(this.maxEnergy, this.energy + card.val);
+            if (card.status === "stun")
+              this.enemy.brokenTurns = Math.max(
+                this.enemy.brokenTurns,
+                card.val
+              );
+            if (card.status === "mark") {
+              this.enemy.status.mark += card.val;
+              game.log(`Enemy applied MARK.`);
+            }
+            if (cardId === "focus" && this.deck.length > 0)
+              this.hand.push(this.deck.shift());
+          } else if (card.type === "curse") {
+            if (cardId === "clunk") {
+              if (this.deck.length > 0) this.hand.push(this.deck.shift());
+              if (this.hand.length > 0) {
+                this.deck.push(this.hand.pop());
+              } // 末尾へ戻す
+            }
+          }
+          if (this.enemy.hp <= 0) {
+            this.endBattle(true);
+            return;
+          }
+          this.updateUI();
+        },
+        endTurn() {
+          if (!this.enemy) return;
+          let intent = this.enemy.nextIntent;
+          if (this.enemy.isBroken) {
+            this.enemy.brokenTurns--;
+            if (this.enemy.brokenTurns <= 0) {
+              this.enemy.isBroken = false;
+              this.enemy.pos = this.enemy.maxPos;
+              game.log("Enemy recovered.");
+            }
+          } else if (intent) {
+            if (intent.name === ENEMY_INTENTS.ATTACK.name) {
+              let incomingDmg = intent.dmg;
+              let block = game.player.playerBlock;
+              let finalDmg = Math.max(0, incomingDmg - block);
+              game.player.playerBlock = Math.max(0, block - incomingDmg);
+              game.player.hp -= finalDmg;
+              game.log(
+                `Enemy Atk ${incomingDmg}. Blocked ${block}. Took ${finalDmg}.`
+              );
+            } else if (intent.name === ENEMY_INTENTS.DEFEND.name) {
+              this.enemy.enemyBlock += intent.block;
+            }
+            this.enemy.pos = Math.min(
+              this.enemy.maxPos,
+              this.enemy.pos + intent.posRegen
+            );
+          }
+          if (this.enemy && this.enemy.status.mark > 0)
+            this.enemy.status.mark--;
+          if (game.player.hp <= 0) {
+            game.returnToBase(false);
+            return;
+          }
+          this.enemy.enemyBlock = 0;
+          this.selectIntent();
+          this.startTurn();
+        },
+        updateUI() {
+          if (!this.enemy) return;
+          document.getElementById("p-hp-text").innerText = game.player.hp;
+          document.getElementById("p-hp-bar").style.width =
+            (game.player.hp / game.player.maxHp) * 100 + "%";
+          document.getElementById(
+            "p-en-text"
+          ).innerText = `${this.energy}/${this.maxEnergy}`;
+          document.getElementById("p-blk-text").innerText =
+            game.player.playerBlock;
+          document.getElementById("p-blk-text").style.display =
+            game.player.playerBlock > 0 ? "flex" : "none";
+          document.getElementById("e-hp-bar").style.width =
+            (this.enemy.hp / this.enemy.maxHp) * 100 + "%";
+          document.getElementById("e-pos-bar").style.width =
+            (this.enemy.pos / this.enemy.maxPos) * 100 + "%";
+          const nameEl = document.getElementById("e-name");
+          if (this.enemy.maxHp >= 300) {
+            // HPが300以上ならボスとみなす簡易判定
+            nameEl.innerText = this.enemy.isBroken
+              ? "WEAKENED BOSS"
+              : "☠️ THE BOSS ☠️";
+            nameEl.style.color = "#c3073f"; // 赤色で強調
+          } else {
+            nameEl.innerText = this.enemy.isBroken ? "Broken Enemy" : "Enemy";
+            nameEl.style.color = "#fff";
+          }
+
+          const intentEl = document.getElementById("e-intent");
+          intentEl.className = "intent-icon";
+          if (this.enemy.isBroken) {
+            intentEl.innerText = "😵";
+          } else {
+            const intent = this.enemy.nextIntent;
+            if (intent) {
+              let text = intent.icon;
+              if (intent.dmg) text += ` ${intent.dmg}`;
+              if (intent.block) text += ` ${intent.block}`;
+              intentEl.innerText = text;
+              intentEl.classList.add(intent.css);
+            } else {
+              intentEl.innerText = "⚠️";
+            }
+          }
+          let enemyStatusHTML = "";
+          if (this.enemy.isBroken)
+            enemyStatusHTML += `<span class="status-badge" style="background: #007bff;">BREAK!</span>`;
+          if (this.enemy.status.mark > 0)
+            enemyStatusHTML += `<span class="status-badge" style="background: #ff00ff;">MARK (${this.enemy.status.mark})</span>`;
+          if (this.enemy.enemyBlock > 0)
+            enemyStatusHTML += `<span class="status-badge" style="background: #0f0;">BLK (${this.enemy.enemyBlock})</span>`;
+          document.getElementById("enemy-status").innerHTML = enemyStatusHTML;
+
+          // 修正点2: 装備名表示
+          document.getElementById("p-eq-w").innerText =
+            WEAPONS[game.player.loadout.weapon].name;
+          document.getElementById("p-eq-a").innerText =
+            ARMORS[game.player.loadout.armor].name;
+
+          const h = document.getElementById("hand-container");
+          h.innerHTML = "";
+          this.hand.forEach((cid, i) => {
+            const c = CARDS[cid];
+            const d = document.createElement("div");
+            const canPlay = this.energy >= c.cost;
+            d.className = `card ${canPlay ? "" : "unplayable"}`;
+            d.innerHTML = `<div class="card-cost">${c.cost}</div><div class="card-type">${c.type}</div><div class="card-name">${c.name}</div><div class="card-desc">${c.desc}</div>`;
+            if (canPlay) d.onclick = () => this.playCard(i);
+            h.appendChild(d);
+          });
+          document.getElementById("deck-num").innerText = this.deck.length;
+          document.getElementById("disc-num").innerText = "0"; // キュー式なので捨て札はない
+        },
+      };
+      window.onload = () => game.init();
+    </script>
+  </body>
+</html>
