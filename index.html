@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DUSTFALL Prototype (Animated + Initiative)</title>
+    <title>DUSTFALL Prototype</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -421,7 +421,7 @@
     </style>
   </head>
   <body>
-    <h1>DUSTFALL - Battle Prototype (Initiative)</h1>
+    <h1>DUSTFALL - Battle Prototype</h1>
 
     <div class="game-container">
       <div class="panel" id="e-panel">
@@ -439,13 +439,13 @@
         </div>
 
         <div class="intel-box" id="e-intel-box" style="display: none">
-          <span>⚠ PENDING COST:</span>
+          <span>⚠ 合計消費コスト:</span>
           <span class="intel-val" id="e-pending-cost">0</span>
         </div>
 
         <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
         <div style="font-size: 0.8rem; text-align: center; color: #888">
-          ENEMY HAND (公開情報)
+          ENEMY HAND
         </div>
         <div class="card-area" id="enemy-hand-view"></div>
       </div>
@@ -484,8 +484,10 @@
       </div>
 
       <div class="controls">
-        <button id="btn-counter" onclick="toggleCounter()">COUNTER: OFF</button>
-        <button id="btn-commit" onclick="commitTurn()">BATTLE START</button>
+        <button id="btn-counter" onclick="toggleCounter()">
+          SP カウンター攻撃
+        </button>
+        <button id="btn-commit" onclick="commitTurn()">コマンド決定</button>
       </div>
 
       <div id="log">Game Initialized...</div>
@@ -1047,10 +1049,10 @@
 
         const btnC = document.getElementById("btn-counter");
         btnC.innerText = hasUsedCounter
-          ? "COUNTER: USED"
+          ? "使用不可"
           : isCounterMode
-          ? "COUNTER: READY"
-          : "COUNTER: OFF";
+          ? "カウンター準備中"
+          : "SP カウンター攻撃";
         btnC.className = isCounterMode ? "active" : "";
         btnC.disabled = hasUsedCounter || isAnimating;
 
@@ -1060,7 +1062,7 @@
           btnCommit.innerText = "BATTLE IN PROGRESS...";
           btnCommit.disabled = true;
         } else {
-          btnCommit.innerText = `BATTLE START (Cost: ${currentCost})`;
+          btnCommit.innerText = `コマンド決定 (Cost: ${currentCost})`;
           btnCommit.disabled = currentCost > player.ep;
         }
       }
