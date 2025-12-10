@@ -564,7 +564,7 @@
       }
 
       function createEntity(name) {
-        const deck = getDeck(true);
+        const deck = getDeck(false);
         const secret = deck.pop();
         return {
           name,
@@ -572,7 +572,7 @@
           maxHp: MAX_HP,
           pos: MAX_POSTURE,
           maxPos: MAX_POSTURE,
-          ep: 6,
+          ep: 5,
           sp: 0,
           deck,
           hand: [],
@@ -613,12 +613,12 @@
             log(`${e.name} recovered from Break.`);
           }
 
-          e.ep = Math.min(MAX_EP, e.ep + 3);
+          e.ep = Math.min(MAX_EP, e.ep + 4);
           e.sp = Math.min(MAX_SP, e.sp + 1);
 
-          while (e.hand.length < 4 && (e.deck.length > 0 || true)) {
+          while (e.hand.length < 4) {
             if (e.deck.length === 0) {
-              const freshDeck = getDeck(false);
+              const freshDeck = getDeck(false); // リサイクル時は SP 入れない
               e.deck = freshDeck;
               log(`[System] ${e.name}'s Deck Recycled`);
             }
@@ -626,6 +626,26 @@
             if (e.hand.length >= 4) break;
           }
         });
+
+        if (turn === 4) {
+          [player, enemy].forEach((e) => {
+            // SPカードのコピーを作成
+            const spCard = JSON.parse(JSON.stringify(SP_CARD));
+
+            // HPが30%以下 (50 * 0.3 = 15以下) かチェック
+            if (e.hp <= e.maxHp * 0.3) {
+              // ピンチの場合: 山札の一番上(末尾)に追加 = 次に必ず引く
+              e.deck.push(spCard);
+              log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
+            } else {
+              // 通常の場合: 山札のランダムな位置に挿入
+              // 0 から deck.length の間のランダムなインデックス
+              const idx = Math.floor(Math.random() * (e.deck.length + 1));
+              e.deck.splice(idx, 0, spCard);
+              log(`[System] ${e.name}: SP Card added to deck.`);
+            }
+          });
+        }
 
         // スロット表示のリセット
         updateSlotUI("e", [null, null]);
