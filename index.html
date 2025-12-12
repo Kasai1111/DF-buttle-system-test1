@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DUSTFALL Prototype - Break Update</title>
+    <title>DUSTFALL Prototype - SP Fix</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -170,7 +170,6 @@
       .card.selected {
         border-color: var(--accent-color);
         box-shadow: 0 0 8px var(--accent-color);
-        /* 選択されていることがわかりやすいように少し上にずらす */
         transform: translateY(-10px);
       }
       .card.disabled {
@@ -226,7 +225,7 @@
         color: #888;
         position: relative;
         transition: all 0.3s ease;
-        cursor: pointer; /* クリックできることを示唆 */
+        cursor: pointer;
       }
       .slot:hover {
         border-color: #999;
@@ -502,6 +501,18 @@
       <div class="tc-node tc-grd"><span>Guard</span></div>
       <div class="tc-arrow">↓</div>
       <div class="tc-loop-arrow">(to Attack)</div>
+      <div
+        style="
+          margin-top: 10px;
+          border-top: 1px dashed #666;
+          padding-top: 5px;
+          font-size: 0.7rem;
+          color: var(--sp-color);
+          text-align: center;
+        "
+      >
+        SPは全てに勝利
+      </div>
     </div>
 
     <script>
@@ -611,7 +622,7 @@
 
           // BURNOUTまたはブレイク中でなければ姿勢回復
           if (!e.burnout && !e.breakState) {
-            e.pos = Math.min(e.maxPos, e.pos + 2.8);
+            e.pos = Math.min(e.maxPos, e.pos + 2.7);
           }
 
           e.ep = Math.min(MAX_EP, e.ep + 4);
@@ -813,21 +824,27 @@
         const pSP = pCards.some((c) => c?.isSP);
         const eSP = eCards.some((c) => c?.isSP);
 
+        // --- SP相殺・カウンター処理 ---
+        // ここでカードが消滅(null化)すれば、resolveStepには届かない（DRAW扱いになる）
         if (pSP && eSP) {
           log("!!! SP CLASH !!! 相殺されました！");
           pCards = [null, null];
           eCards = [null, null];
           await sleep(1000);
         } else if (eSP && isCounterMode) {
+          // 敵がSPで、自分がカウンターの場合
           log("!!! COUNTER SUCCESS !!!");
           hasUsedCounter = true;
-          eCards = [null, null];
+          eCards = [null, null]; // 敵の攻撃を無効化
           await sleep(1000);
         } else if (isCounterMode) {
+          // カウンター空振り
           log("Counter Missed...");
           hasUsedCounter = true;
           await sleep(800);
         }
+        // 注: 自分がSPで敵がカウンターという状況は、敵AIにカウンターがないため現行では発生しないが
+        // 実装されればここに追加する
 
         let pMul = 1.0;
         let eMul = 1.0;
@@ -855,12 +872,12 @@
             if (e.justBroken) {
               // このターンにブレイクされたばかり → 次のターンはBURNOUT(行動不能)になる
               e.justBroken = false;
-              e.burnout = true; // startTurnでもセットされるが、念のため
+              e.burnout = true;
             } else {
               // ブレイクによる行動不能ターンを消化した → 回復処理
-              e.pos = e.maxPos; // 姿勢値を最大まで回復
-              e.breakState = false; // 被ダメージ2倍解除
-              // EPが残っていればバーンアウト解除 (EP0ならバーンアウト継続)
+              e.pos = e.maxPos;
+              e.breakState = false;
+              // EPが残っていればバーンアウト解除
               if (e.ep > 0) {
                 e.burnout = false;
               }
@@ -924,10 +941,19 @@
           applyDmg(enemy, pCard, pMul);
           result = "WIN";
         } else {
+          // --- 勝敗判定ロジックの修正 ---
           if (pCard.type === eCard.type) {
+            // 同じタイプ同士ならコスト勝負
             if (pCard.cost > eCard.cost) result = "WIN";
             else if (eCard.cost > pCard.cost) result = "LOSE";
+          } else if (pCard.type === TYPE.SP) {
+            // 自分がSPなら無条件勝利（相殺処理はcommitTurnで既に終わっているため）
+            result = "WIN";
+          } else if (eCard.type === TYPE.SP) {
+            // 敵がSPなら無条件敗北
+            result = "LOSE";
           } else {
+            // 通常の3すくみ判定
             if (WIN_MAP[pCard.type] === eCard.type) result = "WIN";
             else result = "LOSE";
           }
