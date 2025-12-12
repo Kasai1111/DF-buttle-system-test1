@@ -844,14 +844,14 @@
           e.ep = Math.min(MAX_EP, e.ep + 4);
           e.sp = Math.min(MAX_SP, e.sp + 1);
 
-          while (e.hand.length < 4) {
+          while (e.hand.length < 3) {
             if (e.deck.length === 0) {
               const freshDeck = getDeck(false);
               e.deck = freshDeck;
               log(`[System] ${e.name}'s Deck Recycled`);
             }
             e.hand.push(e.deck.pop());
-            if (e.hand.length >= 4) break;
+            if (e.hand.length >= 3) break;
           }
         });
 
