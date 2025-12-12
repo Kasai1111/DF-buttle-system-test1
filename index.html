@@ -609,16 +609,188 @@
         },
 
         // 新しいAIタイプをここに追加できます
-        DEFENSIVE: (entity) => {
-          // TODO: 防御重視型（Guardを優先、姿勢値を重視する、など）のロジックを実装
-          // 現時点では仮で何もしない（パスする）ロジックにしておきます。
-          return [null, null];
+        // ISTJ: 管理者型 (Standard/Logical)
+        // 特徴: リスク管理を徹底し、EP枯渇(Burnout)を避ける。
+        // 状況に応じて「防御」「攻勢」「堅実」の3モードを切り替える。
+        ISTJ: (entity) => {
+          let eSlots = [null, null];
+          let hand = [...entity.hand];
+
+          // 相手（プレイヤー）の状態を参照（グローバル変数playerを使用）
+          const opponent =
+            typeof player !== "undefined"
+              ? player
+              : { hp: 50, breakState: false, burnout: false };
+
+          // 1. SP技のチェック (確実な成果が見込める時のみ使用)
+          // ISTJは無駄打ちを嫌うため、SPがMAXで、かつコストが足りる場合のみ発動
+          const spCard = hand.find((c) => c.isSP);
+          if (spCard && entity.sp >= MAX_SP && entity.ep >= 5) {
+            eSlots[0] = spCard;
+            return eSlots;
+          }
+
+          // 2. 状況判断と予算策定
+          const isCrisis = entity.hp <= entity.maxHp * 0.4; // HP40%以下で危機管理モード
+          const isChance = opponent.breakState || opponent.burnout; // 相手が隙を見せたら攻勢モード
+
+          // 予算管理: チャンス時以外は、次のターンのためにEPを「1」残そうとする
+          let budget = isChance ? entity.ep : Math.max(0, entity.ep - 1);
+
+          // ヘルパー: 指定タイプの中で、予算内で最強のカードを探す
+          const findBest = (type) => {
+            const candidates = hand.filter(
+              (c) => c.type === type && c.cost <= budget && !c.isSP
+            );
+            // コストが高い順（効果が高い順）にソート
+            return candidates.sort((a, b) => b.cost - a.cost)[0];
+          };
+
+          // --- スロット1の決定 ---
+          if (isCrisis) {
+            // 【危機管理モード】: 最強のGuardを最優先
+            let card = findBest(TYPE.GUARD);
+            // ガードがなければ、やられる前にやる（Attack）
+            if (!card) card = findBest(TYPE.ATTACK);
+
+            if (card) {
+              eSlots[0] = card;
+              budget -= card.cost;
+              hand = hand.filter((c) => c !== card); // 使ったカードを手札候補から除外
+            }
+          } else if (isChance) {
+            // 【攻勢モード】: Attackでダメージを稼ぐ
+            let card = findBest(TYPE.ATTACK);
+            if (!card) card = findBest(TYPE.BREAK); // なければBreakで追撃
+
+            if (card) {
+              eSlots[0] = card;
+              budget -= card.cost;
+              hand = hand.filter((c) => c !== card);
+            }
+          } else {
+            // 【通常（堅実）モード】: 相手の姿勢(Posture)を崩すBreak、または安定のAttack
+            // ISTJは秩序(Posture)の破壊を戦略的優位とみなす
+            let card = findBest(TYPE.BREAK);
+            if (!card) card = findBest(TYPE.ATTACK);
+
+            if (card) {
+              eSlots[0] = card;
+              budget -= card.cost;
+              hand = hand.filter((c) => c !== card);
+            }
+          }
+
+          // --- スロット2の決定 ---
+          // 残りの予算で、最もコスト効率の良いカードを選ぶ
+          if (eSlots[0] && budget > 0) {
+            // 残りの手札をコスト順にソート
+            hand.sort((a, b) => b.cost - a.cost);
+
+            for (let c of hand) {
+              if (c.cost <= budget && !c.isSP) {
+                // 論理チェック: 危機的状況でないのにGuardを重ねるのは非効率なので避ける
+                if (c.type === TYPE.GUARD && !isCrisis) continue;
+
+                eSlots[1] = c;
+                break;
+              }
+            }
+          }
+
+          return eSlots;
         },
 
-        EP_SAVER: (entity) => {
-          // TODO: EP温存型（コストの低いカードを優先、EPが半分以上の時はパスしやすい、など）のロジックを実装
-          // 現時点では仮でBERSERKERと同じロジックにしておきます。
-          return AI_STRATEGIES.BERSERKER(entity);
+        // INFJ: 提唱者型 (The Advocate / Counter-Style)
+        // 特徴: 相手のステータス(EP/Pos)から行動を予測し、メタを張る(カウンターを狙う)。
+        // 無駄なカードは出さず、ここぞという時にSP技や高コストカードを通そうとする。
+        INFJ: (entity) => {
+          let eSlots = [null, null];
+          let hand = [...entity.hand];
+          const opponent =
+            typeof player !== "undefined" ? player : { hp: 50, pos: 20, ep: 0 };
+          let budget = entity.ep;
+
+          // 1. SP技 (理想の実現)
+          // INFJは「決定的な瞬間」を逃さない。SPが溜まったら最優先で放つ。
+          const spCard = hand.find((c) => c.isSP);
+          if (spCard && entity.sp >= MAX_SP && budget >= 5) {
+            eSlots[0] = spCard;
+            return eSlots;
+          }
+
+          // 2. 相手の「意図」を読む (Prediction Phase)
+          // プレイヤーが取りそうな行動を推測し、それに勝てる属性(Target Type)を決める
+          let targetType = TYPE.ATTACK; // デフォルト
+
+          // シナリオA: 相手の姿勢が危ない (Posが30%以下)
+          // -> 相手はBreakされたくないので「Guard」する可能性が高い
+          // -> 対策: Guardを破る「Break」を優先
+          if (opponent.pos <= MAX_POSTURE * 0.3 && !opponent.breakState) {
+            targetType = TYPE.BREAK;
+          }
+          // シナリオB: 相手のEPが潤沢 (6以上)
+          // -> 相手は大技で攻めてくる「Attack」の可能性が高い
+          // -> 対策: 攻撃を防ぐ「Guard」を優先
+          else if (opponent.ep >= 6) {
+            targetType = TYPE.GUARD;
+          }
+          // シナリオC: 相手がBreak中
+          // -> 無防備なので「Attack」で最大火力を出す
+          else if (opponent.breakState) {
+            targetType = TYPE.ATTACK;
+          }
+          // シナリオD: それ以外
+          // -> 相手の狙いが読みにくい時は、汎用性の高い「Attack」か、手札の最強カードに頼る
+          else {
+            targetType = TYPE.ATTACK;
+          }
+
+          // 3. スロット1: 読み（Target Type）に合致する最強カードを探す
+          // 合致するカードがなければ、手札の中でコストが最も高いカード（妥協案）を出す
+          let bestCard = hand
+            .filter((c) => c.type === targetType && c.cost <= budget && !c.isSP)
+            .sort((a, b) => b.cost - a.cost)[0];
+
+          if (!bestCard) {
+            // 読みが外れた(手札にない)場合、タイプ不問で最強のカードを出す
+            bestCard = hand
+              .filter((c) => c.cost <= budget && !c.isSP)
+              .sort((a, b) => b.cost - a.cost)[0];
+          }
+
+          if (bestCard) {
+            eSlots[0] = bestCard;
+            budget -= bestCard.cost;
+            hand = hand.filter((c) => c !== bestCard);
+          }
+
+          // 4. スロット2: 「意味のある行動」のみ行う (Selective Action)
+          // INFJは無駄撃ちを嫌う。低コスト(1コスト)の弱攻撃でお茶を濁すくらいなら、
+          // EPを温存して次のターンのSP技や大技に備える傾向を持たせる。
+          // ただし、トドメを刺せるとき(相手HP極低)は容赦しない。
+
+          if (eSlots[0] && budget > 0) {
+            // トドメを刺せるかチェック
+            const canFinish = opponent.hp <= 5;
+
+            // 手札の残りをチェック
+            const remainingCandidates = hand
+              .filter((c) => c.cost <= budget && !c.isSP)
+              .sort((a, b) => b.cost - a.cost); // 高い順
+
+            if (remainingCandidates.length > 0) {
+              const nextCard = remainingCandidates[0];
+
+              // 条件: 「コスト2以上のしっかりしたカード」 または 「トドメ」 または 「Break中(好機)」
+              // これ以外（例: 状況が拮抗していて1コストのカードしかない時）はパスしてEP温存
+              if (nextCard.cost >= 2 || canFinish || opponent.breakState) {
+                eSlots[1] = nextCard;
+              }
+            }
+          }
+
+          return eSlots;
         },
       };
       // AI戦略名のリスト
