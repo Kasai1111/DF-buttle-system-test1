@@ -520,10 +520,6 @@
        * DUSTFALL Logic Implementation
        */
 
-      /**
-       * DUSTFALL Logic Implementation
-       */
-
       const MAX_HP = 50;
       const MAX_POSTURE = 20;
       const MAX_EP = 9;
@@ -556,11 +552,6 @@
 
       const SP_CARD = { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true };
 
-      // --- AI Strategy Definitions (戦略定義) ---
-      /**
-       * AI_STRATEGIES には、AIの具体的な行動ロジックを関数として格納します。
-       * 各関数は (entity) を引数に取り、[Slot1Card, Slot2Card] の配列を返します。
-       */
       // --- AI Helper Functions ---
       const analyzeOpponent = (playerEntity, currentCost) => {
         const hand = playerEntity.hand;
@@ -578,8 +569,6 @@
       // --- AI Strategy Definitions ---
       const AI_STRATEGIES = {
         // ISTJ: 管理者型 (The Realist)
-        // 特徴: 「データに基づく最適解」。相手の手札構成を見て、統計的に最も勝率の高い手を打つ。
-        // 後攻有利を最大限活かし、相手が大技(Cost 5)できたら、確実に相殺か防御を選択する。
         ISTJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
           let action = "COMMIT"; // or "COUNTER"
@@ -588,20 +577,15 @@
 
           const oppInfo = analyzeOpponent(opponent, pCost);
 
-          // 1. 後攻時の確実な対処 (Reaction)
           if (isSecond) {
-            // 相手がコスト5以上積んでいる場合（SP濃厚）
             if (oppInfo.isHighCost) {
-              // A. こちらもSPがあればぶつけて相殺する (Risk 0)
               const spCard = hand.find((c) => c.isSP);
               if (spCard && entity.sp >= MAX_SP && budget >= 5) {
                 return { slots: [spCard, null], action: "COMMIT" };
               }
-              // B. SPがない、またはコスト不足なら「カウンター」を発動して無効化を狙う
               if (!entity.hasUsedCounter) {
                 return { slots: [null, null], action: "COUNTER" };
               }
-              // C. カウンターもないなら、最大の防御(Guard)を置く
               const bestGuard = hand
                 .filter((c) => c.type === TYPE.GUARD)
                 .sort((a, b) => b.arm - a.arm)[0];
@@ -611,20 +595,12 @@
             }
           }
 
-          // 2. 手札読み (Hand Reading)
-          // 相手の手札にAttackが多い -> Guard優先
-          // 相手の手札にGuardが多い -> Break優先
           let bias = TYPE.ATTACK;
           if (oppInfo.atkCount > oppInfo.grdCount) bias = TYPE.GUARD;
           if (oppInfo.grdCount > oppInfo.atkCount) bias = TYPE.BREAK;
 
-          // 3. 標準行動 (Standard Protocol)
-          // 優先度: リーサル > バイアスに合わせた行動 > 高効率カード
-
-          // リーサル計算 (簡易)
           const totalDmg = hand.reduce((acc, c) => acc + (c.dmg || 0), 0);
           if (totalDmg >= opponent.hp && budget >= 3) {
-            // 全力攻撃
             const atks = hand
               .filter((c) => c.dmg > 0)
               .sort((a, b) => b.dmg - a.dmg);
@@ -637,7 +613,6 @@
             return { slots: eSlots, action: "COMMIT" };
           }
 
-          // バイアスに従ってカードを選ぶ
           const preferred = hand
             .filter((c) => c.type === bias && c.cost <= budget && !c.isSP)
             .sort((a, b) => b.cost - a.cost)[0];
@@ -647,7 +622,6 @@
             budget -= preferred.cost;
             hand = hand.filter((c) => c !== preferred);
           } else {
-            // なければ最強のカード
             const backup = hand
               .filter((c) => c.cost <= budget && !c.isSP)
               .sort((a, b) => b.cost - a.cost)[0];
@@ -658,7 +632,6 @@
             }
           }
 
-          // Slot 2: 余り予算で埋める
           if (budget > 0) {
             const filler = hand
               .filter((c) => c.cost <= budget && !c.isSP)
@@ -670,33 +643,23 @@
         },
 
         // INFJ: 提唱者型 (The Mastermind)
-        // 特徴: 「心理戦と偽装」。
-        // 自分が先攻なら、あえてコスト5になるようにカードを組み合わせて「SP」に見せかける(ブラフ)。
-        // 相手がSPを持っていたら、自分が後攻になるまでSPを温存したり、カウンターの罠を張る。
         INFJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
           let hand = [...entity.hand];
           let budget = entity.ep;
           const oppInfo = analyzeOpponent(opponent, pCost);
 
-          // 1. SPカウンターの罠 (Trap)
-          // 相手がSPを持っていて、かつこちらが後攻なら、相手のSP発動(Cost 5)を読んでカウンター
           if (
             isSecond &&
             oppInfo.isHighCost &&
             oppInfo.hasSP &&
             !entity.hasUsedCounter
           ) {
-            // 90%の確率でカウンター発動（たまに読み違える人間味）
             if (Math.random() < 0.9)
               return { slots: [null, null], action: "COUNTER" };
           }
 
-          // 2. 先攻時のブラフ (The Bluff)
-          // SPが溜まっていない、あるいは使いたくないが、相手に「SPかも？」と思わせてカウンター(無駄打ち)させたい
-          // 手札から合計コストが「5」になる組み合わせ（例: 2+3）を探してセットする
           if (!isSecond && budget >= 5 && entity.sp < MAX_SP) {
-            // 手札のペアを探す
             for (let i = 0; i < hand.length; i++) {
               for (let j = i + 1; j < hand.length; j++) {
                 if (
@@ -704,15 +667,12 @@
                   !hand[i].isSP &&
                   !hand[j].isSP
                 ) {
-                  // ブラフ成立
                   return { slots: [hand[i], hand[j]], action: "COMMIT" };
                 }
               }
             }
           }
 
-          // 3. 本物のSP発動 (The Finisher)
-          // 相手がBreak中、または相手のPendingCostが低く(カウンターされにくい)、かつこちらがSPMAX
           const spCard = hand.find((c) => c.isSP);
           if (spCard && entity.sp >= MAX_SP && budget >= 5) {
             if (opponent.breakState || (isSecond && oppInfo.pendingCost < 5)) {
@@ -720,15 +680,12 @@
             }
           }
 
-          // 4. コンボ攻撃 (Break -> Attack)
-          // 相手の防御が薄そうなら畳み掛ける
           const breakC = hand.find(
             (c) => c.type === TYPE.BREAK && c.cost <= budget
           );
           if (breakC && opponent.pos < 10) {
             eSlots[0] = breakC;
             budget -= breakC.cost;
-            // 追撃
             const atkC = hand.find(
               (c) => c.type === TYPE.ATTACK && c.cost <= budget
             );
@@ -736,7 +693,6 @@
             return { slots: eSlots, action: "COMMIT" };
           }
 
-          // 5. デフォルト: 手札で最も強い動き
           const bestCards = hand
             .filter((c) => !c.isSP && c.cost <= budget)
             .sort((a, b) => b.cost - a.cost);
@@ -752,7 +708,6 @@
           return { slots: eSlots, action: "COMMIT" };
         },
       };
-      // AI戦略名のリスト
       const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
 
       // --- Global State ---
@@ -767,7 +722,6 @@
       let isEnemyFirst = false;
       let pendingEnemySlots = [null, null];
 
-      // Helper for sleep
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
       function getDeck(includeSP) {
@@ -777,7 +731,6 @@
         return deck;
       }
 
-      // --- createEntity 関数の修正 ---
       function createEntity(name) {
         const deck = getDeck(false);
         const secret = deck.pop();
@@ -798,7 +751,6 @@
           justBroken: false,
         };
 
-        // Enemyの場合のみ、ランダムなAI戦略を割り当てる
         if (name === "Enemy") {
           const randomStrategyName =
             AI_STRATEGY_NAMES[
@@ -820,7 +772,7 @@
 
       function init() {
         player = createEntity("Player");
-        enemy = createEntity("Enemy"); // EnemyにはここでランダムなAIが設定される
+        enemy = createEntity("Enemy");
         isEnemyFirst = Math.random() < 0.5;
         startTurn();
       }
@@ -831,16 +783,13 @@
         isAnimating = false;
         isEnemyFirst = !isEnemyFirst;
 
-        // HP/EP回復とカード配布処理
         [player, enemy].forEach((e) => {
           if (e.breakState) {
             e.burnout = true;
           }
-
           if (!e.burnout && !e.breakState) {
             e.pos = Math.min(e.maxPos, e.pos + 2.7);
           }
-
           e.ep = Math.min(MAX_EP, e.ep + 4);
           e.sp = Math.min(MAX_SP, e.sp + 1);
 
@@ -855,7 +804,6 @@
           }
         });
 
-        // SPカード配布イベント (ターン4)
         if (turn === 4) {
           [player, enemy].forEach((e) => {
             const spCard = JSON.parse(JSON.stringify(SP_CARD));
@@ -874,26 +822,21 @@
         document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
         document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
 
-        // --- 修正箇所: AIのBURNOUT判定を追加 ---
         if (enemy.burnout) {
-          // 敵がBURNOUT中なら行動不能
           pendingEnemySlots = [null, null];
           enemy.isCounterMode = false;
           log("[System] Enemy is BURNOUT. Skipping turn.");
         } else {
-          // 通常通りAIを呼び出す
           const aiRes = AI_STRATEGIES[enemy.strategy](
             enemy,
             player,
             !isEnemyFirst,
             0
           );
-
           pendingEnemySlots = aiRes.slots;
           if (aiRes.action === "COUNTER") enemy.isCounterMode = true;
           else enemy.isCounterMode = false;
         }
-        // ----------------------------------------
 
         log(`--- TURN ${turn} START ---`);
         if (isEnemyFirst) log("Enemy has Initiative (First).");
@@ -942,7 +885,6 @@
           alert("BURNOUT（行動不能）のため、カードを選択できません。");
           return;
         }
-        // ----------------------------------
 
         if (isCounterMode) {
           alert("カウンターモード中はカードを選択できません。");
@@ -1006,12 +948,10 @@
       function toggleCounter() {
         if (isAnimating) return;
 
-        // --- 追加箇所: BURNOUTチェック ---
         if (player.burnout) {
           alert("BURNOUT（行動不能）のため、カウンターは使用できません。");
           return;
         }
-        // -----------------------------
 
         if (hasUsedCounter) {
           alert("カウンターは1試合に1回しか使用できません。");
@@ -1022,26 +962,11 @@
         render();
       }
 
-      // --- calculateEnemyMove 関数の修正 ---
-      function calculateEnemyMove(entity) {
-        if (entity.burnout) {
-          return [null, null];
-        }
-        // 割り当てられた戦略に基づいて、その戦略の関数を実行する
-        const strategyFunction = AI_STRATEGIES[entity.strategy];
-        if (strategyFunction) {
-          return strategyFunction(entity);
-        }
-        // 見つからない場合は安全のため何もしない
-        return [null, null];
-      }
-
       async function commitTurn() {
         if (isAnimating) return;
 
         const pCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
 
-        // プレイヤーのバリデーション
         if (!player.burnout && !isCounterMode && !pSlots[0] && !pSlots[1]) {
           alert("カードを選択するか、カウンターを選択してください。");
           return;
@@ -1049,7 +974,6 @@
 
         isAnimating = true;
 
-        // --- 敵の再思考ロジック (Re-Calculation) ---
         if (!isEnemyFirst && !enemy.burnout) {
           const aiRes = AI_STRATEGIES[enemy.strategy](
             enemy,
@@ -1077,21 +1001,16 @@
           ? 0
           : (eSlots[0]?.cost || 0) + (eSlots[1]?.cost || 0);
 
-        // --- EP消費 ---
         player.ep -= pCost;
         enemy.ep -= eCost;
 
-        // --- 追加箇所: SPカード使用時のSP消費 ---
-        // プレイヤーがSPカードを使っていたらSP-5
         if (pSlots.some((c) => c?.isSP)) {
           player.sp = Math.max(0, player.sp - 5);
         }
 
-        // 敵がSPカードを使っていたらSP-5
         if (!enemy.isCounterMode && eSlots.some((c) => c?.isSP)) {
           enemy.sp = Math.max(0, enemy.sp - 5);
         }
-        // ------------------------------------
 
         processHandUsage(player, pSlots);
         if (!enemy.isCounterMode) {
@@ -1100,7 +1019,6 @@
 
         render();
 
-        // ログ出力
         if (player.burnout) log("Player is Stunned (Burnout)...");
         if (enemy.burnout) log("Enemy is Stunned (Burnout)...");
 
@@ -1116,35 +1034,27 @@
         const pSP = pCards.some((c) => c?.isSP);
         const eSP = eCards.some((c) => c?.isSP);
 
-        // --- SP相殺・カウンター判定ロジック ---
         let pCounterSuccess = false;
         let eCounterSuccess = false;
 
-        // 1. SP同士の衝突
         if (pSP && eSP) {
           log("!!! SP CLASH !!! 双方がSPを使用 -> 相殺！");
           pCards = [null, null];
           eCards = [null, null];
           await sleep(1000);
-        }
-        // 2. プレイヤーのカウンター成功
-        else if (eSP && isCounterMode) {
+        } else if (eSP && isCounterMode) {
           log("!!! PLAYER COUNTER SUCCESS !!!");
           hasUsedCounter = true;
-          eCards = [null, null]; // 敵のカード無効化
+          eCards = [null, null];
           pCounterSuccess = true;
           await sleep(1000);
-        }
-        // 3. 敵のカウンター成功
-        else if (pSP && enemy.isCounterMode) {
+        } else if (pSP && enemy.isCounterMode) {
           log("!!! ENEMY COUNTER SUCCESS !!!");
           enemy.hasUsedCounter = true;
-          pCards = [null, null]; // プレイヤーのカード無効化
+          pCards = [null, null];
           eCounterSuccess = true;
           await sleep(1000);
-        }
-        // 4. カウンター空振り
-        else {
+        } else {
           if (isCounterMode) {
             log("Player Counter Missed...");
             hasUsedCounter = true;
@@ -1155,14 +1065,20 @@
           }
         }
 
-        // ダメージ倍率
         let pMul = 1.0;
         let eMul = 1.0;
 
         log("--- SLOT 1 ---");
-        const res1 = await resolveStep(1, pCards[0], eCards[0], pMul, eMul);
+        // スロット1の処理。前の結果は存在しないので null を渡す
+        const res1 = await resolveStep(
+          1,
+          pCards[0],
+          eCards[0],
+          pMul,
+          eMul,
+          null
+        );
 
-        // コンボ補正
         if (res1 === "WIN") {
           pMul = 1.7;
           eMul = 0.25;
@@ -1174,13 +1090,21 @@
         }
 
         log("--- SLOT 2 ---");
-        await resolveStep(2, pCards[1], eCards[1], pMul, eMul);
+        // スロット2の処理。前の結果(res1)を渡すことで、「勢い」の判定を行う
+        await resolveStep(2, pCards[1], eCards[1], pMul, eMul, res1);
 
-        // --- ターン終了処理 ---
         finishTurnProcessing();
       }
 
-      async function resolveStep(slotNum, pCard, eCard, pMul, eMul) {
+      // 引数に prevResult を追加
+      async function resolveStep(
+        slotNum,
+        pCard,
+        eCard,
+        pMul,
+        eMul,
+        prevResult
+      ) {
         const pSlotEl = document.getElementById(`p-slot${slotNum}`);
         const eSlotEl = document.getElementById(`e-slot${slotNum}`);
 
@@ -1206,6 +1130,7 @@
         await sleep(1500);
 
         let result = "DRAW";
+        // カードの有無による基本的な勝敗
         if (!pCard && !eCard) result = "DRAW";
         else if (!pCard) {
           applyDmg(player, eCard, eMul);
@@ -1214,7 +1139,7 @@
           applyDmg(enemy, pCard, pMul);
           result = "WIN";
         } else {
-          // --- 勝敗判定ロジック ---
+          // --- カードタイプによる勝敗判定 ---
           if (pCard.type === eCard.type) {
             // 同じタイプ同士ならコスト勝負
             if (pCard.cost > eCard.cost) result = "WIN";
@@ -1229,12 +1154,28 @@
             else result = "LOSE";
           }
 
-          if (result === "WIN") applyDmg(enemy, pCard, pMul);
-          else if (result === "LOSE") applyDmg(player, eCard, eMul);
-          else {
-            player.hp -= 2;
-            enemy.hp -= 2;
-            log("Draw! Both take 2 dmg.");
+          // --- 判定結果の適用と、勢い(Momentum)の処理 ---
+          if (result === "DRAW") {
+            if (prevResult === "WIN") {
+              // スロット1でプレイヤー勝利 -> 勢いで押し切る (1.5倍)
+              log(">> Momentum! Previous Winner pushes through Draw!");
+              applyDmg(enemy, pCard, 1.5);
+              result = "WIN"; // 勝利扱いに更新
+            } else if (prevResult === "LOSE") {
+              // スロット1で敵勝利 -> 敵が押し切る (1.5倍)
+              log(">> Momentum! Previous Winner pushes through Draw!");
+              applyDmg(player, eCard, 1.5);
+              result = "LOSE"; // 敗北扱いに更新
+            } else {
+              // 本当のドロー
+              player.hp -= 2;
+              enemy.hp -= 2;
+              log("Draw! Both take 2 dmg.");
+            }
+          } else {
+            // 通常の勝利・敗北処理 (1.7倍 or 0.25倍)
+            if (result === "WIN") applyDmg(enemy, pCard, pMul);
+            else if (result === "LOSE") applyDmg(player, eCard, eMul);
           }
         }
 
