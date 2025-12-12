@@ -520,6 +520,10 @@
        * DUSTFALL Logic Implementation
        */
 
+      /**
+       * DUSTFALL Logic Implementation
+       */
+
       const MAX_HP = 50;
       const MAX_POSTURE = 20;
       const MAX_EP = 9;
@@ -552,6 +556,74 @@
 
       const SP_CARD = { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true };
 
+      // --- AI Strategy Definitions (戦略定義) ---
+      /**
+       * AI_STRATEGIES には、AIの具体的な行動ロジックを関数として格納します。
+       * 各関数は (entity) を引数に取り、[Slot1Card, Slot2Card] の配列を返します。
+       */
+      const AI_STRATEGIES = {
+        // 既存のロジック: 高コストカードを優先して、EPを使い切る攻撃型
+        BERSERKER: (entity) => {
+          let eSlots = [null, null];
+          let budget = entity.ep;
+          let hand = [...entity.hand];
+
+          // SP技のチェック (最優先)
+          const spCard = hand.find((c) => c.isSP);
+          if (spCard && entity.sp >= MAX_SP && budget >= 5) {
+            eSlots[0] = spCard;
+            return eSlots;
+          }
+
+          // コストが高い順にソート (攻撃重視)
+          hand.sort((a, b) => b.cost - a.cost);
+
+          // スロット1の決定
+          for (let c of hand) {
+            if (
+              c.cost <= budget &&
+              !(entity.burnout && c.type === TYPE.GUARD) &&
+              !c.isSP
+            ) {
+              eSlots[0] = c;
+              budget -= c.cost;
+              hand = hand.filter((x) => x !== c);
+              break;
+            }
+          }
+
+          // スロット2の決定
+          if (eSlots[0]) {
+            for (let c of hand) {
+              if (
+                c.cost <= budget &&
+                !(entity.burnout && c.type === TYPE.GUARD) &&
+                !c.isSP
+              ) {
+                eSlots[1] = c;
+                break;
+              }
+            }
+          }
+          return eSlots;
+        },
+
+        // 新しいAIタイプをここに追加できます
+        DEFENSIVE: (entity) => {
+          // TODO: 防御重視型（Guardを優先、姿勢値を重視する、など）のロジックを実装
+          // 現時点では仮で何もしない（パスする）ロジックにしておきます。
+          return [null, null];
+        },
+
+        EP_SAVER: (entity) => {
+          // TODO: EP温存型（コストの低いカードを優先、EPが半分以上の時はパスしやすい、など）のロジックを実装
+          // 現時点では仮でBERSERKERと同じロジックにしておきます。
+          return AI_STRATEGIES.BERSERKER(entity);
+        },
+      };
+      // AI戦略名のリスト
+      const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
+
       // --- Global State ---
       let turn = 1;
       let player, enemy;
@@ -574,10 +646,12 @@
         return deck;
       }
 
+      // --- createEntity 関数の修正 ---
       function createEntity(name) {
         const deck = getDeck(false);
         const secret = deck.pop();
-        return {
+
+        const entity = {
           name,
           hp: MAX_HP,
           maxHp: MAX_HP,
@@ -589,9 +663,21 @@
           hand: [],
           secret,
           burnout: false,
-          breakState: false, // 姿勢崩れ(被ダメ2倍)状態
-          justBroken: false, // そのターンにブレイクしたかどうかのフラグ
+          breakState: false,
+          justBroken: false,
         };
+
+        // Enemyの場合のみ、ランダムなAI戦略を割り当てる
+        if (name === "Enemy") {
+          const randomStrategyName =
+            AI_STRATEGY_NAMES[
+              Math.floor(Math.random() * AI_STRATEGY_NAMES.length)
+            ];
+          entity.strategy = randomStrategyName;
+          log(`[System] Enemy Strategy: ${randomStrategyName} assigned.`);
+        }
+
+        return entity;
       }
 
       function shuffle(arr) {
@@ -603,7 +689,7 @@
 
       function init() {
         player = createEntity("Player");
-        enemy = createEntity("Enemy");
+        enemy = createEntity("Enemy"); // EnemyにはここでランダムなAIが設定される
         isEnemyFirst = Math.random() < 0.5;
         startTurn();
       }
@@ -615,12 +701,10 @@
         isEnemyFirst = !isEnemyFirst;
 
         [player, enemy].forEach((e) => {
-          // ブレイク状態であれば、強制的に行動不能(BURNOUT)にする
           if (e.breakState) {
             e.burnout = true;
           }
 
-          // BURNOUTまたはブレイク中でなければ姿勢回復
           if (!e.burnout && !e.breakState) {
             e.pos = Math.min(e.maxPos, e.pos + 2.7);
           }
@@ -657,14 +741,16 @@
         document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
         document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
 
-        pendingEnemySlots = calculateEnemyMove();
+        // --- calculateEnemyMove の呼び出しを変更 ---
+        pendingEnemySlots = calculateEnemyMove(enemy);
 
         log(`--- TURN ${turn} START ---`);
         if (player.burnout) log(">> PLAYER IS BURNOUT (Turn Skipped)");
-        if (enemy.burnout) log(">> ENEMY IS BURNOUT (Turn Skipped)");
+        if (enemy.burnout)
+          log(`>> ENEMY (${enemy.strategy}) IS BURNOUT (Turn Skipped)`);
 
         if (!player.burnout && !enemy.burnout) {
-          if (isEnemyFirst) log("Enemy has Initiative");
+          if (isEnemyFirst) log(`Enemy (${enemy.strategy}) has Initiative`);
           else log("Player has Initiative");
         }
 
@@ -747,48 +833,18 @@
         render();
       }
 
-      function calculateEnemyMove() {
-        if (enemy.burnout) {
+      // --- calculateEnemyMove 関数の修正 ---
+      function calculateEnemyMove(entity) {
+        if (entity.burnout) {
           return [null, null];
         }
-        let eSlots = [null, null];
-        let budget = enemy.ep;
-        let hand = [...enemy.hand];
-
-        const spCard = hand.find((c) => c.isSP);
-        if (spCard && enemy.sp >= MAX_SP && budget >= 5) {
-          eSlots[0] = spCard;
-          return eSlots;
+        // 割り当てられた戦略に基づいて、その戦略の関数を実行する
+        const strategyFunction = AI_STRATEGIES[entity.strategy];
+        if (strategyFunction) {
+          return strategyFunction(entity);
         }
-
-        hand.sort((a, b) => b.cost - a.cost);
-
-        for (let c of hand) {
-          if (
-            c.cost <= budget &&
-            !(enemy.burnout && c.type === TYPE.GUARD) &&
-            !c.isSP
-          ) {
-            eSlots[0] = c;
-            budget -= c.cost;
-            hand = hand.filter((x) => x !== c);
-            break;
-          }
-        }
-
-        if (eSlots[0]) {
-          for (let c of hand) {
-            if (
-              c.cost <= budget &&
-              !(enemy.burnout && c.type === TYPE.GUARD) &&
-              !c.isSP
-            ) {
-              eSlots[1] = c;
-              break;
-            }
-          }
-        }
-        return eSlots;
+        // 見つからない場合は安全のため何もしない
+        return [null, null];
       }
 
       async function commitTurn() {
@@ -825,26 +881,21 @@
         const eSP = eCards.some((c) => c?.isSP);
 
         // --- SP相殺・カウンター処理 ---
-        // ここでカードが消滅(null化)すれば、resolveStepには届かない（DRAW扱いになる）
         if (pSP && eSP) {
           log("!!! SP CLASH !!! 相殺されました！");
           pCards = [null, null];
           eCards = [null, null];
           await sleep(1000);
         } else if (eSP && isCounterMode) {
-          // 敵がSPで、自分がカウンターの場合
           log("!!! COUNTER SUCCESS !!!");
           hasUsedCounter = true;
-          eCards = [null, null]; // 敵の攻撃を無効化
+          eCards = [null, null];
           await sleep(1000);
         } else if (isCounterMode) {
-          // カウンター空振り
           log("Counter Missed...");
           hasUsedCounter = true;
           await sleep(800);
         }
-        // 注: 自分がSPで敵がカウンターという状況は、敵AIにカウンターがないため現行では発生しないが
-        // 実装されればここに追加する
 
         let pMul = 1.0;
         let eMul = 1.0;
@@ -868,23 +919,18 @@
         // --- ターン終了処理 (EP枯渇チェックとBreak回復) ---
         [player, enemy].forEach((e) => {
           if (e.breakState) {
-            // ブレイク状態である場合
             if (e.justBroken) {
-              // このターンにブレイクされたばかり → 次のターンはBURNOUT(行動不能)になる
               e.justBroken = false;
               e.burnout = true;
             } else {
-              // ブレイクによる行動不能ターンを消化した → 回復処理
               e.pos = e.maxPos;
               e.breakState = false;
-              // EPが残っていればバーンアウト解除
               if (e.ep > 0) {
                 e.burnout = false;
               }
               log(`${e.name} RECOVERED from Break!`);
             }
           } else {
-            // 通常時のEPチェック
             if (e.ep <= 0) {
               e.burnout = true;
               log(`${e.name} enters EP BURNOUT!`);
@@ -930,7 +976,7 @@
           pSlotEl.innerHTML = "Empty";
         }
 
-        await sleep(1600);
+        await sleep(1500);
 
         let result = "DRAW";
         if (!pCard && !eCard) result = "DRAW";
@@ -941,16 +987,14 @@
           applyDmg(enemy, pCard, pMul);
           result = "WIN";
         } else {
-          // --- 勝敗判定ロジックの修正 ---
+          // --- 勝敗判定ロジック ---
           if (pCard.type === eCard.type) {
             // 同じタイプ同士ならコスト勝負
             if (pCard.cost > eCard.cost) result = "WIN";
             else if (eCard.cost > pCard.cost) result = "LOSE";
           } else if (pCard.type === TYPE.SP) {
-            // 自分がSPなら無条件勝利（相殺処理はcommitTurnで既に終わっているため）
             result = "WIN";
           } else if (eCard.type === TYPE.SP) {
-            // 敵がSPなら無条件敗北
             result = "LOSE";
           } else {
             // 通常の3すくみ判定
@@ -1017,9 +1061,7 @@
       function applyDmg(target, card, mul) {
         if (!card) return;
         let finalMul = mul;
-        // ブレイク状態(前ターン以前からの継続、または今ブレイクした直後)なら2倍
         if (target.breakState) finalMul *= 2.0;
-        // BURNOUT(EP切れ等)なら1.5倍(ブレイクと重複可)
         if (target.burnout && !target.breakState) finalMul *= 1.5;
 
         let dmg = Math.floor((card.dmg || 0) * finalMul);
@@ -1029,10 +1071,9 @@
         target.pos -= pos;
         log(`${target.name} takes ${dmg} Dmg`);
 
-        // 姿勢崩壊チェック
         if (target.pos <= 0 && !target.breakState) {
           target.breakState = true;
-          target.justBroken = true; // このターンにブレイクしたことを記録
+          target.justBroken = true;
           target.pos = 0;
           log(`!!! ${target.name} POSTURE BREAK !!!`);
           log(`>> Next Turn: BURNOUT & x2 Dmg`);
@@ -1148,8 +1189,8 @@
         div.innerHTML = `<div class="card-type">${
           isSecret ? "SECRET" : card.type
         }</div>
-                     <div class="card-cost">${card.cost}</div>
-                     <div style="font-size:0.7rem">${card.type}</div>`;
+                   <div class="card-cost">${card.cost}</div>
+                   <div style="font-size:0.7rem">${card.type}</div>`;
 
         div.onclick = () => selectCard(card, isSecret, idx);
         return div;
