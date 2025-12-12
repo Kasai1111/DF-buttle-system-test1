@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DUSTFALL Prototype</title>
+    <title>DUSTFALL Prototype - Break Update</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -550,8 +550,8 @@
       let isAnimating = false;
 
       // Initiative State
-      let isEnemyFirst = false; // true = Enemy is First (reveals cost), false = Player is First
-      let pendingEnemySlots = [null, null]; // Stores the enemy's decision at start of turn
+      let isEnemyFirst = false;
+      let pendingEnemySlots = [null, null];
 
       // Helper for sleep
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -578,7 +578,8 @@
           hand: [],
           secret,
           burnout: false,
-          breakState: false,
+          breakState: false, // 姿勢崩れ(被ダメ2倍)状態
+          justBroken: false, // そのターンにブレイクしたかどうかのフラグ
         };
       }
 
@@ -592,7 +593,6 @@
       function init() {
         player = createEntity("Player");
         enemy = createEntity("Enemy");
-        // ランダムに最初の先攻を決める
         isEnemyFirst = Math.random() < 0.5;
         startTurn();
       }
@@ -601,16 +601,17 @@
         pSlots = [null, null];
         isCounterMode = false;
         isAnimating = false;
-
-        // ターンごとに先攻後攻を交代
         isEnemyFirst = !isEnemyFirst;
 
         [player, enemy].forEach((e) => {
-          if (e.burnout && e.ep > 0) e.burnout = false;
+          // ブレイク状態であれば、強制的に行動不能(BURNOUT)にする
           if (e.breakState) {
-            e.breakState = false;
-            e.pos = Math.floor(e.maxPos / 2);
-            log(`${e.name} recovered from Break.`);
+            e.burnout = true;
+          }
+
+          // BURNOUTまたはブレイク中でなければ姿勢回復
+          if (!e.burnout && !e.breakState) {
+            e.pos = Math.min(e.maxPos, e.pos + 2.8);
           }
 
           e.ep = Math.min(MAX_EP, e.ep + 4);
@@ -618,7 +619,7 @@
 
           while (e.hand.length < 4) {
             if (e.deck.length === 0) {
-              const freshDeck = getDeck(false); // リサイクル時は SP 入れない
+              const freshDeck = getDeck(false);
               e.deck = freshDeck;
               log(`[System] ${e.name}'s Deck Recycled`);
             }
@@ -629,17 +630,11 @@
 
         if (turn === 4) {
           [player, enemy].forEach((e) => {
-            // SPカードのコピーを作成
             const spCard = JSON.parse(JSON.stringify(SP_CARD));
-
-            // HPが30%以下 (50 * 0.3 = 15以下) かチェック
             if (e.hp <= e.maxHp * 0.3) {
-              // ピンチの場合: 山札の一番上(末尾)に追加 = 次に必ず引く
               e.deck.push(spCard);
               log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
             } else {
-              // 通常の場合: 山札のランダムな位置に挿入
-              // 0 から deck.length の間のランダムなインデックス
               const idx = Math.floor(Math.random() * (e.deck.length + 1));
               e.deck.splice(idx, 0, spCard);
               log(`[System] ${e.name}: SP Card added to deck.`);
@@ -647,23 +642,30 @@
           });
         }
 
-        // スロット表示のリセット
         updateSlotUI("e", [null, null]);
         document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
         document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
 
-        // ★ここで敵の動きを事前計算する
         pendingEnemySlots = calculateEnemyMove();
 
         log(`--- TURN ${turn} START ---`);
-        if (isEnemyFirst) log("Enemy has Initiative (Moves First)");
-        else log("Player has Initiative (Moves First)");
+        if (player.burnout) log(">> PLAYER IS BURNOUT (Turn Skipped)");
+        if (enemy.burnout) log(">> ENEMY IS BURNOUT (Turn Skipped)");
+
+        if (!player.burnout && !enemy.burnout) {
+          if (isEnemyFirst) log("Enemy has Initiative");
+          else log("Player has Initiative");
+        }
 
         render();
       }
 
       function selectCard(card, isSecret, handIndex) {
         if (isAnimating) return;
+        if (player.burnout) {
+          alert("BURNOUT状態のため、このターンは行動できません！");
+          return;
+        }
         if (isCounterMode) {
           alert("カウンターモード中はカードを選択できません。");
           return;
@@ -671,9 +673,6 @@
 
         const srcId = isSecret ? "secret" : handIndex;
 
-        // --- 修正: トグル機能の実装 ---
-
-        // 1. 既にスロットにあるカードをクリックした場合は「解除」する
         if (pSlots[0] && pSlots[0]._src === srcId) {
           pSlots[0] = null;
           render();
@@ -684,8 +683,6 @@
           render();
           return;
         }
-
-        // --- ここまで修正 ---
 
         if (card.isSP) {
           if (player.sp < MAX_SP) {
@@ -703,20 +700,17 @@
           return;
         }
 
-        // コストチェック
         let currentCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
         if (currentCost + card.cost > player.ep) {
           alert(`EPが足りません！`);
           return;
         }
 
-        // 空きスロットへ追加
         if (!pSlots[0]) {
           pSlots[0] = { ...card, _src: srcId };
         } else if (!pSlots[1]) {
           pSlots[1] = { ...card, _src: srcId };
         } else {
-          // スロットが満杯のときに、選択されていないカードをクリックした場合
           alert(
             "スロットがいっぱいです。選択済みのカードをタップして解除するか、スロットをタップして空けてください。"
           );
@@ -742,13 +736,14 @@
         render();
       }
 
-      // 名前変更: getEnemyMove -> calculateEnemyMove (即時実行用)
       function calculateEnemyMove() {
+        if (enemy.burnout) {
+          return [null, null];
+        }
         let eSlots = [null, null];
         let budget = enemy.ep;
         let hand = [...enemy.hand];
 
-        // 1. SP技
         const spCard = hand.find((c) => c.isSP);
         if (spCard && enemy.sp >= MAX_SP && budget >= 5) {
           eSlots[0] = spCard;
@@ -757,7 +752,6 @@
 
         hand.sort((a, b) => b.cost - a.cost);
 
-        // 2. Slot 1
         for (let c of hand) {
           if (
             c.cost <= budget &&
@@ -771,7 +765,6 @@
           }
         }
 
-        // 3. Slot 2
         if (eSlots[0]) {
           for (let c of hand) {
             if (
@@ -787,41 +780,36 @@
         return eSlots;
       }
 
-      // --- Main Battle Logic (Async) ---
       async function commitTurn() {
         if (isAnimating) return;
 
         const pCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
-        if (!isCounterMode && !pSlots[0] && !pSlots[1]) {
+        if (!player.burnout && !isCounterMode && !pSlots[0] && !pSlots[1]) {
           alert("カードを選択するか、カウンターを選択してください。");
           return;
         }
 
-        // 開始処理
         isAnimating = true;
-        render(); // ボタン無効化
+        render();
 
-        // ★事前計算済みの敵の手を使用
         const eSlots = pendingEnemySlots;
         const eCost = (eSlots[0]?.cost || 0) + (eSlots[1]?.cost || 0);
 
-        // コスト消費
         player.ep -= pCost;
         enemy.ep -= eCost;
 
-        // 手札消費処理
         processHandUsage(player, pSlots);
         processHandUsage(enemy, eSlots);
 
-        render(); // コスト減反映
-        log(`Battle Start! Cost P:${pCost} / E:${eCost}`);
+        render();
+        if (player.burnout) log("Player is Stunned (Burnout)...");
+        else log(`Battle Start! Cost P:${pCost} / E:${eCost}`);
 
         await sleep(600);
 
         let pCards = [...pSlots];
         let eCards = [...eSlots];
 
-        // --- SP / Counter Phase ---
         const pSP = pCards.some((c) => c?.isSP);
         const eSP = eCards.some((c) => c?.isSP);
 
@@ -844,7 +832,6 @@
         let pMul = 1.0;
         let eMul = 1.0;
 
-        // --- Step-by-Step Resolution ---
         log("--- SLOT 1 ---");
         const res1 = await resolveStep(1, pCards[0], eCards[0], 1.0, 1.0);
 
@@ -861,8 +848,34 @@
         log("--- SLOT 2 ---");
         await resolveStep(2, pCards[1], eCards[1], pMul, eMul);
 
-        checkBurnout(player);
-        checkBurnout(enemy);
+        // --- ターン終了処理 (EP枯渇チェックとBreak回復) ---
+        [player, enemy].forEach((e) => {
+          if (e.breakState) {
+            // ブレイク状態である場合
+            if (e.justBroken) {
+              // このターンにブレイクされたばかり → 次のターンはBURNOUT(行動不能)になる
+              e.justBroken = false;
+              e.burnout = true; // startTurnでもセットされるが、念のため
+            } else {
+              // ブレイクによる行動不能ターンを消化した → 回復処理
+              e.pos = e.maxPos; // 姿勢値を最大まで回復
+              e.breakState = false; // 被ダメージ2倍解除
+              // EPが残っていればバーンアウト解除 (EP0ならバーンアウト継続)
+              if (e.ep > 0) {
+                e.burnout = false;
+              }
+              log(`${e.name} RECOVERED from Break!`);
+            }
+          } else {
+            // 通常時のEPチェック
+            if (e.ep <= 0) {
+              e.burnout = true;
+              log(`${e.name} enters EP BURNOUT!`);
+            } else {
+              e.burnout = false;
+            }
+          }
+        });
 
         turn++;
         render();
@@ -978,8 +991,10 @@
       function applyDmg(target, card, mul) {
         if (!card) return;
         let finalMul = mul;
+        // ブレイク状態(前ターン以前からの継続、または今ブレイクした直後)なら2倍
         if (target.breakState) finalMul *= 2.0;
-        if (target.burnout) finalMul *= 1.5;
+        // BURNOUT(EP切れ等)なら1.5倍(ブレイクと重複可)
+        if (target.burnout && !target.breakState) finalMul *= 1.5;
 
         let dmg = Math.floor((card.dmg || 0) * finalMul);
         let pos = Math.floor((card.pos || 0) * finalMul);
@@ -988,17 +1003,15 @@
         target.pos -= pos;
         log(`${target.name} takes ${dmg} Dmg`);
 
+        // 姿勢崩壊チェック
         if (target.pos <= 0 && !target.breakState) {
           target.breakState = true;
+          target.justBroken = true; // このターンにブレイクしたことを記録
           target.pos = 0;
-          log(`!!! ${target.name} BREAK !!!`);
-        }
-      }
-
-      function checkBurnout(e) {
-        if (e.ep === 0) {
-          e.burnout = true;
-          log(`${e.name} enters BURNOUT!`);
+          log(`!!! ${target.name} POSTURE BREAK !!!`);
+          log(`>> Next Turn: BURNOUT & x2 Dmg`);
+        } else if (target.pos < 0) {
+          target.pos = 0;
         }
       }
 
@@ -1024,14 +1037,12 @@
           epEl.style.color = e.ep < 3 ? "red" : "var(--grd-color)";
         });
 
-        // ★ イニシアチブ（先攻・後攻）表示の切り替え
         const ePanel = document.getElementById("e-panel");
         const pPanel = document.getElementById("p-panel");
         if (isEnemyFirst) {
           ePanel.classList.add("initiative");
           pPanel.classList.remove("initiative");
 
-          // ★ 敵が先攻の場合、予告コストを表示
           const intelBox = document.getElementById("e-intel-box");
           intelBox.style.display = "flex";
           const cost =
@@ -1044,7 +1055,6 @@
           document.getElementById("e-intel-box").style.display = "none";
         }
 
-        // Enemy Hand (Secret)
         const eZone = document.getElementById("enemy-hand-view");
         eZone.innerHTML = "";
         eZone.innerHTML += `<div class="card type-Secret"><div class="card-type">SECRET</div><div class="card-cost">?</div></div>`;
@@ -1052,7 +1062,6 @@
           eZone.innerHTML += `<div class="card type-${c.type}"><div class="card-type">${c.type}</div><div class="card-cost">${c.cost}</div></div>`;
         });
 
-        // Player Hand
         const pZone = document.getElementById("player-hand-view");
         pZone.innerHTML = "";
 
@@ -1074,16 +1083,21 @@
           ? "カウンター準備中"
           : "SP カウンター攻撃";
         btnC.className = isCounterMode ? "active" : "";
-        btnC.disabled = hasUsedCounter || isAnimating;
+        btnC.disabled = hasUsedCounter || isAnimating || player.burnout;
 
         const currentCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
         const btnCommit = document.getElementById("btn-commit");
         if (isAnimating) {
           btnCommit.innerText = "BATTLE IN PROGRESS...";
           btnCommit.disabled = true;
+        } else if (player.burnout) {
+          btnCommit.innerText = "ターンをスキップ (BURNOUT)";
+          btnCommit.disabled = false;
+          btnCommit.style.background = "#555";
         } else {
           btnCommit.innerText = `コマンド決定 (Cost: ${currentCost})`;
           btnCommit.disabled = currentCost > player.ep;
+          btnCommit.style.background = "var(--accent-color)";
         }
       }
 
@@ -1124,7 +1138,6 @@
             el.innerHTML = renderCardContent(c);
           } else {
             el.className = "slot";
-            // プレイヤー側のスロットはタップで外せることを明示
             if (prefix === "p") {
               el.innerHTML = `Tap Card<br>to Set`;
             } else {
