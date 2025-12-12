@@ -565,6 +565,77 @@
           pendingCost: currentCost,
         };
       };
+      // --- Prediction Helper ---
+      // 相手が最も出しそうなタイプを推定する
+      function predictLikelyType(opponent) {
+        const hand = opponent.hand;
+
+        // 手札の比率で簡易予測
+        const counts = {
+          Attack: hand.filter((c) => c.type === TYPE.ATTACK).length,
+          Guard: hand.filter((c) => c.type === TYPE.GUARD).length,
+          Break: hand.filter((c) => c.type === TYPE.BREAK).length,
+        };
+
+        let likely = TYPE.ATTACK;
+        let max = counts.Attack;
+
+        if (counts.Guard > max) {
+          likely = TYPE.GUARD;
+          max = counts.Guard;
+        }
+        if (counts.Break > max) {
+          likely = TYPE.BREAK;
+        }
+
+        return likely;
+      }
+
+      // --- Card Evaluator ---
+      // カード1枚の「強さ」を数値化する
+      function evaluateCard(card, enemyLikelyType, entity, opponent) {
+        let score = 0;
+
+        // ① 相性評価（読み合いの核）
+        if (WIN_MAP[card.type] === enemyLikelyType) score += 30; // 有利
+        if (WIN_MAP[enemyLikelyType] === card.type) score -= 25; // 不利
+
+        // ② コスト＝強さ（ただし過大評価しない）
+        score += card.cost * 2;
+
+        // ③ ダメージ・姿勢値（Momentum向け）
+        if (card.dmg) score += card.dmg * 1.2;
+        if (card.pos) score += card.pos * 0.6;
+
+        // ④ 姿勢ブレイク狙い
+        if (opponent.pos < 7 && card.type === TYPE.BREAK) score += 20;
+
+        // ⑤ SPカード使用条件
+        if (card.isSP) {
+          if (entity.sp >= MAX_SP && entity.ep >= 5) {
+            score += 80;
+          } else {
+            score -= 9999; // 使えないなら捨てる
+          }
+        }
+
+        return score;
+      }
+
+      // --- Slot 2 Evaluator ---
+      // 勢い(Momentum)が乗るなら2スロット目はさらに強くしたい
+      function evaluateSecondSlot(card, baseScore, prevWin) {
+        if (!card) return 0;
+        let score = baseScore;
+
+        if (prevWin) {
+          // 勢いで高ダメ狙い
+          if (card.dmg) score += card.dmg * 2.0;
+          if (card.pos) score += card.pos * 1.0;
+        }
+
+        return score;
+      }
 
       // --- AI Strategy Definitions ---
       const AI_STRATEGIES = {
