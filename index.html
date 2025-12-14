@@ -390,7 +390,35 @@
         color: #666;
         margin-top: -5px;
       }
-
+      /* 戦況 (BATTLE CONTEXT) */
+      .context-banner {
+        background: linear-gradient(90deg, #2c3e50, #4ca1af);
+        border: 1px solid #80deea;
+        color: #e0f7fa;
+        padding: 8px 15px;
+        text-align: center;
+        margin: 10px 0;
+        font-size: 0.95rem;
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(76, 161, 175, 0.5);
+        display: none; /* デフォルトは非表示 */
+        animation: slideIn 0.5s ease-out;
+      }
+      .context-highlight {
+        font-weight: bold;
+        color: #ffeb3b;
+        text-decoration: underline;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
       @media (max-width: 900px) {
         .type-chart-container {
           position: static;
@@ -448,7 +476,13 @@
         </div>
         <div class="card-area" id="enemy-hand-view"></div>
       </div>
+      <div class="panel" id="e-panel">...</div>
 
+      <div id="battle-context" class="context-banner">
+        戦況: <span id="context-msg">なし</span>
+      </div>
+
+      <div style="text-align: center">...</div>
       <div style="text-align: center">
         <div class="slots-wrapper">
           <div class="slot" id="e-slot1">Enemy<br />Slot 1</div>
@@ -565,77 +599,6 @@
           pendingCost: currentCost,
         };
       };
-      // --- Prediction Helper ---
-      // 相手が最も出しそうなタイプを推定する
-      function predictLikelyType(opponent) {
-        const hand = opponent.hand;
-
-        // 手札の比率で簡易予測
-        const counts = {
-          Attack: hand.filter((c) => c.type === TYPE.ATTACK).length,
-          Guard: hand.filter((c) => c.type === TYPE.GUARD).length,
-          Break: hand.filter((c) => c.type === TYPE.BREAK).length,
-        };
-
-        let likely = TYPE.ATTACK;
-        let max = counts.Attack;
-
-        if (counts.Guard > max) {
-          likely = TYPE.GUARD;
-          max = counts.Guard;
-        }
-        if (counts.Break > max) {
-          likely = TYPE.BREAK;
-        }
-
-        return likely;
-      }
-
-      // --- Card Evaluator ---
-      // カード1枚の「強さ」を数値化する
-      function evaluateCard(card, enemyLikelyType, entity, opponent) {
-        let score = 0;
-
-        // ① 相性評価（読み合いの核）
-        if (WIN_MAP[card.type] === enemyLikelyType) score += 30; // 有利
-        if (WIN_MAP[enemyLikelyType] === card.type) score -= 25; // 不利
-
-        // ② コスト＝強さ（ただし過大評価しない）
-        score += card.cost * 2;
-
-        // ③ ダメージ・姿勢値（Momentum向け）
-        if (card.dmg) score += card.dmg * 1.2;
-        if (card.pos) score += card.pos * 0.6;
-
-        // ④ 姿勢ブレイク狙い
-        if (opponent.pos < 7 && card.type === TYPE.BREAK) score += 20;
-
-        // ⑤ SPカード使用条件
-        if (card.isSP) {
-          if (entity.sp >= MAX_SP && entity.ep >= 5) {
-            score += 80;
-          } else {
-            score -= 9999; // 使えないなら捨てる
-          }
-        }
-
-        return score;
-      }
-
-      // --- Slot 2 Evaluator ---
-      // 勢い(Momentum)が乗るなら2スロット目はさらに強くしたい
-      function evaluateSecondSlot(card, baseScore, prevWin) {
-        if (!card) return 0;
-        let score = baseScore;
-
-        if (prevWin) {
-          // 勢いで高ダメ狙い
-          if (card.dmg) score += card.dmg * 2.0;
-          if (card.pos) score += card.pos * 1.0;
-        }
-
-        return score;
-      }
 
       // --- AI Strategy Definitions ---
       const AI_STRATEGIES = {
@@ -645,7 +608,22 @@
           let action = "COMMIT"; // or "COUNTER"
           let hand = [...entity.hand];
           let budget = entity.ep;
-
+          if (
+            battleContext &&
+            battleContext.holderName === entity.name &&
+            !isSecond
+          ) {
+            // 戦況指定のカードを持っているか？
+            const targetCard = hand.find(
+              (c) =>
+                c.type === battleContext.type && c.cost <= budget && !c.isSP
+            );
+            if (targetCard) {
+              eSlots[0] = targetCard;
+              budget -= targetCard.cost;
+              hand = hand.filter((c) => c !== targetCard);
+            }
+          }
           const oppInfo = analyzeOpponent(opponent, pCost);
 
           if (isSecond) {
@@ -783,6 +761,7 @@
 
       // --- Global State ---
       let turn = 1;
+      let battleContext = null; // { type: TYPE.ATTACK, holder: 'player' or 'enemy' }
       let player, enemy;
       let pSlots = [null, null];
       let isCounterMode = false;
@@ -853,7 +832,9 @@
         isCounterMode = false;
         isAnimating = false;
         isEnemyFirst = !isEnemyFirst;
+        battleContext = null; // リセット
 
+        // 1. リソース回復と手札補充 (既存処理)
         [player, enemy].forEach((e) => {
           if (e.breakState) {
             e.burnout = true;
@@ -866,8 +847,7 @@
 
           while (e.hand.length < 3) {
             if (e.deck.length === 0) {
-              const freshDeck = getDeck(false);
-              e.deck = freshDeck;
+              e.deck = getDeck(false);
               log(`[System] ${e.name}'s Deck Recycled`);
             }
             e.hand.push(e.deck.pop());
@@ -875,9 +855,12 @@
           }
         });
 
+        // 4ターン目のSPカード配布 (既存処理)
         if (turn === 4) {
           [player, enemy].forEach((e) => {
             const spCard = JSON.parse(JSON.stringify(SP_CARD));
+            // ... (省略: 既存のSP配布ロジックそのまま) ...
+            // 簡略化のためここには記載しませんが、元のコードを残してください
             if (e.hp <= e.maxHp * 0.3) {
               e.deck.push(spCard);
               log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
@@ -893,11 +876,34 @@
         document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
         document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
 
+        // --- ★ここが追加箇所: 戦況システムの判定 ---
+        const initiativeEntity = isEnemyFirst ? enemy : player;
+
+        // シークレットを除く手札に3属性が揃っているかチェック
+        const typesInHand = new Set(initiativeEntity.hand.map((c) => c.type));
+        const hasAllTypes =
+          typesInHand.has(TYPE.ATTACK) &&
+          typesInHand.has(TYPE.GUARD) &&
+          typesInHand.has(TYPE.BREAK);
+
+        if (hasAllTypes) {
+          // ランダムにターゲット属性を決定
+          const targetTypes = [TYPE.ATTACK, TYPE.GUARD, TYPE.BREAK];
+          const target =
+            targetTypes[Math.floor(Math.random() * targetTypes.length)];
+          battleContext = { type: target, holderName: initiativeEntity.name };
+          log(`[戦況] 好機到来！先攻(${initiativeEntity.name})の手札充実。`);
+        }
+        // --- 追加ここまで ---
+
+        // AI処理 (既存処理に battleContext を渡すように少し変更可能ですが、まずはそのままで動作します)
         if (enemy.burnout) {
           pendingEnemySlots = [null, null];
           enemy.isCounterMode = false;
           log("[System] Enemy is BURNOUT. Skipping turn.");
         } else {
+          // ★AIに少し知恵をつける: 戦況があればそれを狙う簡易ロジック
+          // ここでは複雑さを避けるため、後述の「AIの更新」で対応します
           const aiRes = AI_STRATEGIES[enemy.strategy](
             enemy,
             player,
@@ -913,7 +919,7 @@
         if (isEnemyFirst) log("Enemy has Initiative (First).");
         else log("Player has Initiative (First).");
 
-        render();
+        render(); // レンダリング時に戦況を表示
       }
       function finishTurnProcessing() {
         [player, enemy].forEach((e) => {
@@ -1204,15 +1210,12 @@
         // カードの有無による基本的な勝敗
         if (!pCard && !eCard) result = "DRAW";
         else if (!pCard) {
-          applyDmg(player, eCard, eMul);
           result = "LOSE";
         } else if (!eCard) {
-          applyDmg(enemy, pCard, pMul);
           result = "WIN";
         } else {
           // --- カードタイプによる勝敗判定 ---
           if (pCard.type === eCard.type) {
-            // 同じタイプ同士ならコスト勝負
             if (pCard.cost > eCard.cost) result = "WIN";
             else if (eCard.cost > pCard.cost) result = "LOSE";
           } else if (pCard.type === TYPE.SP) {
@@ -1220,34 +1223,50 @@
           } else if (eCard.type === TYPE.SP) {
             result = "LOSE";
           } else {
-            // 通常の3すくみ判定
             if (WIN_MAP[pCard.type] === eCard.type) result = "WIN";
             else result = "LOSE";
           }
+        }
 
-          // --- 判定結果の適用と、勢い(Momentum)の処理 ---
-          if (result === "DRAW") {
-            if (prevResult === "WIN") {
-              // スロット1でプレイヤー勝利 -> 勢いで押し切る (1.5倍)
-              log(">> Momentum! Previous Winner pushes through Draw!");
-              applyDmg(enemy, pCard, 1.5);
-              result = "WIN"; // 勝利扱いに更新
-            } else if (prevResult === "LOSE") {
-              // スロット1で敵勝利 -> 敵が押し切る (1.5倍)
-              log(">> Momentum! Previous Winner pushes through Draw!");
-              applyDmg(player, eCard, 1.5);
-              result = "LOSE"; // 敗北扱いに更新
-            } else {
-              // 本当のドロー
-              player.hp -= 2;
-              enemy.hp -= 2;
-              log("Draw! Both take 2 dmg.");
+        // ★ 戦況ボーナスの計算
+        let contextBonus = 1.0;
+        if (slotNum === 1 && battleContext && result !== "DRAW") {
+          const isPlayerWin = result === "WIN";
+          const isPlayerHolder = battleContext.holderName === "Player";
+
+          // 勝者が戦況の権利者と一致するか？
+          if (isPlayerWin === isPlayerHolder) {
+            const winningCard = isPlayerWin ? pCard : eCard;
+            // 勝ったカードが指定タイプか？
+            if (winningCard && winningCard.type === battleContext.type) {
+              contextBonus = 1.5;
+              log(`>> 【戦況掌握】${battleContext.type}での勝利！効果 1.5倍！`);
+              // エフェクト的にテキストを強調
+              if (isPlayerWin) pSlotEl.style.boxShadow = "0 0 25px gold";
+              else eSlotEl.style.boxShadow = "0 0 25px gold";
             }
-          } else {
-            // 通常の勝利・敗北処理 (1.7倍 or 0.25倍)
-            if (result === "WIN") applyDmg(enemy, pCard, pMul);
-            else if (result === "LOSE") applyDmg(player, eCard, eMul);
           }
+        }
+
+        // --- 判定結果の適用 ---
+        if (result === "DRAW") {
+          if (prevResult === "WIN") {
+            log(">> Momentum! Previous Winner pushes through Draw!");
+            applyDmg(enemy, pCard, 1.5); // ここは勢いボーナスのみ
+            result = "WIN";
+          } else if (prevResult === "LOSE") {
+            log(">> Momentum! Previous Winner pushes through Draw!");
+            applyDmg(player, eCard, 1.5);
+            result = "LOSE";
+          } else {
+            player.hp -= 2;
+            enemy.hp -= 2;
+            log("Draw! Both take 2 dmg.");
+          }
+        } else {
+          if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
+          else if (result === "LOSE")
+            applyDmg(player, eCard, eMul * contextBonus);
         }
 
         render();
@@ -1261,6 +1280,8 @@
 
         pSlotEl.classList.remove("active-battle-slot");
         eSlotEl.classList.remove("active-battle-slot");
+        pSlotEl.style.boxShadow = ""; // リセット
+        eSlotEl.style.boxShadow = ""; // リセット
         clearOverlays(pSlotEl);
         clearOverlays(eSlotEl);
 
@@ -1404,6 +1425,30 @@
           btnCommit.innerText = `コマンド決定 (Cost: ${currentCost})`;
           btnCommit.disabled = currentCost > player.ep;
           btnCommit.style.background = "var(--accent-color)";
+        }
+        // render関数の最後の方、btnCommitの処理のあたりに追加
+
+        const ctxBanner = document.getElementById("battle-context");
+        const ctxMsg = document.getElementById("context-msg");
+
+        if (battleContext) {
+          ctxBanner.style.display = "block";
+          const holderText =
+            battleContext.holderName === "Player" ? "あなた" : "敵";
+          // バナーの色味を権利者によって変えるとなお良い
+          if (battleContext.holderName === "Enemy") {
+            ctxBanner.style.background =
+              "linear-gradient(90deg, #3e2723, #bf360c)";
+            ctxBanner.style.border = "1px solid #ffab91";
+          } else {
+            ctxBanner.style.background =
+              "linear-gradient(90deg, #1a237e, #0277bd)";
+            ctxBanner.style.border = "1px solid #81d4fa";
+          }
+
+          ctxMsg.innerHTML = `${holderText}のスロット1が <span class="context-highlight">${battleContext.type}</span> で勝利時、威力1.5倍！`;
+        } else {
+          ctxBanner.style.display = "none";
         }
       }
 
