@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DUSTFALL Prototype - Visual Assist</title>
+    <title>DUSTFALL Prototype - Visual Assist v2</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -16,7 +16,7 @@
         --sp-color: #ba68c8;
         --secret-color: #90a4ae;
 
-        /* New Vars for Visual Assist */
+        /* Visual Assist Vars */
         --ep-color: #29b6f6;
         --ep-ghost: #01579b;
         --sp-bar-color: #ab47bc;
@@ -54,7 +54,7 @@
         transition: border-color 0.3s;
       }
 
-      /* 先攻表示用のスタイル */
+      /* 先攻表示 */
       .panel.initiative {
         border-color: var(--accent-color);
         box-shadow: 0 0 10px rgba(255, 152, 0, 0.2);
@@ -75,7 +75,7 @@
         display: block;
       }
 
-      /* 敵の予告情報 (INTEL) */
+      /* Intel Box */
       .intel-box {
         background: rgba(0, 0, 0, 0.3);
         border: 1px dashed #555;
@@ -93,7 +93,7 @@
         font-size: 1rem;
       }
 
-      /* Status Bars */
+      /* Bars */
       .status-row {
         display: flex;
         justify-content: space-between;
@@ -116,7 +116,6 @@
         margin-bottom: 8px;
         position: relative;
       }
-      /* Standard Bars */
       .hp-bar {
         background: #d32f2f;
         height: 100%;
@@ -134,7 +133,7 @@
         z-index: 2;
       }
 
-      /* Ghost Bar Implementation (EP/SP) */
+      /* Ghost Bars */
       .bar-ghost {
         position: absolute;
         top: 0;
@@ -153,14 +152,12 @@
         z-index: 2;
         transition: width 0.3s;
       }
-      /* Specific Colors */
       .ep-fill {
         background: var(--ep-color);
       }
       .ep-ghost-bg {
         background: var(--ep-ghost);
-      } /* 減る予定の部分 */
-
+      }
       .sp-fill {
         background: var(--sp-bar-color);
       }
@@ -187,7 +184,7 @@
         }
       }
 
-      /* Card UI */
+      /* Cards */
       .card-area {
         display: flex;
         gap: 5px;
@@ -225,7 +222,6 @@
         filter: grayscale(1);
       }
 
-      /* Types */
       .type-Attack {
         border-top: 4px solid var(--atk-color);
       }
@@ -257,17 +253,28 @@
       /* Matchup Badges (Win/Lose Indicator) */
       .matchup-badge {
         position: absolute;
-        top: -6px;
-        right: -6px;
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: bold;
-        padding: 2px 6px;
+        padding: 2px 4px;
         border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
         z-index: 10;
         text-transform: uppercase;
         animation: popBadge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        min-width: 30px;
+        text-align: center;
+        line-height: 1;
       }
+      /* 位置指定: Slot 1 = 右上, Slot 2 = 左下 */
+      .mb-slot1 {
+        top: -8px;
+        right: -8px;
+      }
+      .mb-slot2 {
+        bottom: -8px;
+        left: -8px;
+      }
+
       @keyframes popBadge {
         from {
           transform: scale(0);
@@ -318,7 +325,6 @@
       .slot:hover {
         border-color: #999;
       }
-
       .active-battle-slot {
         border: 2px solid #fff !important;
         box-shadow: 0 0 15px var(--accent-color);
@@ -404,7 +410,6 @@
         border: 2px solid #fff;
       }
 
-      /* Log */
       #log {
         height: 100px;
         overflow-y: auto;
@@ -478,7 +483,7 @@
         color: #666;
         margin-top: -5px;
       }
-      /* 戦況 (BATTLE CONTEXT) */
+
       .context-banner {
         background: linear-gradient(90deg, #2c3e50, #4ca1af);
         border: 1px solid #80deea;
@@ -489,7 +494,7 @@
         font-size: 0.95rem;
         border-radius: 4px;
         box-shadow: 0 0 10px rgba(76, 161, 175, 0.5);
-        display: none; /* デフォルトは非表示 */
+        display: none;
         animation: slideIn 0.5s ease-out;
       }
       .context-highlight {
@@ -568,7 +573,7 @@
 
         <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
         <div style="font-size: 0.8rem; text-align: center; color: #888">
-          ENEMY HAND (VS Slot 1 Check)
+          ENEMY HAND (VS Slot 1 / Slot 2)
         </div>
         <div class="card-area" id="enemy-hand-view"></div>
       </div>
@@ -1541,18 +1546,24 @@
           cardDiv.className = `card type-${c.type}`;
           cardDiv.innerHTML = `<div class="card-type">${c.type}</div><div class="card-cost">${c.cost}</div>`;
 
-          // --- NEW: Matchup Badge Injection ---
-          // If player has a card in Slot 1, compare it to this enemy card
-          // If Slot 1 is empty, check Slot 2 (edge case, but useful)
-          // Or just check Slot 1 as primary matchup.
-          const pCheckCard = pSlots[0] || pSlots[1]; // Use whichever is available for preview
-
-          if (pCheckCard && !isAnimating) {
-            const result = getMatchupResult(pCheckCard, c);
-            const badge = document.createElement("span");
-            badge.className = `matchup-badge mb-${result.toLowerCase()}`;
-            badge.innerText = result;
-            cardDiv.appendChild(badge);
+          // --- MODIFIED: Independent Matchup Badges for Slot 1 and Slot 2 ---
+          if (!isAnimating) {
+            // Slot 1 Check (Top Right)
+            if (pSlots[0]) {
+              const res1 = getMatchupResult(pSlots[0], c);
+              const badge1 = document.createElement("span");
+              badge1.className = `matchup-badge mb-slot1 mb-${res1.toLowerCase()}`;
+              badge1.innerText = res1;
+              cardDiv.appendChild(badge1);
+            }
+            // Slot 2 Check (Bottom Left)
+            if (pSlots[1]) {
+              const res2 = getMatchupResult(pSlots[1], c);
+              const badge2 = document.createElement("span");
+              badge2.className = `matchup-badge mb-slot2 mb-${res2.toLowerCase()}`;
+              badge2.innerText = res2;
+              cardDiv.appendChild(badge2);
+            }
           }
           // ------------------------------------
 
