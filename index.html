@@ -708,172 +708,203 @@
 
       const SP_CARD = { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true };
 
-      // --- AI Helper Functions ---
-      const analyzeOpponent = (playerEntity, currentCost) => {
-        const hand = playerEntity.hand;
-        return {
-          hasSP: hand.some((c) => c.isSP),
-          atkCount: hand.filter((c) => c.type === TYPE.ATTACK).length,
-          grdCount: hand.filter((c) => c.type === TYPE.GUARD).length,
-          brkCount: hand.filter((c) => c.type === TYPE.BREAK).length,
-          isHighCost: currentCost >= 5, // プレイヤーが5コスト以上積んでいる（SPの可能性大）
-          isLowCost: currentCost <= 2, // 様子見か？
-          pendingCost: currentCost,
-        };
+      // --- AI Helper Functions (Updated) ---
+      const WIN_TYPE = {
+        [TYPE.ATTACK]: TYPE.BREAK,
+        [TYPE.BREAK]: TYPE.GUARD,
+        [TYPE.GUARD]: TYPE.ATTACK,
+      };
+      const LOSE_TYPE = {
+        [TYPE.ATTACK]: TYPE.GUARD,
+        [TYPE.BREAK]: TYPE.ATTACK,
+        [TYPE.GUARD]: TYPE.BREAK,
       };
 
-      // --- AI Strategy Definitions ---
+      // 相手の消費コストから、何を出してきそうか予測する
+      const predictPlayerMove = (cost) => {
+        if (cost === 0) return "WAIT_OR_COUNTER";
+        if (cost <= 2) return "LIGHT"; // 軽い攻撃かガード
+        if (cost <= 4) return "HEAVY"; // 重い攻撃かブレイク
+        return "SP_OR_COMBO"; // SPか、高コストコンボ
+      };
+
+      // 手札から特定のタイプのカードを探す（コスト予算内、SP除外）
+      const findCard = (hand, type, budget) => {
+        return hand
+          .filter((c) => c.type === type && c.cost <= budget && !c.isSP)
+          .sort((a, b) => b.cost - a.cost)[0]; // コストが高い順
+      };
+
+      // 手札から最強のカードを探す
+      const findBestDmg = (hand, budget) => {
+        return hand
+          .filter(
+            (c) =>
+              (c.type === TYPE.ATTACK || c.type === TYPE.BREAK) &&
+              c.cost <= budget &&
+              !c.isSP
+          )
+          .sort((a, b) => b.dmg - a.dmg)[0];
+      };
+
+      // --- AI Strategy Definitions (Enhanced) ---
       const AI_STRATEGIES = {
-        // ISTJ: 管理者型 (The Realist)
+        // ISTJ: 徹底したリスク管理と理論値の追求 (The Realist)
         ISTJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
-          let action = "COMMIT"; // or "COUNTER"
           let hand = [...entity.hand];
           let budget = entity.ep;
-          if (
-            battleContext &&
-            battleContext.holderName === entity.name &&
-            !isSecond
-          ) {
-            // 戦況指定のカードを持っているか？
-            const targetCard = hand.find(
-              (c) =>
-                c.type === battleContext.type && c.cost <= budget && !c.isSP
-            );
-            if (targetCard) {
-              eSlots[0] = targetCard;
-              budget -= targetCard.cost;
-              hand = hand.filter((c) => c !== targetCard);
+          const oppPrediction = predictPlayerMove(pCost);
+
+          // 1. 【最優先】 リーサル計算 (倒せるなら確実に倒す)
+          const bestAtk = findBestDmg(hand, budget);
+          if (bestAtk && bestAtk.dmg >= opponent.hp) {
+            return { slots: [bestAtk, null], action: "COMMIT" };
+          }
+
+          // 2. 【防衛本能】 自分がブレイクしそうで、相手が高コスト(攻撃の可能性大)なら全力防御
+          if (entity.pos <= 5 && pCost >= 3 && !entity.breakState) {
+            const bestGuard = findCard(hand, TYPE.GUARD, budget);
+            if (bestGuard) {
+              // 相手が先攻なら、相手のSlot1に合わせて配置したいが、不明なのでSlot1に置く
+              return { slots: [bestGuard, null], action: "COMMIT" };
             }
           }
-          const oppInfo = analyzeOpponent(opponent, pCost);
 
-          if (isSecond) {
-            if (oppInfo.isHighCost) {
+          // 3. 【戦況順守】 Contextボーナスがある場合、それを素直に狙う（律儀な性格）
+          if (battleContext && !isSecond) {
+            // 自分が先攻の場合のみ能動的に狙う
+            const bonusCard = findCard(hand, battleContext.type, budget);
+            if (bonusCard) {
+              eSlots[0] = bonusCard;
+              budget -= bonusCard.cost;
+              hand = hand.filter((c) => c !== bonusCard);
+            }
+          }
+
+          // 4. 【後攻時の対応】 相手のコストを見て、有利なタイプをぶつける
+          if (isSecond && !eSlots[0]) {
+            // 相手コストが高い(3以上) = 重い攻撃かBreakが来る可能性が高い
+            if (pCost >= 5 && entity.sp >= MAX_SP) {
+              // 相手がSP等の大技なら、こちらもSPで対抗（相殺狙い）またはカウンター
               const spCard = hand.find((c) => c.isSP);
-              if (spCard && entity.sp >= MAX_SP && budget >= 5) {
+              if (spCard && budget >= 5)
                 return { slots: [spCard, null], action: "COMMIT" };
-              }
-              if (!entity.hasUsedCounter) {
+              if (!entity.hasUsedCounter)
                 return { slots: [null, null], action: "COUNTER" };
+            }
+
+            // 相手が中コスト(3-4) = Breakか強Attackの可能性 -> Attackで割り込むか、Guardで受ける
+            // ISTJは「Attack」で割り込んでBreakを潰す方を好む（攻撃は最大の防御）
+            if (pCost >= 3) {
+              const counterAtk = findCard(hand, TYPE.ATTACK, budget);
+              if (counterAtk) {
+                eSlots[0] = counterAtk;
+                budget -= counterAtk.cost;
+                hand = hand.filter((c) => c !== counterAtk);
               }
-              const bestGuard = hand
-                .filter((c) => c.type === TYPE.GUARD)
-                .sort((a, b) => b.arm - a.arm)[0];
-              if (bestGuard && bestGuard.cost <= budget) {
-                return { slots: [bestGuard, null], action: "COMMIT" };
-              }
             }
           }
 
-          let bias = TYPE.ATTACK;
-          if (oppInfo.atkCount > oppInfo.grdCount) bias = TYPE.GUARD;
-          if (oppInfo.grdCount > oppInfo.atkCount) bias = TYPE.BREAK;
-
-          const totalDmg = hand.reduce((acc, c) => acc + (c.dmg || 0), 0);
-          if (totalDmg >= opponent.hp && budget >= 3) {
-            const atks = hand
-              .filter((c) => c.dmg > 0)
-              .sort((a, b) => b.dmg - a.dmg);
-            if (atks[0] && atks[0].cost <= budget) {
-              eSlots[0] = atks[0];
-              budget -= atks[0].cost;
-              const nextAtk = atks.filter((c) => c !== eSlots[0])[0];
-              if (nextAtk && nextAtk.cost <= budget) eSlots[1] = nextAtk;
-            }
-            return { slots: eSlots, action: "COMMIT" };
-          }
-
-          const preferred = hand
-            .filter((c) => c.type === bias && c.cost <= budget && !c.isSP)
-            .sort((a, b) => b.cost - a.cost)[0];
-
-          if (preferred) {
-            eSlots[0] = preferred;
-            budget -= preferred.cost;
-            hand = hand.filter((c) => c !== preferred);
-          } else {
-            const backup = hand
-              .filter((c) => c.cost <= budget && !c.isSP)
-              .sort((a, b) => b.cost - a.cost)[0];
-            if (backup) {
-              eSlots[0] = backup;
-              budget -= backup.cost;
-              hand = hand.filter((c) => c !== backup);
+          // 5. 【穴埋め】 まだスロットが空いているなら、残りの予算で最大戦力を投入
+          if (!eSlots[0]) {
+            // 基本はAttack > Break > Guardの優先度
+            const c =
+              findCard(hand, TYPE.ATTACK, budget) ||
+              findCard(hand, TYPE.BREAK, budget) ||
+              findCard(hand, TYPE.GUARD, budget);
+            if (c) {
+              eSlots[0] = c;
+              budget -= c.cost;
+              hand = hand.filter((x) => x !== c);
             }
           }
 
-          if (budget > 0) {
-            const filler = hand
-              .filter((c) => c.cost <= budget && !c.isSP)
-              .sort((a, b) => b.cost - a.cost)[0];
-            if (filler) eSlots[1] = filler;
+          if (!eSlots[1] && budget > 0) {
+            // 2手目は余りコストでGuardを張るなど堅実に
+            const c =
+              findCard(hand, TYPE.GUARD, budget) ||
+              findCard(hand, TYPE.ATTACK, budget);
+            if (c) eSlots[1] = c;
           }
 
           return { slots: eSlots, action: "COMMIT" };
         },
 
-        // INFJ: 提唱者型 (The Mastermind)
+        // INFJ: 相手の心理を読み、裏の裏をかく (The Mastermind)
         INFJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
           let hand = [...entity.hand];
           let budget = entity.ep;
-          const oppInfo = analyzeOpponent(opponent, pCost);
 
-          if (
-            isSecond &&
-            oppInfo.isHighCost &&
-            oppInfo.hasSP &&
-            !entity.hasUsedCounter
-          ) {
-            if (Math.random() < 0.9)
+          // 1. 【SP一点読み】 相手が5コスト以上積んでいて、後攻ならカウンター即決
+          if (isSecond && pCost >= 5 && !entity.hasUsedCounter) {
+            // 80%の確率でカウンター（たまに読み違えて普通に殴る人間味）
+            if (Math.random() < 0.8) {
               return { slots: [null, null], action: "COUNTER" };
+            }
           }
 
-          if (!isSecond && budget >= 5 && entity.sp < MAX_SP) {
-            for (let i = 0; i < hand.length; i++) {
-              for (let j = i + 1; j < hand.length; j++) {
-                if (
-                  hand[i].cost + hand[j].cost === 5 &&
-                  !hand[i].isSP &&
-                  !hand[j].isSP
-                ) {
-                  return { slots: [hand[i], hand[j]], action: "COMMIT" };
-                }
+          // 2. 【戦況の深読み】 Battle Contextがある時
+          // 例: Contextが「Attack」有利の場合
+          // 一般プレイヤー思考: 「Attackを出そう」
+          // 裏読み思考: 「相手はAttack対策でGuardをしてくるはずだ。なら私はBreakを出す」
+          if (battleContext && !isSecond) {
+            const ctxType = battleContext.type;
+            const winVsCtx = WIN_TYPE[ctxType]; // Contextに勝つ手
+            const loseVsCtx = LOSE_TYPE[ctxType]; // Contextに負ける手（＝Contextを狩りに来た相手を狩る手）
+
+            // 50%で「Contextそのもの」を出す（素直）、50%で「Context対策の対策」を出す
+            const targetType = Math.random() < 0.5 ? ctxType : loseVsCtx;
+
+            const trickCard = findCard(hand, targetType, budget);
+            if (trickCard) {
+              eSlots[0] = trickCard;
+              budget -= trickCard.cost;
+              hand = hand.filter((c) => c !== trickCard);
+            }
+          }
+
+          // 3. 【ブラフ】 相手が様子見（コスト0~1）の場合、あえて何もしないでEPを温存し、次ターンに備える
+          // または、相手が隙を見せた瞬間にSPを叩き込む
+          if (isSecond && pCost <= 1) {
+            if (entity.sp >= MAX_SP && budget >= 5) {
+              const spCard = hand.find((c) => c.isSP);
+              if (spCard) return { slots: [spCard, null], action: "COMMIT" };
+            }
+            // EP温存
+            if (budget < 5 && Math.random() < 0.5) {
+              return { slots: [null, null], action: "COMMIT" };
+            }
+          }
+
+          // 4. 【コンボ構築】 スロット1、2を使ってシナジーを狙う
+          // Break -> Attack の順で入ると大ダメージなので、それを狙う
+          if (!eSlots[0]) {
+            const breakCard = findCard(hand, TYPE.BREAK, budget);
+            if (breakCard && budget - breakCard.cost >= 2) {
+              // Breakの後ろにAttackを置けるか確認
+              const followUp = findCard(
+                hand.filter((c) => c !== breakCard),
+                TYPE.ATTACK,
+                budget - breakCard.cost
+              );
+              if (followUp) {
+                return { slots: [breakCard, followUp], action: "COMMIT" };
               }
             }
           }
 
-          const spCard = hand.find((c) => c.isSP);
-          if (spCard && entity.sp >= MAX_SP && budget >= 5) {
-            if (opponent.breakState || (isSecond && oppInfo.pendingCost < 5)) {
-              return { slots: [spCard, null], action: "COMMIT" };
+          // 5. 【標準動作】 ここまで決まらなければ、相手の手札の弱点を突くようなカードを選ぶ
+          // 相手の手札は見えないが、確率的にAttackが多いと仮定してGuardを置くなど
+          if (!eSlots[0]) {
+            const safeMove =
+              findCard(hand, TYPE.ATTACK, budget) ||
+              findCard(hand, TYPE.GUARD, budget);
+            if (safeMove) {
+              eSlots[0] = safeMove;
+              budget -= safeMove.cost;
             }
-          }
-
-          const breakC = hand.find(
-            (c) => c.type === TYPE.BREAK && c.cost <= budget
-          );
-          if (breakC && opponent.pos < 10) {
-            eSlots[0] = breakC;
-            budget -= breakC.cost;
-            const atkC = hand.find(
-              (c) => c.type === TYPE.ATTACK && c.cost <= budget
-            );
-            if (atkC) eSlots[1] = atkC;
-            return { slots: eSlots, action: "COMMIT" };
-          }
-
-          const bestCards = hand
-            .filter((c) => !c.isSP && c.cost <= budget)
-            .sort((a, b) => b.cost - a.cost);
-          if (bestCards[0]) {
-            eSlots[0] = bestCards[0];
-            budget -= bestCards[0].cost;
-            const next = hand.filter(
-              (c) => c !== eSlots[0] && !c.isSP && c.cost <= budget
-            )[0];
-            if (next) eSlots[1] = next;
           }
 
           return { slots: eSlots, action: "COMMIT" };
