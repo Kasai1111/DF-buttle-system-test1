@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DUSTFALL Prototype - SP Fix</title>
+    <title>DUSTFALL Prototype - Visual Assist</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -15,6 +15,12 @@
         --brk-color: #fff176;
         --sp-color: #ba68c8;
         --secret-color: #90a4ae;
+
+        /* New Vars for Visual Assist */
+        --ep-color: #29b6f6;
+        --ep-ghost: #01579b;
+        --sp-bar-color: #ab47bc;
+        --sp-ghost: #4a148c;
       }
       body {
         font-family: "Helvetica Neue", Arial, sans-serif;
@@ -94,39 +100,81 @@
         margin-bottom: 5px;
         font-size: 0.9rem;
       }
+      .bar-label {
+        font-size: 0.75rem;
+        color: #888;
+        margin-bottom: 2px;
+        display: flex;
+        justify-content: space-between;
+      }
       .bar-wrap {
         width: 100%;
-        background: #444;
+        background: #333;
         height: 8px;
         border-radius: 4px;
         overflow: hidden;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
+        position: relative;
       }
+      /* Standard Bars */
       .hp-bar {
         background: #d32f2f;
         height: 100%;
         width: 100%;
         transition: width 0.3s;
+        position: relative;
+        z-index: 2;
       }
       .pos-bar {
         background: #fbc02d;
         height: 100%;
         width: 100%;
         transition: width 0.3s;
+        position: relative;
+        z-index: 2;
       }
 
-      .resource-box {
-        display: flex;
+      /* Ghost Bar Implementation (EP/SP) */
+      .bar-ghost {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 0%;
+        z-index: 1;
+        transition: width 0.3s;
+      }
+      .bar-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 0%;
+        z-index: 2;
+        transition: width 0.3s;
+      }
+      /* Specific Colors */
+      .ep-fill {
+        background: var(--ep-color);
+      }
+      .ep-ghost-bg {
+        background: var(--ep-ghost);
+      } /* 減る予定の部分 */
+
+      .sp-fill {
+        background: var(--sp-bar-color);
+      }
+      .sp-ghost-bg {
+        background: var(--sp-ghost);
+      }
+
+      .resource-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
-        font-weight: bold;
-        font-size: 0.9rem;
+        margin-top: 5px;
       }
-      .ep-val {
-        color: var(--grd-color);
-      }
-      .sp-val {
-        color: var(--sp-color);
-      }
+
       .burnout-tag {
         color: red;
         font-weight: bold;
@@ -204,6 +252,46 @@
       }
       .card-type {
         font-weight: bold;
+      }
+
+      /* Matchup Badges (Win/Lose Indicator) */
+      .matchup-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        z-index: 10;
+        text-transform: uppercase;
+        animation: popBadge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      @keyframes popBadge {
+        from {
+          transform: scale(0);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .mb-win {
+        background: #4caf50;
+        color: #fff;
+        border: 1px solid #a5d6a7;
+      }
+      .mb-lose {
+        background: #f44336;
+        color: #fff;
+        border: 1px solid #ef9a9a;
+      }
+      .mb-draw {
+        background: #9e9e9e;
+        color: #fff;
+        border: 1px solid #e0e0e0;
       }
 
       /* Slots */
@@ -318,7 +406,7 @@
 
       /* Log */
       #log {
-        height: 120px;
+        height: 100px;
         overflow-y: auto;
         background: #000;
         color: #0f0;
@@ -448,7 +536,7 @@
     </style>
   </head>
   <body>
-    <h1>DUSTFALL - Battle Prototype</h1>
+    <h1>DUSTFALL - Battle Prototype (Visual Assist)</h1>
 
     <div class="game-container">
       <div class="panel" id="e-panel">
@@ -457,10 +545,18 @@
           <strong>ENEMY</strong>
           <span class="burnout-tag" id="e-burnout">BURNOUT</span>
         </div>
-        <div class="bar-wrap"><div class="hp-bar" id="e-hp-bar"></div></div>
-        <div class="bar-wrap"><div class="pos-bar" id="e-pos-bar"></div></div>
-        <div class="resource-box">
+
+        <div class="bar-label">
           <span>HP: <span id="e-hp"></span></span>
+        </div>
+        <div class="bar-wrap"><div class="hp-bar" id="e-hp-bar"></div></div>
+
+        <div class="bar-label">
+          <span>Posture</span>
+        </div>
+        <div class="bar-wrap"><div class="pos-bar" id="e-pos-bar"></div></div>
+
+        <div style="font-size: 0.8rem; color: #888; display: flex; gap: 10px">
           <span class="ep-val">EP: <span id="e-ep"></span></span>
           <span class="sp-val">SP: <span id="e-sp"></span></span>
         </div>
@@ -472,17 +568,15 @@
 
         <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
         <div style="font-size: 0.8rem; text-align: center; color: #888">
-          ENEMY HAND
+          ENEMY HAND (VS Slot 1 Check)
         </div>
         <div class="card-area" id="enemy-hand-view"></div>
       </div>
-      <div class="panel" id="e-panel">...</div>
 
       <div id="battle-context" class="context-banner">
         戦況: <span id="context-msg">なし</span>
       </div>
 
-      <div style="text-align: center">...</div>
       <div style="text-align: center">
         <div class="slots-wrapper">
           <div class="slot" id="e-slot1">Enemy<br />Slot 1</div>
@@ -505,13 +599,36 @@
           <strong>PLAYER</strong>
           <span class="burnout-tag" id="p-burnout">BURNOUT</span>
         </div>
-        <div class="bar-wrap"><div class="hp-bar" id="p-hp-bar"></div></div>
-        <div class="bar-wrap"><div class="pos-bar" id="p-pos-bar"></div></div>
-        <div class="resource-box">
+
+        <div class="bar-label">
           <span>HP: <span id="p-hp"></span></span>
-          <span class="ep-val">EP: <span id="p-ep"></span></span>
-          <span class="sp-val">SP: <span id="p-sp"></span></span>
         </div>
+        <div class="bar-wrap"><div class="hp-bar" id="p-hp-bar"></div></div>
+
+        <div class="bar-label"><span>Posture</span></div>
+        <div class="bar-wrap"><div class="pos-bar" id="p-pos-bar"></div></div>
+
+        <div class="resource-grid">
+          <div>
+            <div class="bar-label">
+              <span>EP: <span id="p-ep-txt"></span></span>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar-ghost ep-ghost-bg" id="p-ep-ghost"></div>
+              <div class="bar-fill ep-fill" id="p-ep-fill"></div>
+            </div>
+          </div>
+          <div>
+            <div class="bar-label">
+              <span>SP: <span id="p-sp-txt"></span></span>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar-ghost sp-ghost-bg" id="p-sp-ghost"></div>
+              <div class="bar-fill sp-fill" id="p-sp-fill"></div>
+            </div>
+          </div>
+        </div>
+
         <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
         <div class="card-area" id="player-hand-view"></div>
       </div>
@@ -834,7 +951,7 @@
         isEnemyFirst = !isEnemyFirst;
         battleContext = null; // リセット
 
-        // 1. リソース回復と手札補充 (既存処理)
+        // 1. リソース回復と手札補充
         [player, enemy].forEach((e) => {
           if (e.breakState) {
             e.burnout = true;
@@ -855,12 +972,10 @@
           }
         });
 
-        // 4ターン目のSPカード配布 (既存処理)
+        // 4ターン目のSPカード配布
         if (turn === 4) {
           [player, enemy].forEach((e) => {
             const spCard = JSON.parse(JSON.stringify(SP_CARD));
-            // ... (省略: 既存のSP配布ロジックそのまま) ...
-            // 簡略化のためここには記載しませんが、元のコードを残してください
             if (e.hp <= e.maxHp * 0.3) {
               e.deck.push(spCard);
               log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
@@ -876,10 +991,8 @@
         document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
         document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
 
-        // --- ★ここが追加箇所: 戦況システムの判定 ---
+        // 戦況システムの判定
         const initiativeEntity = isEnemyFirst ? enemy : player;
-
-        // シークレットを除く手札に3属性が揃っているかチェック
         const typesInHand = new Set(initiativeEntity.hand.map((c) => c.type));
         const hasAllTypes =
           typesInHand.has(TYPE.ATTACK) &&
@@ -887,23 +1000,19 @@
           typesInHand.has(TYPE.BREAK);
 
         if (hasAllTypes) {
-          // ランダムにターゲット属性を決定
           const targetTypes = [TYPE.ATTACK, TYPE.GUARD, TYPE.BREAK];
           const target =
             targetTypes[Math.floor(Math.random() * targetTypes.length)];
           battleContext = { type: target, holderName: initiativeEntity.name };
           log(`[戦況] 好機到来！先攻(${initiativeEntity.name})の手札充実。`);
         }
-        // --- 追加ここまで ---
 
-        // AI処理 (既存処理に battleContext を渡すように少し変更可能ですが、まずはそのままで動作します)
+        // AI処理
         if (enemy.burnout) {
           pendingEnemySlots = [null, null];
           enemy.isCounterMode = false;
           log("[System] Enemy is BURNOUT. Skipping turn.");
         } else {
-          // ★AIに少し知恵をつける: 戦況があればそれを狙う簡易ロジック
-          // ここでは複雑さを避けるため、後述の「AIの更新」で対応します
           const aiRes = AI_STRATEGIES[enemy.strategy](
             enemy,
             player,
@@ -919,7 +1028,7 @@
         if (isEnemyFirst) log("Enemy has Initiative (First).");
         else log("Player has Initiative (First).");
 
-        render(); // レンダリング時に戦況を表示
+        render();
       }
       function finishTurnProcessing() {
         [player, enemy].forEach((e) => {
@@ -1146,7 +1255,6 @@
         let eMul = 1.0;
 
         log("--- SLOT 1 ---");
-        // スロット1の処理。前の結果は存在しないので null を渡す
         const res1 = await resolveStep(
           1,
           pCards[0],
@@ -1167,13 +1275,27 @@
         }
 
         log("--- SLOT 2 ---");
-        // スロット2の処理。前の結果(res1)を渡すことで、「勢い」の判定を行う
         await resolveStep(2, pCards[1], eCards[1], pMul, eMul, res1);
 
         finishTurnProcessing();
       }
 
-      // 引数に prevResult を追加
+      // --- New Logic: Calculate Matchup without applying damage ---
+      function getMatchupResult(pCard, eCard) {
+        if (!eCard) return "WIN";
+        if (pCard.type === eCard.type) {
+          if (pCard.cost > eCard.cost) return "WIN";
+          if (eCard.cost > pCard.cost) return "LOSE";
+          return "DRAW";
+        }
+        if (pCard.type === TYPE.SP) return "WIN";
+        if (eCard.type === TYPE.SP) return "LOSE";
+
+        if (WIN_MAP[pCard.type] === eCard.type) return "WIN";
+        return "LOSE";
+      }
+      // -----------------------------------------------------------
+
       async function resolveStep(
         slotNum,
         pCard,
@@ -1207,52 +1329,36 @@
         await sleep(1500);
 
         let result = "DRAW";
-        // カードの有無による基本的な勝敗
         if (!pCard && !eCard) result = "DRAW";
         else if (!pCard) {
           result = "LOSE";
         } else if (!eCard) {
           result = "WIN";
         } else {
-          // --- カードタイプによる勝敗判定 ---
-          if (pCard.type === eCard.type) {
-            if (pCard.cost > eCard.cost) result = "WIN";
-            else if (eCard.cost > pCard.cost) result = "LOSE";
-          } else if (pCard.type === TYPE.SP) {
-            result = "WIN";
-          } else if (eCard.type === TYPE.SP) {
-            result = "LOSE";
-          } else {
-            if (WIN_MAP[pCard.type] === eCard.type) result = "WIN";
-            else result = "LOSE";
-          }
+          // Use the extracted logic, but re-implemented here for safety within async flow
+          result = getMatchupResult(pCard, eCard);
         }
 
-        // ★ 戦況ボーナスの計算
         let contextBonus = 1.0;
         if (slotNum === 1 && battleContext && result !== "DRAW") {
           const isPlayerWin = result === "WIN";
           const isPlayerHolder = battleContext.holderName === "Player";
 
-          // 勝者が戦況の権利者と一致するか？
           if (isPlayerWin === isPlayerHolder) {
             const winningCard = isPlayerWin ? pCard : eCard;
-            // 勝ったカードが指定タイプか？
             if (winningCard && winningCard.type === battleContext.type) {
               contextBonus = 1.5;
               log(`>> 【戦況掌握】${battleContext.type}での勝利！効果 1.5倍！`);
-              // エフェクト的にテキストを強調
               if (isPlayerWin) pSlotEl.style.boxShadow = "0 0 25px gold";
               else eSlotEl.style.boxShadow = "0 0 25px gold";
             }
           }
         }
 
-        // --- 判定結果の適用 ---
         if (result === "DRAW") {
           if (prevResult === "WIN") {
             log(">> Momentum! Previous Winner pushes through Draw!");
-            applyDmg(enemy, pCard, 1.5); // ここは勢いボーナスのみ
+            applyDmg(enemy, pCard, 1.5);
             result = "WIN";
           } else if (prevResult === "LOSE") {
             log(">> Momentum! Previous Winner pushes through Draw!");
@@ -1280,8 +1386,8 @@
 
         pSlotEl.classList.remove("active-battle-slot");
         eSlotEl.classList.remove("active-battle-slot");
-        pSlotEl.style.boxShadow = ""; // リセット
-        eSlotEl.style.boxShadow = ""; // リセット
+        pSlotEl.style.boxShadow = "";
+        eSlotEl.style.boxShadow = "";
         clearOverlays(pSlotEl);
         clearOverlays(eSlotEl);
 
@@ -1347,8 +1453,12 @@
         ["p", "e"].forEach((prefix) => {
           const e = prefix === "p" ? player : enemy;
           document.getElementById(`${prefix}-hp`).innerText = e.hp;
-          document.getElementById(`${prefix}-ep`).innerText = e.ep;
-          document.getElementById(`${prefix}-sp`).innerText = e.sp;
+          // EP/SP text update is handled below with Ghost logic for player
+          if (prefix === "e") {
+            document.getElementById(`e-ep`).innerText = e.ep;
+            document.getElementById(`e-sp`).innerText = e.sp;
+          }
+
           document.getElementById(`${prefix}-hp-bar`).style.width = `${Math.max(
             0,
             (e.hp / MAX_HP) * 100
@@ -1359,10 +1469,45 @@
           document.getElementById(`${prefix}-burnout`).style.display = e.burnout
             ? "inline"
             : "none";
-
-          const epEl = document.getElementById(`${prefix}-ep`);
-          epEl.style.color = e.ep < 3 ? "red" : "var(--grd-color)";
         });
+
+        // --- NEW: Ghost Bar Logic for Player ---
+        const pendingCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
+        const pendingSP = pSlots.some((c) => c?.isSP) ? 5 : 0;
+
+        const predictedEP = Math.max(0, player.ep - pendingCost);
+        const predictedSP = Math.max(0, player.sp - pendingSP);
+
+        // Text update with diff
+        const epTxt =
+          pendingCost > 0
+            ? `${player.ep} <span style="color:#aaa; font-size:0.8em">(-${pendingCost})</span>`
+            : player.ep;
+        document.getElementById("p-ep-txt").innerHTML = epTxt;
+
+        const spTxt =
+          pendingSP > 0
+            ? `${player.sp} <span style="color:#aaa; font-size:0.8em">(-${pendingSP})</span>`
+            : player.sp;
+        document.getElementById("p-sp-txt").innerHTML = spTxt;
+
+        // Bar Widths
+        // Ghost(Bg) = Current, Fill(Fg) = Predicted
+        // If Predicted < Current, Ghost is visible at the end.
+        document.getElementById("p-ep-ghost").style.width = `${
+          (player.ep / MAX_EP) * 100
+        }%`;
+        document.getElementById("p-ep-fill").style.width = `${
+          (predictedEP / MAX_EP) * 100
+        }%`;
+
+        document.getElementById("p-sp-ghost").style.width = `${
+          (player.sp / MAX_SP) * 100
+        }%`;
+        document.getElementById("p-sp-fill").style.width = `${
+          (predictedSP / MAX_SP) * 100
+        }%`;
+        // ----------------------------------------
 
         const ePanel = document.getElementById("e-panel");
         const pPanel = document.getElementById("p-panel");
@@ -1384,9 +1529,34 @@
 
         const eZone = document.getElementById("enemy-hand-view");
         eZone.innerHTML = "";
-        eZone.innerHTML += `<div class="card type-Secret"><div class="card-type">SECRET</div><div class="card-cost">?</div></div>`;
+
+        // Enemy Hand Render with Matchup Check
+        const secretDiv = document.createElement("div");
+        secretDiv.className = "card type-Secret";
+        secretDiv.innerHTML = `<div class="card-type">SECRET</div><div class="card-cost">?</div>`;
+        eZone.appendChild(secretDiv);
+
         enemy.hand.forEach((c) => {
-          eZone.innerHTML += `<div class="card type-${c.type}"><div class="card-type">${c.type}</div><div class="card-cost">${c.cost}</div></div>`;
+          const cardDiv = document.createElement("div");
+          cardDiv.className = `card type-${c.type}`;
+          cardDiv.innerHTML = `<div class="card-type">${c.type}</div><div class="card-cost">${c.cost}</div>`;
+
+          // --- NEW: Matchup Badge Injection ---
+          // If player has a card in Slot 1, compare it to this enemy card
+          // If Slot 1 is empty, check Slot 2 (edge case, but useful)
+          // Or just check Slot 1 as primary matchup.
+          const pCheckCard = pSlots[0] || pSlots[1]; // Use whichever is available for preview
+
+          if (pCheckCard && !isAnimating) {
+            const result = getMatchupResult(pCheckCard, c);
+            const badge = document.createElement("span");
+            badge.className = `matchup-badge mb-${result.toLowerCase()}`;
+            badge.innerText = result;
+            cardDiv.appendChild(badge);
+          }
+          // ------------------------------------
+
+          eZone.appendChild(cardDiv);
         });
 
         const pZone = document.getElementById("player-hand-view");
@@ -1412,7 +1582,6 @@
         btnC.className = isCounterMode ? "active" : "";
         btnC.disabled = hasUsedCounter || isAnimating || player.burnout;
 
-        const currentCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
         const btnCommit = document.getElementById("btn-commit");
         if (isAnimating) {
           btnCommit.innerText = "BATTLE IN PROGRESS...";
@@ -1422,11 +1591,10 @@
           btnCommit.disabled = false;
           btnCommit.style.background = "#555";
         } else {
-          btnCommit.innerText = `コマンド決定 (Cost: ${currentCost})`;
-          btnCommit.disabled = currentCost > player.ep;
+          btnCommit.innerText = `コマンド決定 (Cost: ${pendingCost})`;
+          btnCommit.disabled = pendingCost > player.ep;
           btnCommit.style.background = "var(--accent-color)";
         }
-        // render関数の最後の方、btnCommitの処理のあたりに追加
 
         const ctxBanner = document.getElementById("battle-context");
         const ctxMsg = document.getElementById("context-msg");
@@ -1435,7 +1603,6 @@
           ctxBanner.style.display = "block";
           const holderText =
             battleContext.holderName === "Player" ? "あなた" : "敵";
-          // バナーの色味を権利者によって変えるとなお良い
           if (battleContext.holderName === "Enemy") {
             ctxBanner.style.background =
               "linear-gradient(90deg, #3e2723, #bf360c)";
