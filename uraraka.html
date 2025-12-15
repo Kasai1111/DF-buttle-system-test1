@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DUSTFALL Prototype - Visual Assist v2</title>
+    <title>DUSTFALL Prototype - UI Update</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -31,6 +31,7 @@
         align-items: center;
         margin: 0;
         padding: 10px;
+        min-height: 100vh;
       }
       h1 {
         margin: 10px 0;
@@ -38,10 +39,102 @@
         border-bottom: 2px solid var(--accent-color);
       }
 
+      /* --- Setup Screen Styles --- */
+      #setup-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg-color);
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-y: auto;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      .setup-container {
+        width: 100%;
+        max-width: 800px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .equip-section {
+        background: var(--panel-bg);
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #444;
+      }
+      .equip-title {
+        font-weight: bold;
+        color: var(--accent-color);
+        margin-bottom: 10px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 5px;
+      }
+
+      .equip-options {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+
+      .equip-btn {
+        background: #333;
+        color: #fff;
+        border: 1px solid #555;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .equip-btn:hover {
+        background: #444;
+      }
+      .equip-btn.active {
+        background: var(--accent-color);
+        color: #000;
+        font-weight: bold;
+        border-color: var(--accent-color);
+      }
+
+      .preview-area {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        background: #111;
+        padding: 10px;
+        border-radius: 6px;
+        min-height: 110px;
+      }
+
+      .start-btn {
+        padding: 15px;
+        background: linear-gradient(45deg, #43a047, #66bb6a);
+        color: white;
+        border: none;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+        box-shadow: 0 4px 10px rgba(67, 160, 71, 0.4);
+      }
+      .start-btn:hover {
+        transform: scale(1.02);
+      }
+
+      /* --- Existing Game Styles --- */
       .game-container {
         width: 100%;
         max-width: 600px;
-        display: flex;
+        display: none; /* Initially hidden */
         flex-direction: column;
         gap: 10px;
       }
@@ -207,6 +300,7 @@
         background: #333;
         user-select: none;
         transition: transform 0.2s;
+        flex-shrink: 0;
       }
       .card:hover {
         transform: translateY(-3px);
@@ -248,6 +342,16 @@
       }
       .card-type {
         font-weight: bold;
+      }
+
+      .ability-badge {
+        font-size: 0.6rem;
+        color: #ffd700;
+        margin-top: 2px;
+        border: 1px solid #ffd700;
+        border-radius: 3px;
+        padding: 0 2px;
+        transform: scale(0.9);
       }
 
       /* Matchup Badges (Win/Lose Indicator) */
@@ -512,6 +616,76 @@
           transform: translateY(0);
         }
       }
+
+      /* --- UI Improvement: Tooltip & Card Stats --- */
+
+      /* ツールチップの本体 */
+      /* --- styleタグ内の #card-tooltip を以下に差し替え --- */
+      #card-tooltip {
+        position: fixed;
+        background: rgba(20, 20, 20, 0.98); /* 不透明度を少し上げる */
+        border: 1px solid var(--accent-color);
+        color: #fff;
+        padding: 12px;
+        border-radius: 8px;
+        pointer-events: auto; /* none から auto に変更：タップ可能にする */
+        z-index: 2000;
+        max-width: 250px;
+        display: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 1);
+        font-size: 0.85rem;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        /* スマホ向け：タップで閉じるためのヒントを疑似要素で追加（任意） */
+        cursor: pointer;
+      }
+
+      #card-tooltip::after {
+        content: "タップで閉じる";
+        display: block;
+        font-size: 0.6rem;
+        color: #888;
+        text-align: right;
+        margin-top: 8px;
+      }
+      #card-tooltip strong {
+        color: var(--accent-color);
+        font-size: 0.95rem;
+        display: block;
+        margin-bottom: 5px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 3px;
+      }
+
+      #card-tooltip .tooltip-stat {
+        color: #ffcc80;
+        font-weight: bold;
+      }
+
+      #card-tooltip .tooltip-desc {
+        margin-top: 8px;
+        color: #e0e0e0;
+        font-size: 0.8rem;
+      }
+
+      /* カード表面のステータス表示改善 */
+      .card-stats {
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 1px 1px 0 #000;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        margin-top: 2px;
+      }
+      .stat-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 3px;
+      }
+
       @media (max-width: 900px) {
         .type-chart-container {
           position: static;
@@ -541,9 +715,35 @@
     </style>
   </head>
   <body>
-    <h1>DUSTFALL - Battle Prototype (Visual Assist)</h1>
+    <div id="card-tooltip"></div>
+
+    <div id="setup-screen">
+      <h1>DUSTFALL - Equipment Setup</h1>
+      <div class="setup-container">
+        <div class="equip-section">
+          <div class="equip-title">1. WEAPON (4 Cards)</div>
+          <div class="equip-options" id="opt-weapon"></div>
+          <div class="preview-area" id="prev-weapon"></div>
+        </div>
+
+        <div class="equip-section">
+          <div class="equip-title">2. ARMOR (3 Cards)</div>
+          <div class="equip-options" id="opt-armor"></div>
+          <div class="preview-area" id="prev-armor"></div>
+        </div>
+
+        <div class="equip-section">
+          <div class="equip-title">3. ACCESSORY (3 Cards)</div>
+          <div class="equip-options" id="opt-acc"></div>
+          <div class="preview-area" id="prev-acc"></div>
+        </div>
+
+        <button class="start-btn" onclick="startGame()">BATTLE START</button>
+      </div>
+    </div>
 
     <div class="game-container">
+      <h1>DUSTFALL - Battle Phase</h1>
       <div class="panel" id="e-panel">
         <div class="initiative-badge">先攻</div>
         <div class="status-row">
@@ -667,21 +867,20 @@
           text-align: center;
         "
       >
-        SPは全てに勝利
+        SPは全てに勝利<br />
+        <span style="color: #ffd700">Win + Slot1 = Ability!</span>
       </div>
     </div>
 
     <script>
       /**
-       * DUSTFALL Logic Implementation (Updated AI & Counter Cost)
+       * DUSTFALL - Equipment & Battle Logic
        */
 
       const MAX_HP = 50;
       const MAX_POSTURE = 20;
-      const MAX_EP = 9;
+      const MAX_EP = 8;
       const MAX_SP = 5;
-
-      // ★変更点: カウンターの消費EPを定義
       const COUNTER_EP_COST = 4;
 
       const TYPE = {
@@ -697,213 +896,91 @@
         [TYPE.GUARD]: TYPE.ATTACK,
       };
 
-      const BASE_DECK = [
-        { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2 },
-        { type: TYPE.ATTACK, cost: 3, dmg: 10, pos: 3 },
-        { type: TYPE.BREAK, cost: 2, dmg: 4, pos: 6 },
-        { type: TYPE.BREAK, cost: 3, dmg: 6, pos: 8 },
-        { type: TYPE.GUARD, cost: 1, arm: 4 },
-        { type: TYPE.GUARD, cost: 2, arm: 7 },
-        { type: TYPE.GUARD, cost: 3, arm: 10 },
-        { type: TYPE.ATTACK, cost: 1, dmg: 5, pos: 1 },
-        { type: TYPE.BREAK, cost: 1, dmg: 3, pos: 5 },
-      ];
-
-      const SP_CARD = { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true };
-
-      // --- AI Helper Functions ---
-      const WIN_TYPE = {
-        [TYPE.ATTACK]: TYPE.BREAK,
-        [TYPE.BREAK]: TYPE.GUARD,
-        [TYPE.GUARD]: TYPE.ATTACK,
-      };
-      const LOSE_TYPE = {
-        [TYPE.ATTACK]: TYPE.GUARD,
-        [TYPE.BREAK]: TYPE.ATTACK,
-        [TYPE.GUARD]: TYPE.BREAK,
-      };
-
-      // 相手の消費コストから、何を出してきそうか予測する
-      const predictPlayerMove = (cost) => {
-        if (cost === COUNTER_EP_COST) return "WAIT_OR_COUNTER"; // コスト4ならカウンターの可能性あり
-        if (cost <= 2) return "LIGHT";
-        if (cost <= 4) return "HEAVY";
-        return "SP_OR_COMBO";
-      };
-
-      // 手札から特定のタイプのカードを探す（コスト予算内、SP除外）
-      const findCard = (hand, type, budget) => {
-        return hand
-          .filter((c) => c.type === type && c.cost <= budget && !c.isSP)
-          .sort((a, b) => b.cost - a.cost)[0]; // コストが高い順
-      };
-
-      // 手札から最強のカードを探す
-      const findBestDmg = (hand, budget) => {
-        return hand
-          .filter(
-            (c) =>
-              (c.type === TYPE.ATTACK || c.type === TYPE.BREAK) &&
-              c.cost <= budget &&
-              !c.isSP
-          )
-          .sort((a, b) => b.dmg - a.dmg)[0];
-      };
-
-      // --- AI Strategy Definitions (Enhanced) ---
-      const AI_STRATEGIES = {
-        // ISTJ: 徹底したリスク管理と理論値の追求 (The Realist)
-        ISTJ: (entity, opponent, isSecond, pCost) => {
-          let eSlots = [null, null];
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-
-          // 1. 【最優先】 リーサル計算 (倒せるなら確実に倒す)
-          const bestAtk = findBestDmg(hand, budget);
-          if (bestAtk && bestAtk.dmg >= opponent.hp) {
-            return { slots: [bestAtk, null], action: "COMMIT" };
-          }
-
-          // 2. 【防衛本能】 自分がブレイクしそうで、相手が高コストなら防御
-          if (entity.pos <= 5 && pCost >= 3 && !entity.breakState) {
-            const bestGuard = findCard(hand, TYPE.GUARD, budget);
-            if (bestGuard) {
-              return { slots: [bestGuard, null], action: "COMMIT" };
-            }
-          }
-
-          // 3. 【戦況順守】 Contextボーナスがある場合、それを素直に狙う
-          if (battleContext && !isSecond) {
-            const bonusCard = findCard(hand, battleContext.type, budget);
-            if (bonusCard) {
-              eSlots[0] = bonusCard;
-              budget -= bonusCard.cost;
-              hand = hand.filter((c) => c !== bonusCard);
-            }
-          }
-
-          // 4. 【後攻時の対応】 相手の動きに合わせてカウンターか迎撃
-          if (isSecond && !eSlots[0]) {
-            // 相手が大技（SPや重コスト）の場合
-            if (pCost >= 5) {
-              // こちらもSPを持っていれば相殺狙い
-              const spCard = hand.find((c) => c.isSP);
-              if (spCard && budget >= 5)
-                return { slots: [spCard, null], action: "COMMIT" };
-
-              // SPがない、またはコスト不足ならカウンターを検討 (コスト4必要)
-              if (!entity.hasUsedCounter && budget >= COUNTER_EP_COST) {
-                return { slots: [null, null], action: "COUNTER" };
-              }
-            }
-
-            // 相手が中コスト(3-4) = Breakか強Attackの可能性 -> Attackで割り込む
-            if (pCost >= 3) {
-              const counterAtk = findCard(hand, TYPE.ATTACK, budget);
-              if (counterAtk) {
-                eSlots[0] = counterAtk;
-                budget -= counterAtk.cost;
-                hand = hand.filter((c) => c !== counterAtk);
-              }
-            }
-          }
-
-          // 5. 【穴埋め】
-          if (!eSlots[0]) {
-            const c =
-              findCard(hand, TYPE.ATTACK, budget) ||
-              findCard(hand, TYPE.BREAK, budget) ||
-              findCard(hand, TYPE.GUARD, budget);
-            if (c) {
-              eSlots[0] = c;
-              budget -= c.cost;
-              hand = hand.filter((x) => x !== c);
-            }
-          }
-
-          if (!eSlots[1] && budget > 0) {
-            const c =
-              findCard(hand, TYPE.GUARD, budget) ||
-              findCard(hand, TYPE.ATTACK, budget);
-            if (c) eSlots[1] = c;
-          }
-
-          return { slots: eSlots, action: "COMMIT" };
+      // --- Ability Definitions (Updated with Japanese Desc) ---
+      // Slot 1で勝利したときのみ発動する特殊効果
+      const ABILITIES = {
+        EP_CHARGE: {
+          id: "EP_CHARGE",
+          name: "EP Charge",
+          desc: "勝利時、自身のEPを3回復する。",
         },
-
-        // INFJ: 相手の心理を読み、裏の裏をかく (The Mastermind)
-        INFJ: (entity, opponent, isSecond, pCost) => {
-          let eSlots = [null, null];
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-
-          // 1. 【カウンター狙い】 後攻で、相手が重い手またはSPの可能性がある場合
-          if (isSecond && pCost >= 5 && !entity.hasUsedCounter) {
-            // コスト4以上あるなら高確率でカウンター
-            if (budget >= COUNTER_EP_COST && Math.random() < 0.8) {
-              return { slots: [null, null], action: "COUNTER" };
-            }
-          }
-
-          // 2. 【戦況の深読み】 裏の裏をかく
-          if (battleContext && !isSecond) {
-            const ctxType = battleContext.type;
-            const loseVsCtx = LOSE_TYPE[ctxType]; // Context対策をしてくる相手を狩る手
-
-            // 50%で素直に、50%で裏をかく
-            const targetType = Math.random() < 0.5 ? ctxType : loseVsCtx;
-            const trickCard = findCard(hand, targetType, budget);
-            if (trickCard) {
-              eSlots[0] = trickCard;
-              budget -= trickCard.cost;
-              hand = hand.filter((c) => c !== trickCard);
-            }
-          }
-
-          // 3. 【ブラフ/温存】 相手が様子見（コスト低い）なら何もしないか、SPを狙う
-          if (isSecond && pCost <= 2) {
-            if (entity.sp >= MAX_SP && budget >= 5) {
-              const spCard = hand.find((c) => c.isSP);
-              if (spCard) return { slots: [spCard, null], action: "COMMIT" };
-            }
-            // EP温存 (何もしない)
-            if (budget < 5 && Math.random() < 0.5) {
-              return { slots: [null, null], action: "COMMIT" };
-            }
-          }
-
-          // 4. 【コンボ構築】 Break -> Attack
-          if (!eSlots[0]) {
-            const breakCard = findCard(hand, TYPE.BREAK, budget);
-            if (breakCard && budget - breakCard.cost >= 2) {
-              const followUp = findCard(
-                hand.filter((c) => c !== breakCard),
-                TYPE.ATTACK,
-                budget - breakCard.cost
-              );
-              if (followUp) {
-                return { slots: [breakCard, followUp], action: "COMMIT" };
-              }
-            }
-          }
-
-          // 5. 【標準動作】
-          if (!eSlots[0]) {
-            const safeMove =
-              findCard(hand, TYPE.ATTACK, budget) ||
-              findCard(hand, TYPE.GUARD, budget);
-            if (safeMove) {
-              eSlots[0] = safeMove;
-              budget -= safeMove.cost;
-            }
-          }
-
-          return { slots: eSlots, action: "COMMIT" };
+        SMOKE: {
+          id: "SMOKE",
+          name: "Smokescreen",
+          desc: "勝利時、煙幕を張り、2ターンの間 敵の手札を強制的に隠す（シークレット化）。",
+        },
+        FEINT: {
+          id: "FEINT",
+          name: "Feint",
+          desc: "勝利時、次のターンのイニシアチブ（先攻・後攻）を強制的に操作し、有利な展開を作る。",
+        },
+        PREP_ATK: {
+          id: "PREP_ATK",
+          name: "Weapon Prep",
+          desc: "勝利時、山札から「Attack」カードを探し、次のドロー（山札の一番上）にセットする。",
         },
       };
-      const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
 
-      // --- Global State ---
+      // --- Equipment Data Definition ---
+      const EQUIPMENT = {
+        WEAPONS: {
+          // 【大剣】
+          剛の大剣: [
+            { type: TYPE.ATTACK, cost: 6, dmg: 22, pos: 5 },
+            { type: TYPE.ATTACK, cost: 4, dmg: 16, pos: 4 },
+            { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" }, // ガード勝利時、息を整える
+            { type: TYPE.SP, cost: 6, dmg: 40, pos: 20, isSP: true },
+          ],
+          // 【短剣】
+          双の短剣: [
+            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2, ability: "SMOKE" }, // 攻撃ヒットで煙幕
+            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 },
+            { type: TYPE.ATTACK, cost: 2, dmg: 10, pos: 4 },
+            { type: TYPE.SP, cost: 4, dmg: 15, pos: 0, isSP: true },
+          ],
+          // 【槍】
+          貫きの槍: [
+            { type: TYPE.ATTACK, cost: 3, dmg: 14, pos: 6 },
+            { type: TYPE.BREAK, cost: 2, dmg: 5, pos: 10, ability: "PREP_ATK" }, // 崩して追撃準備
+            { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 5 },
+            { type: TYPE.SP, cost: 5, dmg: 25, pos: 20, isSP: true },
+          ],
+        },
+        ARMORS: {
+          // 【重装】
+          フルプレート: [
+            { type: TYPE.GUARD, cost: 3, arm: 18 },
+            { type: TYPE.GUARD, cost: 2, arm: 12 },
+            { type: TYPE.BREAK, cost: 4, dmg: 5, pos: 15 },
+          ],
+          // 【軽装】
+          レザーベスト: [
+            { type: TYPE.GUARD, cost: 1, arm: 4 },
+            { type: TYPE.GUARD, cost: 1, arm: 4 },
+            { type: TYPE.GUARD, cost: 2, arm: 8, ability: "FEINT" }, // 軽く受け流して体勢有利(後攻)へ
+          ],
+        },
+        ACCESSORIES: {
+          // 【力の指輪】
+          パワーリング: [
+            { type: TYPE.BREAK, cost: 3, dmg: 8, pos: 8 },
+            { type: TYPE.BREAK, cost: 3, dmg: 8, pos: 8 },
+            { type: TYPE.ATTACK, cost: 5, dmg: 20, pos: 0 },
+          ],
+          // 【羽根の靴】
+          フェザーブーツ: [
+            { type: TYPE.BREAK, cost: 1, dmg: 2, pos: 6, ability: "FEINT" }, // ステップで翻弄
+            { type: TYPE.BREAK, cost: 2, dmg: 3, pos: 8 },
+            { type: TYPE.BREAK, cost: 1, dmg: 2, pos: 6 },
+          ],
+        },
+      };
+      // --- Setup State ---
+      let selectedWeapon = Object.keys(EQUIPMENT.WEAPONS)[0];
+      let selectedArmor = Object.keys(EQUIPMENT.ARMORS)[0];
+      let selectedAcc = Object.keys(EQUIPMENT.ACCESSORIES)[0];
+
+      // --- Battle State ---
       let turn = 1;
       let battleContext = null;
       let player, enemy;
@@ -911,22 +988,138 @@
       let isCounterMode = false;
       let hasUsedCounter = false;
       let isAnimating = false;
-
-      // Initiative State
       let isEnemyFirst = false;
       let pendingEnemySlots = [null, null];
+      let nextTurnInitiativeOverride = null; // null | 'player' | 'enemy'
 
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-      function getDeck(includeSP) {
-        const deck = JSON.parse(JSON.stringify(BASE_DECK));
-        if (includeSP) deck.push(JSON.parse(JSON.stringify(SP_CARD)));
-        shuffle(deck);
-        return deck;
+      // --- Setup Functions ---
+      function initSetup() {
+        renderEquipOptions("weapon", EQUIPMENT.WEAPONS, selectedWeapon);
+        renderEquipOptions("armor", EQUIPMENT.ARMORS, selectedArmor);
+        renderEquipOptions("acc", EQUIPMENT.ACCESSORIES, selectedAcc);
+        updatePreviews();
       }
 
-      function createEntity(name) {
-        const deck = getDeck(false);
+      function renderEquipOptions(category, data, currentSelection) {
+        const container = document.getElementById(`opt-${category}`);
+        container.innerHTML = "";
+        Object.keys(data).forEach((key) => {
+          const btn = document.createElement("div");
+          btn.className = `equip-btn ${
+            key === currentSelection ? "active" : ""
+          }`;
+          btn.innerText = key;
+          btn.onclick = () => {
+            if (category === "weapon") selectedWeapon = key;
+            if (category === "armor") selectedArmor = key;
+            if (category === "acc") selectedAcc = key;
+            initSetup(); // Re-render to update active classes and previews
+          };
+          container.appendChild(btn);
+        });
+      }
+
+      function updatePreviews() {
+        renderCardsToPreview("prev-weapon", EQUIPMENT.WEAPONS[selectedWeapon]);
+        renderCardsToPreview("prev-armor", EQUIPMENT.ARMORS[selectedArmor]);
+        renderCardsToPreview("prev-acc", EQUIPMENT.ACCESSORIES[selectedAcc]);
+      }
+
+      function renderCardsToPreview(elementId, cards) {
+        const el = document.getElementById(elementId);
+        el.innerHTML = "";
+        cards.forEach((c) => {
+          const div = createCardDiv(c, false, -99);
+          // Previewではクリック無効
+          div.onclick = null;
+          el.appendChild(div);
+        });
+      }
+
+      function startGame() {
+        document.getElementById("setup-screen").style.display = "none";
+        document.querySelector(".game-container").style.display = "flex";
+        initBattle();
+      }
+
+      // --- Tooltip Logic ---
+      function showTooltip(e, card) {
+        if (!card) return;
+
+        // スマホで「背景タップで閉じる」判定と競合しないように伝播を止める
+        if (e) e.stopPropagation();
+
+        const tt = document.getElementById("card-tooltip");
+
+        let statsText = "";
+        if (card.dmg)
+          statsText += `<span class="tooltip-stat">HP-${card.dmg} (Dmg)</span>\n`;
+        if (card.pos)
+          statsText += `<span class="tooltip-stat">Posture-${card.pos}</span>\n`;
+        if (card.arm)
+          statsText += `<span class="tooltip-stat">Armor ${card.arm}</span>\n`;
+        if (card.isSP)
+          statsText += `<span style="color:#ba68c8">SP必殺技 (Cost 5)</span>\n`;
+
+        let abilityText = "";
+        if (card.ability && ABILITIES[card.ability]) {
+          abilityText = `<div class="tooltip-desc">【${
+            ABILITIES[card.ability].name
+          }】<br>${ABILITIES[card.ability].desc}</div>`;
+        }
+
+        tt.innerHTML = `
+       <strong>${card.type} (Cost: ${card.cost})</strong>
+       <div>${statsText}</div>
+       ${(abilityHtml = abilityText)}
+       `;
+
+        tt.style.display = "block";
+        moveTooltip(e);
+      }
+
+      function moveTooltip(e) {
+        const tt = document.getElementById("card-tooltip");
+        // マウスの少し右下に表示
+        const x = e.clientX + 15;
+        const y = e.clientY + 15;
+
+        // 画面外にはみ出さない簡易補正
+        tt.style.left = Math.min(x, window.innerWidth - 260) + "px";
+        tt.style.top = Math.min(y, window.innerHeight - 150) + "px";
+      }
+
+      function hideTooltip() {
+        const tt = document.getElementById("card-tooltip");
+        tt.style.display = "none";
+      }
+
+      // --- Battle Init Logic ---
+
+      function buildDeck(wKey, aKey, accKey) {
+        // Deep copy all cards
+        const wCards = JSON.parse(JSON.stringify(EQUIPMENT.WEAPONS[wKey]));
+        const aCards = JSON.parse(JSON.stringify(EQUIPMENT.ARMORS[aKey]));
+        const accCards = JSON.parse(
+          JSON.stringify(EQUIPMENT.ACCESSORIES[accKey])
+        );
+
+        let deck = [...wCards, ...aCards, ...accCards];
+
+        const spIndex = deck.findIndex((c) => c.isSP);
+        let reservedSP = null;
+        if (spIndex !== -1) {
+          reservedSP = deck.splice(spIndex, 1)[0];
+        }
+
+        shuffle(deck);
+        return { deck, reservedSP };
+      }
+
+      function createEntity(name, wKey, aKey, accKey) {
+        const { deck, reservedSP } = buildDeck(wKey, aKey, accKey);
         const secret = deck.pop();
 
         const entity = {
@@ -940,18 +1133,23 @@
           deck,
           hand: [],
           secret,
+          reservedSP,
           burnout: false,
           breakState: false,
           justBroken: false,
+          // Status Effects
+          stealthTurns: 0, // 手札が隠されるターン数
         };
 
         if (name === "Enemy") {
+          const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
           const randomStrategyName =
             AI_STRATEGY_NAMES[
               Math.floor(Math.random() * AI_STRATEGY_NAMES.length)
             ];
           entity.strategy = randomStrategyName;
-          log(`[System] Enemy Strategy: ${randomStrategyName} assigned.`);
+          log(`[System] Enemy Strategy: ${randomStrategyName}`);
+          log(`[System] Enemy Equip: ${wKey} / ${aKey} / ${accKey}`);
         }
 
         return entity;
@@ -964,22 +1162,207 @@
         }
       }
 
-      function init() {
-        player = createEntity("Player");
-        enemy = createEntity("Enemy");
+      function initBattle() {
+        // Player Setup
+        player = createEntity(
+          "Player",
+          selectedWeapon,
+          selectedArmor,
+          selectedAcc
+        );
+
+        // Enemy Setup (Random)
+        const wKeys = Object.keys(EQUIPMENT.WEAPONS);
+        const aKeys = Object.keys(EQUIPMENT.ARMORS);
+        const accKeys = Object.keys(EQUIPMENT.ACCESSORIES);
+
+        const ew = wKeys[Math.floor(Math.random() * wKeys.length)];
+        const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
+        const eacc = accKeys[Math.floor(Math.random() * accKeys.length)];
+
+        enemy = createEntity("Enemy", ew, ea, eacc);
+
         isEnemyFirst = Math.random() < 0.5;
         startTurn();
       }
+
+      // --- AI & Logic ---
+
+      const LOSE_TYPE = {
+        [TYPE.ATTACK]: TYPE.GUARD,
+        [TYPE.BREAK]: TYPE.ATTACK,
+        [TYPE.GUARD]: TYPE.BREAK,
+      };
+
+      const findCard = (hand, type, budget) => {
+        return hand
+          .filter((c) => c.type === type && c.cost <= budget && !c.isSP)
+          .sort((a, b) => b.cost - a.cost)[0];
+      };
+
+      const findBestDmg = (hand, budget) => {
+        return hand
+          .filter(
+            (c) =>
+              (c.type === TYPE.ATTACK || c.type === TYPE.BREAK) &&
+              c.cost <= budget &&
+              !c.isSP
+          )
+          .sort((a, b) => (b.dmg || 0) - (a.dmg || 0))[0];
+      };
+
+      const AI_STRATEGIES = {
+        // --- ISTJ: 効率重視・堅実な理論派 ---
+        // ルールを最大限に利用し、確実にアドバンテージを取るロジック
+        ISTJ: (entity, opponent, isSecond, pCost) => {
+          let eSlots = [null, null];
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+
+          // 1. リーサル確認 (Slot 1で倒しきれるなら出す)
+          const killShot = hand.find(
+            (c) => (c.dmg || 0) >= opponent.hp && c.cost <= budget
+          );
+          if (killShot) return { slots: [killShot, null], action: "COMMIT" };
+
+          // 2. Slot 1 の決定 (アビリティとContextを優先)
+          let s1Candidates = hand.filter((c) => c.cost <= budget);
+
+          // スコアリング: Context一致 > アビリティ有効 > コスト効率
+          s1Candidates.sort((a, b) => {
+            let scoreA = 0,
+              scoreB = 0;
+            if (battleContext && a.type === battleContext.type) scoreA += 5;
+            if (battleContext && b.type === battleContext.type) scoreB += 5;
+            if (a.ability === "EP_CHARGE" && entity.ep < 4) scoreA += 4;
+            if (b.ability === "EP_CHARGE" && entity.ep < 4) scoreB += 4;
+            if (a.isSP && entity.sp >= MAX_SP) scoreA += 10;
+            if (b.isSP && entity.sp >= MAX_SP) scoreB += 10;
+            return scoreB - scoreA;
+          });
+
+          if (s1Candidates.length > 0) {
+            eSlots[0] = s1Candidates[0];
+            budget -= eSlots[0].cost;
+            hand = hand.filter((c) => c !== eSlots[0]);
+          }
+
+          // 3. Slot 2 の決定 (モメンタムの活用)
+          // Slot 1が強そうなら高火力、そうでなければ守備的または低コスト
+          if (eSlots[0] && budget > 0) {
+            let s2Candidates = hand.filter((c) => c.cost <= budget);
+            if (eSlots[0].dmg > 15 || eSlots[0].isSP) {
+              // Slot 1で勝つ可能性が高い -> 高火力をSlot 2に (1.7倍狙い)
+              s2Candidates.sort((a, b) => (b.dmg || 0) - (a.dmg || 0));
+            } else {
+              // 堅実なカードを選択
+              s2Candidates.sort((a, b) => (b.arm || 0) - (a.arm || 0));
+            }
+            if (s2Candidates.length > 0) eSlots[1] = s2Candidates[0];
+          }
+
+          return { slots: eSlots, action: "COMMIT" };
+        },
+
+        // --- INFJ: 心理戦・搦め手重視の直感派 ---
+        // アビリティによる妨害と、カウンターを効果的に使うロジック
+        INFJ: (entity, opponent, isSecond, pCost) => {
+          let eSlots = [null, null];
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+
+          // 1. 特殊妨害: 相手がBurnoutなら最大火力を叩き込む
+          if (opponent.burnout) {
+            const bigDmgCards = hand
+              .filter((c) => c.cost <= budget)
+              .sort((a, b) => b.dmg - a.dmg);
+            return {
+              slots: [bigDmgCards[0] || null, bigDmgCards[1] || null],
+              action: "COMMIT",
+            };
+          }
+
+          // 2. カウンター判断 (後攻かつ相手が高コストを払っている場合)
+          if (
+            isSecond &&
+            pCost >= 5 &&
+            !entity.hasUsedCounter &&
+            budget >= COUNTER_EP_COST
+          ) {
+            // 相手がSPを使ってそう、あるいは大技ならカウンター
+            return { slots: [null, null], action: "COUNTER" };
+          }
+
+          // 3. アビリティ優先配置
+          // 「FEINT」で次ターンの先攻後攻を操作したり、「SMOKE」で隠したりを狙う
+          const abilityCard = hand.find(
+            (c) =>
+              (c.ability === "FEINT" || c.ability === "SMOKE") &&
+              c.cost <= budget
+          );
+          if (abilityCard) {
+            eSlots[0] = abilityCard;
+            budget -= abilityCard.cost;
+            hand = hand.filter((c) => c !== abilityCard);
+          }
+
+          // 4. BREAK 連携
+          // 相手の姿勢(Posture)が低いなら、BreakカードをSlot 1に置いてBurnoutを狙う
+          if (!eSlots[0] && opponent.pos < 10) {
+            const breaker = hand.find(
+              (c) => c.type === TYPE.BREAK && c.cost <= budget
+            );
+            if (breaker) {
+              eSlots[0] = breaker;
+              budget -= breaker.cost;
+              hand = hand.filter((c) => c !== breaker);
+            }
+          }
+
+          // 残りのスロット埋め
+          if (!eSlots[0] && hand.length > 0) {
+            const best = hand
+              .filter((c) => c.cost <= budget)
+              .sort((a, b) => b.cost - a.cost)[0];
+            if (best) {
+              eSlots[0] = best;
+              budget -= best.cost;
+              hand = hand.filter((c) => c !== best);
+            }
+          }
+          if (!eSlots[1] && hand.length > 0) {
+            eSlots[1] = hand.find((c) => c.cost <= budget) || null;
+          }
+
+          return { slots: eSlots, action: "COMMIT" };
+        },
+      };
+
+      // --- Main Logic ---
 
       function startTurn() {
         pSlots = [null, null];
         isCounterMode = false;
         isAnimating = false;
-        isEnemyFirst = !isEnemyFirst;
+
+        // Handle Initiative Override (Ability Effect)
+        if (nextTurnInitiativeOverride === "enemy") {
+          isEnemyFirst = true;
+          log("[Effect] Feint activates: Enemy takes Initiative!");
+        } else if (nextTurnInitiativeOverride === "player") {
+          isEnemyFirst = false;
+          log("[Effect] Feint activates: Player takes Initiative!");
+        } else {
+          isEnemyFirst = !isEnemyFirst;
+        }
+        nextTurnInitiativeOverride = null;
+
         battleContext = null;
 
-        // 1. リソース回復と手札補充
+        // Resource & Hand Management
         [player, enemy].forEach((e) => {
+          if (e.stealthTurns > 0) e.stealthTurns--;
+
           if (e.breakState) {
             e.burnout = true;
           }
@@ -991,24 +1374,59 @@
 
           while (e.hand.length < 3) {
             if (e.deck.length === 0) {
-              e.deck = getDeck(false);
-              log(`[System] ${e.name}'s Deck Recycled`);
+              if (!e.initialDeckList) {
+                // Initial capture for recycling
+                e.initialDeckList = JSON.parse(JSON.stringify(e.deck));
+              } else {
+                // Recycle Logic
+                e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
+                shuffle(e.deck);
+                log(`[System] ${e.name}'s Deck Recycled`);
+              }
             }
-            e.hand.push(e.deck.pop());
+            // Fallback if deck was initially empty (shouldn't happen with logic above but safe guard)
+            if (e.deck.length === 0 && e.initialDeckList) {
+              e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
+              shuffle(e.deck);
+            }
+
+            if (e.deck.length > 0) {
+              e.hand.push(e.deck.pop());
+            }
             if (e.hand.length >= 3) break;
           }
         });
 
+        // Initialize recycle lists if not present
+        if (!player.initialDeckList && player.deck.length > 0) {
+          player.initialDeckList = buildDeck(
+            selectedWeapon,
+            selectedArmor,
+            selectedAcc
+          ).deck.filter((c) => !c.isSP);
+          enemy.initialDeckList = enemy.deck.filter((c) => !c.isSP); // Approximate
+        }
+
+        if (!player.initialDeckList)
+          player.initialDeckList = buildDeck(
+            selectedWeapon,
+            selectedArmor,
+            selectedAcc
+          ).deck.filter((c) => !c.isSP);
+
+        // TURN 4 SP Injection
         if (turn === 4) {
           [player, enemy].forEach((e) => {
-            const spCard = JSON.parse(JSON.stringify(SP_CARD));
-            if (e.hp <= e.maxHp * 0.3) {
-              e.deck.push(spCard);
-              log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
-            } else {
-              const idx = Math.floor(Math.random() * (e.deck.length + 1));
-              e.deck.splice(idx, 0, spCard);
-              log(`[System] ${e.name}: SP Card added to deck.`);
+            if (e.reservedSP) {
+              if (e.hp <= e.maxHp * 0.3) {
+                e.deck.push(e.reservedSP);
+                log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
+              } else {
+                const idx = Math.floor(Math.random() * (e.deck.length + 1));
+                e.deck.splice(idx, 0, e.reservedSP);
+                log(`[System] ${e.name}: SP Card added to deck.`);
+              }
+              e.reservedSP = null;
             }
           });
         }
@@ -1032,7 +1450,7 @@
           log(`[戦況] 好機到来！先攻(${initiativeEntity.name})の手札充実。`);
         }
 
-        // AI処理
+        // AI Logic
         if (enemy.burnout) {
           pendingEnemySlots = [null, null];
           enemy.isCounterMode = false;
@@ -1094,6 +1512,7 @@
 
       function selectCard(card, isSecret, handIndex) {
         if (isAnimating) return;
+        hideTooltip();
         if (player.burnout) {
           alert("BURNOUT（行動不能）のため、カードを選択できません。");
           return;
@@ -1149,7 +1568,20 @@
         }
         render();
       }
+      // 【新規追加】画面のどこをタップしてもツールチップを閉じる仕組み
+      document.addEventListener("click", (e) => {
+        const tt = document.getElementById("card-tooltip");
+        // ツールチップが表示されている時、ツールチップ以外の場所をタップしたら閉じる
+        if (tt.style.display === "block") {
+          hideTooltip();
+        }
+      });
 
+      // 【新規追加】ツールチップ自体をタップしても閉じるように設定
+      document.getElementById("card-tooltip").onclick = (e) => {
+        e.stopPropagation(); // 背景のクリックイベントと重複しないように
+        hideTooltip();
+      };
       function clearSlot(num) {
         if (isAnimating) return;
         pSlots[num - 1] = null;
@@ -1169,7 +1601,6 @@
           return;
         }
 
-        // ★追加: カウンターに必要なEPのチェック
         if (!isCounterMode && player.ep < COUNTER_EP_COST) {
           alert(
             `カウンター攻撃にはEPが ${COUNTER_EP_COST} 必要です。（現在: ${player.ep}）`
@@ -1185,7 +1616,6 @@
       async function commitTurn() {
         if (isAnimating) return;
 
-        // ★変更: プレイヤーのカウンター時のコストを計算
         let pCost = 0;
         if (isCounterMode) {
           pCost = COUNTER_EP_COST;
@@ -1200,7 +1630,6 @@
 
         isAnimating = true;
 
-        // 後攻AIの判断（コストを見て再決定）
         if (!isEnemyFirst && !enemy.burnout) {
           const aiRes = AI_STRATEGIES[enemy.strategy](
             enemy,
@@ -1224,7 +1653,6 @@
         render();
 
         const eSlots = pendingEnemySlots;
-        // ★変更: 敵AIのカウンター時のコストを計算
         const eCost = enemy.isCounterMode
           ? COUNTER_EP_COST
           : (eSlots[0]?.cost || 0) + (eSlots[1]?.cost || 0);
@@ -1350,6 +1778,7 @@
         pSlotEl.classList.add("active-battle-slot");
         eSlotEl.classList.add("active-battle-slot");
 
+        // 表示更新
         if (eCard) {
           eSlotEl.className = `slot type-${eCard.type} active-battle-slot`;
           eSlotEl.innerHTML = renderCardContent(eCard);
@@ -1368,6 +1797,7 @@
 
         await sleep(1500);
 
+        // 勝敗判定
         let result = "DRAW";
         if (!pCard && !eCard) result = "DRAW";
         else if (!pCard) {
@@ -1378,6 +1808,7 @@
           result = getMatchupResult(pCard, eCard);
         }
 
+        // 戦況(Context)ボーナス判定（勝利側のみ適用）
         let contextBonus = 1.0;
         if (slotNum === 1 && battleContext && result !== "DRAW") {
           const isPlayerWin = result === "WIN";
@@ -1394,24 +1825,54 @@
           }
         }
 
-        if (result === "DRAW") {
-          if (prevResult === "WIN") {
-            log(">> Momentum! Previous Winner pushes through Draw!");
-            applyDmg(enemy, pCard, 1.5);
-            result = "WIN";
-          } else if (prevResult === "LOSE") {
-            log(">> Momentum! Previous Winner pushes through Draw!");
-            applyDmg(player, eCard, 1.5);
-            result = "LOSE";
-          } else {
-            player.hp -= 2;
-            enemy.hp -= 2;
-            log("Draw! Both take 2 dmg.");
-          }
+        // ★ Guard vs Attack の特別処理判定 ★
+        const isPlayerGuardVsAtk =
+          result === "WIN" &&
+          pCard?.type === TYPE.GUARD &&
+          eCard?.type === TYPE.ATTACK;
+        const isEnemyGuardVsAtk =
+          result === "LOSE" &&
+          eCard?.type === TYPE.GUARD &&
+          pCard?.type === TYPE.ATTACK;
+
+        if (isPlayerGuardVsAtk) {
+          log(`Guard Logic: Enemy Attack x0.5 vs Player Armor`);
+          await resolveGuardDeflect(player, pCard, eCard, eMul);
+        } else if (isEnemyGuardVsAtk) {
+          log(`Guard Logic: Player Attack x0.5 vs Enemy Armor`);
+          await resolveGuardDeflect(enemy, eCard, pCard, pMul);
         } else {
-          if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
-          else if (result === "LOSE")
-            applyDmg(player, eCard, eMul * contextBonus);
+          // --- 通常ダメージ ---
+          if (result === "DRAW") {
+            if (prevResult === "WIN") {
+              log(">> Momentum! Previous Winner pushes through Draw!");
+              applyDmg(enemy, pCard, 1.5);
+              result = "WIN";
+            } else if (prevResult === "LOSE") {
+              log(">> Momentum! Previous Winner pushes through Draw!");
+              applyDmg(player, eCard, 1.5);
+              result = "LOSE";
+            } else {
+              player.hp -= 2;
+              enemy.hp -= 2;
+              log("Draw! Both take 2 dmg.");
+            }
+          } else {
+            if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
+            else if (result === "LOSE")
+              applyDmg(player, eCard, eMul * contextBonus);
+          }
+        }
+
+        // ★ Ability Trigger Logic (After Damage) ★
+        if (slotNum === 1) {
+          if (result === "WIN" && pCard?.ability) {
+            log(`★ Player Ability: ${ABILITIES[pCard.ability].name}`);
+            await resolveAbility(player, enemy, pCard.ability);
+          } else if (result === "LOSE" && eCard?.ability) {
+            log(`★ Enemy Ability: ${ABILITIES[eCard.ability].name}`);
+            await resolveAbility(enemy, player, eCard.ability);
+          }
         }
 
         render();
@@ -1431,6 +1892,66 @@
         clearOverlays(eSlotEl);
 
         return result;
+      }
+
+      async function resolveAbility(user, opponent, abilityId) {
+        switch (abilityId) {
+          case "EP_CHARGE":
+            user.ep = Math.min(MAX_EP, user.ep + 3);
+            log(`>> ${user.name} recovered 3 EP!`);
+            break;
+          case "SMOKE":
+            opponent.stealthTurns = 2; // 2 turns of blinded hand
+            log(
+              `>> ${user.name} deploys Smokescreen! ${opponent.name}'s vision obscured (2T).`
+            );
+            break;
+          case "FEINT":
+            // User wants to go second next turn.
+            // If User is Player, next turn is Enemy First.
+            // If User is Enemy, next turn is Player First.
+            nextTurnInitiativeOverride =
+              user.name === "Player" ? "enemy" : "player";
+            log(`>> ${user.name} prepares a Feint! (Goes Second next turn)`);
+            break;
+          case "PREP_ATK":
+            // Move an Attack card from deck to top
+            const atkIdx = user.deck.findIndex(
+              (c) => c.type === TYPE.ATTACK && !c.isSP
+            );
+            if (atkIdx !== -1) {
+              const c = user.deck.splice(atkIdx, 1)[0];
+              user.deck.push(c); // Push to top (pop gets it)
+              log(`>> ${user.name} prepares an Attack card on top of Deck!`);
+            } else {
+              log(
+                `>> ${user.name} attempted Prep, but no Attack cards in deck.`
+              );
+            }
+            break;
+        }
+        await sleep(500);
+      }
+
+      async function resolveGuardDeflect(
+        defender,
+        guardCard,
+        attackCard,
+        attackerMul
+      ) {
+        const rawAtk = (attackCard.dmg || 0) * attackerMul;
+        const reducedAtk = Math.floor(rawAtk * 0.5);
+        const armor = guardCard.arm || 0;
+        const finalDmg = Math.max(0, reducedAtk - armor);
+
+        if (finalDmg > 0) {
+          defender.hp -= finalDmg;
+          log(
+            `GUARD! Piercing Dmg: ${finalDmg} (Atk:${reducedAtk} - Arm:${armor})`
+          );
+        } else {
+          log(`BLOCKED! Damage 0 (Atk:${reducedAtk} vs Arm:${armor})`);
+        }
       }
 
       function showResultOverlay(el, text) {
@@ -1509,8 +2030,6 @@
             : "none";
         });
 
-        // --- Ghost Bar Logic (Updated for Counter Cost) ---
-        // ★変更: カウンター選択時もコストを反映
         const pendingCost = isCounterMode
           ? COUNTER_EP_COST
           : (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
@@ -1545,7 +2064,6 @@
         document.getElementById("p-sp-fill").style.width = `${
           (predictedSP / MAX_SP) * 100
         }%`;
-        // ----------------------------------------
 
         const ePanel = document.getElementById("e-panel");
         const pPanel = document.getElementById("p-panel");
@@ -1555,7 +2073,6 @@
 
           const intelBox = document.getElementById("e-intel-box");
           intelBox.style.display = "flex";
-          // ★変更: 敵のカウンターコストも表示に反映
           const cost = enemy.isCounterMode
             ? COUNTER_EP_COST
             : (pendingEnemySlots[0]?.cost || 0) +
@@ -1576,11 +2093,39 @@
         eZone.appendChild(secretDiv);
 
         enemy.hand.forEach((c) => {
-          const cardDiv = document.createElement("div");
-          cardDiv.className = `card type-${c.type}`;
-          cardDiv.innerHTML = `<div class="card-type">${c.type}</div><div class="card-cost">${c.cost}</div>`;
+          const isBlinded = player.stealthTurns > 0;
 
-          if (!isAnimating) {
+          const cardDiv = document.createElement("div");
+          if (isBlinded) {
+            cardDiv.className = "card type-Secret";
+            cardDiv.innerHTML = `<div class="card-type">SECRET</div><div class="card-cost">?</div>`;
+          } else {
+            // --- createCardDivと同様のアイコン表示を敵カードにも適用 ---
+            cardDiv.className = `card type-${c.type}`;
+
+            let statsHtml = "";
+            if (c.dmg)
+              statsHtml += `<div class="stat-row"><span>⚔️</span><span>${c.dmg}</span></div>`;
+            if (c.pos)
+              statsHtml += `<div class="stat-row"><span style="font-size:0.7em">POS</span><span>${c.pos}</span></div>`;
+            if (c.arm)
+              statsHtml += `<div class="stat-row"><span>🛡️</span><span>${c.arm}</span></div>`;
+
+            let abilityHtml = "";
+            if (c.ability && ABILITIES[c.ability]) {
+              abilityHtml = `<div class="ability-badge">${
+                ABILITIES[c.ability].name
+              }</div>`;
+            }
+
+            cardDiv.innerHTML = `
+                <div class="card-type">${c.type}</div>
+                <div class="card-cost">${c.cost}</div>
+                <div class="card-stats">${statsHtml}</div>
+                ${abilityHtml}`;
+          }
+
+          if (!isAnimating && !isBlinded) {
             if (pSlots[0]) {
               const res1 = getMatchupResult(pSlots[0], c);
               const badge1 = document.createElement("span");
@@ -1596,6 +2141,14 @@
               cardDiv.appendChild(badge2);
             }
           }
+
+          // --- Tooltip Binding for Enemy Cards ---
+          if (!isBlinded) {
+            cardDiv.onmouseenter = (e) => showTooltip(e, c);
+            cardDiv.onmousemove = (e) => moveTooltip(e);
+            cardDiv.onmouseleave = () => hideTooltip();
+          }
+
           eZone.appendChild(cardDiv);
         });
 
@@ -1664,26 +2217,56 @@
         div.className = `card type-${card.type}`;
 
         let disabled = false;
-        if (player.burnout && card.type === TYPE.GUARD) disabled = true;
-        if (card.isSP && (player.sp < MAX_SP || player.ep < 5)) disabled = true;
+
+        // 【修正箇所】playerオブジェクトが存在する場合のみ、ステータスによる無効化判定を行う
+        if (typeof player !== "undefined" && player) {
+          if (player.burnout && card.type === TYPE.GUARD) disabled = true;
+          if (card.isSP && (player.sp < MAX_SP || player.ep < 5))
+            disabled = true;
+
+          const isSel =
+            pSlots[0]?._src === (isSecret ? "secret" : idx) ||
+            pSlots[1]?._src === (isSecret ? "secret" : idx);
+          if (isSel) {
+            div.classList.add("selected");
+            div.classList.remove("disabled");
+          }
+        }
 
         if (disabled) div.classList.add("disabled");
 
-        const isSel =
-          pSlots[0]?._src === (isSecret ? "secret" : idx) ||
-          pSlots[1]?._src === (isSecret ? "secret" : idx);
-        if (isSel) {
-          div.classList.add("selected");
-          div.classList.remove("disabled");
+        // --- Stats Display Update (Icons) ---
+        let statsHtml = "";
+        if (card.dmg)
+          statsHtml += `<div class="stat-row"><span>⚔️</span><span>${card.dmg}</span></div>`;
+        if (card.pos)
+          statsHtml += `<div class="stat-row"><span style="font-size:0.7em">POS</span><span>${card.pos}</span></div>`;
+        if (card.arm)
+          statsHtml += `<div class="stat-row"><span>🛡️</span><span>${card.arm}</span></div>`;
+
+        let abilityHtml = "";
+        if (!isSecret && card.ability && ABILITIES[card.ability]) {
+          abilityHtml = `<div class="ability-badge">${
+            ABILITIES[card.ability].name
+          }</div>`;
         }
 
         div.innerHTML = `<div class="card-type">${
           isSecret ? "SECRET" : card.type
         }</div>
-                   <div class="card-cost">${card.cost}</div>
-                   <div style="font-size:0.7rem">${card.type}</div>`;
+             <div class="card-cost">${card.cost}</div>
+             <div class="card-stats">${isSecret ? "?" : statsHtml}</div>
+             ${abilityHtml}`;
 
         div.onclick = () => selectCard(card, isSecret, idx);
+
+        // --- Tooltip Event Binding ---
+        if (!isSecret) {
+          div.onmouseenter = (e) => showTooltip(e, card);
+          div.onmousemove = (e) => moveTooltip(e);
+          div.onmouseleave = () => hideTooltip();
+        }
+
         return div;
       }
 
@@ -1707,7 +2290,13 @@
 
       function renderCardContent(c) {
         if (!c) return "Empty";
-        return `<div style="font-weight:bold">${c.type}</div><div style="font-size:1.2rem">${c.cost}</div>`;
+        let abHtml = "";
+        if (c.ability && ABILITIES[c.ability]) {
+          abHtml = `<div style="font-size:0.6rem; color:#ffd700; margin-top:-2px">${
+            ABILITIES[c.ability].name
+          }</div>`;
+        }
+        return `<div style="font-weight:bold">${c.type}</div><div style="font-size:1.2rem">${c.cost}</div>${abHtml}`;
       }
 
       function log(msg) {
@@ -1716,7 +2305,7 @@
         l.scrollTop = l.scrollHeight;
       }
 
-      window.onload = init;
+      window.onload = initSetup;
     </script>
   </body>
 </html>

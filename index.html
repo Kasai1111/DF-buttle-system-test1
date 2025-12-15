@@ -877,6 +877,7 @@
        * DUSTFALL - Equipment & Battle Logic
        */
 
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       const MAX_HP = 50;
       const MAX_POSTURE = 20;
       const MAX_EP = 8;
@@ -1094,6 +1095,9 @@
       function hideTooltip() {
         const tt = document.getElementById("card-tooltip");
         tt.style.display = "none";
+        document.querySelectorAll(".tooltip-active").forEach((el) => {
+          el.classList.remove("tooltip-active");
+        });
       }
 
       // --- Battle Init Logic ---
@@ -2258,13 +2262,56 @@
              <div class="card-stats">${isSecret ? "?" : statsHtml}</div>
              ${abilityHtml}`;
 
-        div.onclick = () => selectCard(card, isSecret, idx);
+        // --- イベントバインディング (PC/スマホ対応) ---
 
-        // --- Tooltip Event Binding ---
-        if (!isSecret) {
-          div.onmouseenter = (e) => showTooltip(e, card);
-          div.onmousemove = (e) => moveTooltip(e);
-          div.onmouseleave = () => hideTooltip();
+        if (!isMobile) {
+          // --- PC (マウスオーバーで詳細、クリックで選択) ---
+
+          // Tooltip Event Binding (詳細表示)
+          if (!isSecret) {
+            div.onmouseenter = (e) => showTooltip(e, card);
+            div.onmousemove = (e) => moveTooltip(e);
+            div.onmouseleave = () => hideTooltip();
+          }
+
+          // Card Selection Event (スロット登録)
+          div.onclick = (e) => {
+            e.stopPropagation();
+            selectCard(card, isSecret, idx); // 既存の選択関数を呼び出し
+            hideTooltip();
+
+            // PCでのマウスイベントを解除する必要はないかもしれませんが、念のため元のコードの挙動（onCardSelect後のイベント解除）に倣うなら追加しても良い
+            // 例: div.onmouseenter = null;
+            //     div.onmouseleave = null;
+          };
+        } else {
+          // --- スマホ (1タップで詳細表示、2タップで選択) ---
+
+          if (!isSecret) {
+            div.onclick = (e) => {
+              e.stopPropagation();
+
+              // カードに 'tooltip-active' クラスが設定されているか確認 (2回目タップの判定用)
+              if (div.classList.contains("tooltip-active")) {
+                // 2回目: カード選択とツールチップ非表示
+                selectCard(card, isSecret, idx); // 既存の選択関数を呼び出し
+                hideTooltip();
+                div.classList.remove("tooltip-active");
+              } else {
+                // 1回目 (または別カード): 詳細表示
+                // 他のカードのツールチップを非表示にするために、一旦 hideTooltip() を呼ぶ
+                hideTooltip();
+                // ツールチップを表示
+                showTooltip(e, card);
+                // 現在のカードにアクティブクラスを設定
+                div.classList.add("tooltip-active");
+              }
+            };
+          } else {
+            // isSecret のカードは、選択不可かつ詳細非表示なので、タップイベントは設定しない
+            // もしシークレットカードも選択可能にするなら、上記の 2回タップロジックを here にコピーします
+            div.onclick = (e) => selectCard(card, isSecret, idx); // 元の selectCard を残す
+          }
         }
 
         return div;
