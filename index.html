@@ -620,23 +620,34 @@
       /* --- UI Improvement: Tooltip & Card Stats --- */
 
       /* ツールチップの本体 */
+      /* --- styleタグ内の #card-tooltip を以下に差し替え --- */
       #card-tooltip {
         position: fixed;
-        background: rgba(20, 20, 20, 0.95);
+        background: rgba(20, 20, 20, 0.98); /* 不透明度を少し上げる */
         border: 1px solid var(--accent-color);
         color: #fff;
         padding: 12px;
         border-radius: 8px;
-        pointer-events: none; /* マウスイベントを透過 */
+        pointer-events: auto; /* none から auto に変更：タップ可能にする */
         z-index: 2000;
         max-width: 250px;
-        display: none; /* デフォルト非表示 */
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+        display: none;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 1);
         font-size: 0.85rem;
         line-height: 1.4;
         white-space: pre-wrap;
+        /* スマホ向け：タップで閉じるためのヒントを疑似要素で追加（任意） */
+        cursor: pointer;
       }
 
+      #card-tooltip::after {
+        content: "タップで閉じる";
+        display: block;
+        font-size: 0.6rem;
+        color: #888;
+        text-align: right;
+        margin-top: 8px;
+      }
       #card-tooltip strong {
         color: var(--accent-color);
         font-size: 0.95rem;
@@ -868,7 +879,7 @@
 
       const MAX_HP = 50;
       const MAX_POSTURE = 20;
-      const MAX_EP = 9;
+      const MAX_EP = 8;
       const MAX_SP = 5;
       const COUNTER_EP_COST = 4;
 
@@ -915,7 +926,7 @@
         WEAPONS: {
           // 【大剣】
           剛の大剣: [
-            { type: TYPE.ATTACK, cost: 5, dmg: 22, pos: 5 },
+            { type: TYPE.ATTACK, cost: 6, dmg: 22, pos: 5 },
             { type: TYPE.ATTACK, cost: 4, dmg: 16, pos: 4 },
             { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" }, // ガード勝利時、息を整える
             { type: TYPE.SP, cost: 6, dmg: 40, pos: 20, isSP: true },
@@ -1036,20 +1047,22 @@
       // --- Tooltip Logic ---
       function showTooltip(e, card) {
         if (!card) return;
+
+        // スマホで「背景タップで閉じる」判定と競合しないように伝播を止める
+        if (e) e.stopPropagation();
+
         const tt = document.getElementById("card-tooltip");
 
-        // 数値情報の整形
         let statsText = "";
         if (card.dmg)
           statsText += `<span class="tooltip-stat">HP-${card.dmg} (Dmg)</span>\n`;
         if (card.pos)
           statsText += `<span class="tooltip-stat">Posture-${card.pos}</span>\n`;
         if (card.arm)
-          statsText += `<span class="tooltip-stat">Armor ${card.arm} (軽減)</span>\n`;
+          statsText += `<span class="tooltip-stat">Armor ${card.arm}</span>\n`;
         if (card.isSP)
           statsText += `<span style="color:#ba68c8">SP必殺技 (Cost 5)</span>\n`;
 
-        // アビリティ説明の整形
         let abilityText = "";
         if (card.ability && ABILITIES[card.ability]) {
           abilityText = `<div class="tooltip-desc">【${
@@ -1058,10 +1071,10 @@
         }
 
         tt.innerHTML = `
-          <strong>${card.type} (Cost: ${card.cost})</strong>
-          <div>${statsText}</div>
-          ${abilityText}
-        `;
+       <strong>${card.type} (Cost: ${card.cost})</strong>
+       <div>${statsText}</div>
+       ${(abilityHtml = abilityText)}
+       `;
 
         tt.style.display = "block";
         moveTooltip(e);
@@ -1499,6 +1512,7 @@
 
       function selectCard(card, isSecret, handIndex) {
         if (isAnimating) return;
+        hideTooltip();
         if (player.burnout) {
           alert("BURNOUT（行動不能）のため、カードを選択できません。");
           return;
@@ -1554,7 +1568,20 @@
         }
         render();
       }
+      // 【新規追加】画面のどこをタップしてもツールチップを閉じる仕組み
+      document.addEventListener("click", (e) => {
+        const tt = document.getElementById("card-tooltip");
+        // ツールチップが表示されている時、ツールチップ以外の場所をタップしたら閉じる
+        if (tt.style.display === "block") {
+          hideTooltip();
+        }
+      });
 
+      // 【新規追加】ツールチップ自体をタップしても閉じるように設定
+      document.getElementById("card-tooltip").onclick = (e) => {
+        e.stopPropagation(); // 背景のクリックイベントと重複しないように
+        hideTooltip();
+      };
       function clearSlot(num) {
         if (isAnimating) return;
         pSlots[num - 1] = null;
