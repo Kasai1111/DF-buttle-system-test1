@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DUSTFALL Prototype - Equipment Update</title>
+    <title>DUSTFALL Prototype - Visual Assist v2</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -31,7 +31,6 @@
         align-items: center;
         margin: 0;
         padding: 10px;
-        min-height: 100vh;
       }
       h1 {
         margin: 10px 0;
@@ -39,102 +38,10 @@
         border-bottom: 2px solid var(--accent-color);
       }
 
-      /* --- Setup Screen Styles --- */
-      #setup-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: var(--bg-color);
-        z-index: 999;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow-y: auto;
-        padding: 20px;
-        box-sizing: border-box;
-      }
-
-      .setup-container {
-        width: 100%;
-        max-width: 800px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-
-      .equip-section {
-        background: var(--panel-bg);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #444;
-      }
-      .equip-title {
-        font-weight: bold;
-        color: var(--accent-color);
-        margin-bottom: 10px;
-        border-bottom: 1px solid #444;
-        padding-bottom: 5px;
-      }
-
-      .equip-options {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
-        flex-wrap: wrap;
-      }
-
-      .equip-btn {
-        background: #333;
-        color: #fff;
-        border: 1px solid #555;
-        padding: 10px 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-      .equip-btn:hover {
-        background: #444;
-      }
-      .equip-btn.active {
-        background: var(--accent-color);
-        color: #000;
-        font-weight: bold;
-        border-color: var(--accent-color);
-      }
-
-      .preview-area {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        background: #111;
-        padding: 10px;
-        border-radius: 6px;
-        min-height: 110px;
-      }
-
-      .start-btn {
-        padding: 15px;
-        background: linear-gradient(45deg, #43a047, #66bb6a);
-        color: white;
-        border: none;
-        font-size: 1.2rem;
-        font-weight: bold;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 20px;
-        box-shadow: 0 4px 10px rgba(67, 160, 71, 0.4);
-      }
-      .start-btn:hover {
-        transform: scale(1.02);
-      }
-
-      /* --- Existing Game Styles --- */
       .game-container {
         width: 100%;
         max-width: 600px;
-        display: none; /* Initially hidden */
+        display: flex;
         flex-direction: column;
         gap: 10px;
       }
@@ -300,7 +207,6 @@
         background: #333;
         user-select: none;
         transition: transform 0.2s;
-        flex-shrink: 0;
       }
       .card:hover {
         transform: translateY(-3px);
@@ -342,11 +248,6 @@
       }
       .card-type {
         font-weight: bold;
-      }
-      .card-stats {
-        font-size: 0.65rem;
-        color: #ccc;
-        text-align: center;
       }
 
       /* Matchup Badges (Win/Lose Indicator) */
@@ -640,33 +541,9 @@
     </style>
   </head>
   <body>
-    <div id="setup-screen">
-      <h1>DUSTFALL - Equipment Setup</h1>
-      <div class="setup-container">
-        <div class="equip-section">
-          <div class="equip-title">1. WEAPON (4 Cards)</div>
-          <div class="equip-options" id="opt-weapon"></div>
-          <div class="preview-area" id="prev-weapon"></div>
-        </div>
-
-        <div class="equip-section">
-          <div class="equip-title">2. ARMOR (3 Cards)</div>
-          <div class="equip-options" id="opt-armor"></div>
-          <div class="preview-area" id="prev-armor"></div>
-        </div>
-
-        <div class="equip-section">
-          <div class="equip-title">3. ACCESSORY (3 Cards)</div>
-          <div class="equip-options" id="opt-acc"></div>
-          <div class="preview-area" id="prev-acc"></div>
-        </div>
-
-        <button class="start-btn" onclick="startGame()">BATTLE START</button>
-      </div>
-    </div>
+    <h1>DUSTFALL - Battle Prototype (Visual Assist)</h1>
 
     <div class="game-container">
-      <h1>DUSTFALL - Battle Phase</h1>
       <div class="panel" id="e-panel">
         <div class="initiative-badge">先攻</div>
         <div class="status-row">
@@ -796,13 +673,15 @@
 
     <script>
       /**
-       * DUSTFALL - Equipment & Battle Logic
+       * DUSTFALL Logic Implementation (Updated AI & Counter Cost)
        */
 
       const MAX_HP = 50;
       const MAX_POSTURE = 20;
       const MAX_EP = 9;
       const MAX_SP = 5;
+
+      // ★変更点: カウンターの消費EPを定義
       const COUNTER_EP_COST = 4;
 
       const TYPE = {
@@ -818,234 +697,48 @@
         [TYPE.GUARD]: TYPE.ATTACK,
       };
 
-      // --- Equipment Data Definition ---
-      const EQUIPMENT = {
-        WEAPONS: {
-          大剣: [
-            { type: TYPE.ATTACK, cost: 3, dmg: 18, pos: 8 },
-            { type: TYPE.ATTACK, cost: 3, dmg: 18, pos: 8 },
-            { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true },
-            { type: TYPE.GUARD, cost: 1, arm: 4 },
-          ],
-          短剣: [
-            { type: TYPE.ATTACK, cost: 1, dmg: 18, pos: 8 },
-            { type: TYPE.ATTACK, cost: 2, dmg: 18, pos: 8 },
-            { type: TYPE.SP, cost: 5, dmg: 25, pos: 10, isSP: true },
-            { type: TYPE.ATTACK, cost: 3, dmg: 18, pos: 8 },
-          ],
-        },
-        ARMORS: {
-          鉄の鎧: [
-            { type: TYPE.GUARD, cost: 2, arm: 10 },
-            { type: TYPE.GUARD, cost: 3, arm: 10 },
-            { type: TYPE.GUARD, cost: 3, arm: 15 },
-          ],
-          木の鎧: [
-            { type: TYPE.GUARD, cost: 1, arm: 5 },
-            { type: TYPE.GUARD, cost: 2, arm: 8 },
-            { type: TYPE.GUARD, cost: 3, arm: 12 },
-          ],
-        },
-        ACCESSORIES: {
-          アクセサリA: [
-            { type: TYPE.BREAK, cost: 3, dmg: 4, pos: 10 },
-            { type: TYPE.BREAK, cost: 3, dmg: 6, pos: 10 },
-            { type: TYPE.BREAK, cost: 2, dmg: 3, pos: 5 },
-          ],
-          アクセサリB: [
-            { type: TYPE.BREAK, cost: 1, dmg: 4, pos: 4 },
-            { type: TYPE.BREAK, cost: 3, dmg: 6, pos: 10 },
-            { type: TYPE.BREAK, cost: 2, dmg: 3, pos: 5 },
-          ],
-        },
+      const BASE_DECK = [
+        { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2 },
+        { type: TYPE.ATTACK, cost: 3, dmg: 10, pos: 3 },
+        { type: TYPE.BREAK, cost: 2, dmg: 4, pos: 6 },
+        { type: TYPE.BREAK, cost: 3, dmg: 6, pos: 8 },
+        { type: TYPE.GUARD, cost: 1, arm: 4 },
+        { type: TYPE.GUARD, cost: 2, arm: 7 },
+        { type: TYPE.GUARD, cost: 3, arm: 10 },
+        { type: TYPE.ATTACK, cost: 1, dmg: 5, pos: 1 },
+        { type: TYPE.BREAK, cost: 1, dmg: 3, pos: 5 },
+      ];
+
+      const SP_CARD = { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true };
+
+      // --- AI Helper Functions ---
+      const WIN_TYPE = {
+        [TYPE.ATTACK]: TYPE.BREAK,
+        [TYPE.BREAK]: TYPE.GUARD,
+        [TYPE.GUARD]: TYPE.ATTACK,
       };
-
-      // --- Setup State ---
-      let selectedWeapon = Object.keys(EQUIPMENT.WEAPONS)[0];
-      let selectedArmor = Object.keys(EQUIPMENT.ARMORS)[0];
-      let selectedAcc = Object.keys(EQUIPMENT.ACCESSORIES)[0];
-
-      // --- Battle State ---
-      let turn = 1;
-      let battleContext = null;
-      let player, enemy;
-      let pSlots = [null, null];
-      let isCounterMode = false;
-      let hasUsedCounter = false;
-      let isAnimating = false;
-      let isEnemyFirst = false;
-      let pendingEnemySlots = [null, null];
-
-      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-      // --- Setup Functions ---
-      function initSetup() {
-        renderEquipOptions("weapon", EQUIPMENT.WEAPONS, selectedWeapon);
-        renderEquipOptions("armor", EQUIPMENT.ARMORS, selectedArmor);
-        renderEquipOptions("acc", EQUIPMENT.ACCESSORIES, selectedAcc);
-        updatePreviews();
-      }
-
-      function renderEquipOptions(category, data, currentSelection) {
-        const container = document.getElementById(`opt-${category}`);
-        container.innerHTML = "";
-        Object.keys(data).forEach((key) => {
-          const btn = document.createElement("div");
-          btn.className = `equip-btn ${
-            key === currentSelection ? "active" : ""
-          }`;
-          btn.innerText = key;
-          btn.onclick = () => {
-            if (category === "weapon") selectedWeapon = key;
-            if (category === "armor") selectedArmor = key;
-            if (category === "acc") selectedAcc = key;
-            initSetup(); // Re-render to update active classes and previews
-          };
-          container.appendChild(btn);
-        });
-      }
-
-      function updatePreviews() {
-        renderCardsToPreview("prev-weapon", EQUIPMENT.WEAPONS[selectedWeapon]);
-        renderCardsToPreview("prev-armor", EQUIPMENT.ARMORS[selectedArmor]);
-        renderCardsToPreview("prev-acc", EQUIPMENT.ACCESSORIES[selectedAcc]);
-      }
-
-      function renderCardsToPreview(elementId, cards) {
-        const el = document.getElementById(elementId);
-        el.innerHTML = "";
-        cards.forEach((c) => {
-          const div = document.createElement("div");
-          div.className = `card type-${c.type}`;
-          // SPカードの場合は特別な表示でも良いが、統一感のためそのまま
-          let statsHtml = "";
-          if (c.dmg) statsHtml += `DMG:${c.dmg} `;
-          if (c.pos) statsHtml += `POS:${c.pos} `;
-          if (c.arm) statsHtml += `ARM:${c.arm} `;
-
-          div.innerHTML = `
-            <div class="card-type">${c.type}</div>
-            <div class="card-cost">${c.cost}</div>
-            <div class="card-stats">${statsHtml}</div>
-          `;
-          el.appendChild(div);
-        });
-      }
-
-      function startGame() {
-        document.getElementById("setup-screen").style.display = "none";
-        document.querySelector(".game-container").style.display = "flex";
-        initBattle();
-      }
-
-      // --- Battle Init Logic ---
-
-      function buildDeck(wKey, aKey, accKey) {
-        // Deep copy all cards
-        const wCards = JSON.parse(JSON.stringify(EQUIPMENT.WEAPONS[wKey]));
-        const aCards = JSON.parse(JSON.stringify(EQUIPMENT.ARMORS[aKey]));
-        const accCards = JSON.parse(
-          JSON.stringify(EQUIPMENT.ACCESSORIES[accKey])
-        );
-
-        let deck = [...wCards, ...aCards, ...accCards];
-
-        // Extract SP Card (to be added later)
-        const spIndex = deck.findIndex((c) => c.isSP);
-        let reservedSP = null;
-        if (spIndex !== -1) {
-          reservedSP = deck.splice(spIndex, 1)[0];
-        }
-
-        shuffle(deck);
-        return { deck, reservedSP };
-      }
-
-      function createEntity(name, wKey, aKey, accKey) {
-        const { deck, reservedSP } = buildDeck(wKey, aKey, accKey);
-
-        // Secret Card Logic: Initial hand generation will pop from deck.
-        // We'll handle initial draw inside startTurn or here.
-        // Let's pop one card for 'Secret' immediately to match original logic style
-        const secret = deck.pop();
-
-        const entity = {
-          name,
-          hp: MAX_HP,
-          maxHp: MAX_HP,
-          pos: MAX_POSTURE,
-          maxPos: MAX_POSTURE,
-          ep: 5,
-          sp: 0,
-          deck, // Current draw pile
-          hand: [],
-          secret,
-          reservedSP, // The SP card waiting for turn 4
-          burnout: false,
-          breakState: false,
-          justBroken: false,
-        };
-
-        if (name === "Enemy") {
-          const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
-          const randomStrategyName =
-            AI_STRATEGY_NAMES[
-              Math.floor(Math.random() * AI_STRATEGY_NAMES.length)
-            ];
-          entity.strategy = randomStrategyName;
-          log(`[System] Enemy Strategy: ${randomStrategyName}`);
-          log(`[System] Enemy Equip: ${wKey} / ${aKey} / ${accKey}`);
-        }
-
-        return entity;
-      }
-
-      function shuffle(arr) {
-        for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-      }
-
-      function initBattle() {
-        // Player Setup
-        player = createEntity(
-          "Player",
-          selectedWeapon,
-          selectedArmor,
-          selectedAcc
-        );
-
-        // Enemy Setup (Random)
-        const wKeys = Object.keys(EQUIPMENT.WEAPONS);
-        const aKeys = Object.keys(EQUIPMENT.ARMORS);
-        const accKeys = Object.keys(EQUIPMENT.ACCESSORIES);
-
-        const ew = wKeys[Math.floor(Math.random() * wKeys.length)];
-        const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
-        const eacc = accKeys[Math.floor(Math.random() * accKeys.length)];
-
-        enemy = createEntity("Enemy", ew, ea, eacc);
-
-        isEnemyFirst = Math.random() < 0.5;
-        startTurn();
-      }
-
-      // --- AI & Logic (Preserved & Adapted) ---
-
-      // Helper functions for AI
       const LOSE_TYPE = {
         [TYPE.ATTACK]: TYPE.GUARD,
         [TYPE.BREAK]: TYPE.ATTACK,
         [TYPE.GUARD]: TYPE.BREAK,
       };
 
+      // 相手の消費コストから、何を出してきそうか予測する
+      const predictPlayerMove = (cost) => {
+        if (cost === COUNTER_EP_COST) return "WAIT_OR_COUNTER"; // コスト4ならカウンターの可能性あり
+        if (cost <= 2) return "LIGHT";
+        if (cost <= 4) return "HEAVY";
+        return "SP_OR_COMBO";
+      };
+
+      // 手札から特定のタイプのカードを探す（コスト予算内、SP除外）
       const findCard = (hand, type, budget) => {
         return hand
           .filter((c) => c.type === type && c.cost <= budget && !c.isSP)
-          .sort((a, b) => b.cost - a.cost)[0];
+          .sort((a, b) => b.cost - a.cost)[0]; // コストが高い順
       };
 
+      // 手札から最強のカードを探す
       const findBestDmg = (hand, budget) => {
         return hand
           .filter(
@@ -1054,20 +747,24 @@
               c.cost <= budget &&
               !c.isSP
           )
-          .sort((a, b) => (b.dmg || 0) - (a.dmg || 0))[0];
+          .sort((a, b) => b.dmg - a.dmg)[0];
       };
 
+      // --- AI Strategy Definitions (Enhanced) ---
       const AI_STRATEGIES = {
+        // ISTJ: 徹底したリスク管理と理論値の追求 (The Realist)
         ISTJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
           let hand = [...entity.hand];
           let budget = entity.ep;
 
+          // 1. 【最優先】 リーサル計算 (倒せるなら確実に倒す)
           const bestAtk = findBestDmg(hand, budget);
-          if (bestAtk && (bestAtk.dmg || 0) >= opponent.hp) {
+          if (bestAtk && bestAtk.dmg >= opponent.hp) {
             return { slots: [bestAtk, null], action: "COMMIT" };
           }
 
+          // 2. 【防衛本能】 自分がブレイクしそうで、相手が高コストなら防御
           if (entity.pos <= 5 && pCost >= 3 && !entity.breakState) {
             const bestGuard = findCard(hand, TYPE.GUARD, budget);
             if (bestGuard) {
@@ -1075,6 +772,7 @@
             }
           }
 
+          // 3. 【戦況順守】 Contextボーナスがある場合、それを素直に狙う
           if (battleContext && !isSecond) {
             const bonusCard = findCard(hand, battleContext.type, budget);
             if (bonusCard) {
@@ -1084,17 +782,22 @@
             }
           }
 
+          // 4. 【後攻時の対応】 相手の動きに合わせてカウンターか迎撃
           if (isSecond && !eSlots[0]) {
+            // 相手が大技（SPや重コスト）の場合
             if (pCost >= 5) {
+              // こちらもSPを持っていれば相殺狙い
               const spCard = hand.find((c) => c.isSP);
               if (spCard && budget >= 5)
                 return { slots: [spCard, null], action: "COMMIT" };
 
+              // SPがない、またはコスト不足ならカウンターを検討 (コスト4必要)
               if (!entity.hasUsedCounter && budget >= COUNTER_EP_COST) {
                 return { slots: [null, null], action: "COUNTER" };
               }
             }
 
+            // 相手が中コスト(3-4) = Breakか強Attackの可能性 -> Attackで割り込む
             if (pCost >= 3) {
               const counterAtk = findCard(hand, TYPE.ATTACK, budget);
               if (counterAtk) {
@@ -1105,6 +808,7 @@
             }
           }
 
+          // 5. 【穴埋め】
           if (!eSlots[0]) {
             const c =
               findCard(hand, TYPE.ATTACK, budget) ||
@@ -1127,20 +831,26 @@
           return { slots: eSlots, action: "COMMIT" };
         },
 
+        // INFJ: 相手の心理を読み、裏の裏をかく (The Mastermind)
         INFJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
           let hand = [...entity.hand];
           let budget = entity.ep;
 
+          // 1. 【カウンター狙い】 後攻で、相手が重い手またはSPの可能性がある場合
           if (isSecond && pCost >= 5 && !entity.hasUsedCounter) {
+            // コスト4以上あるなら高確率でカウンター
             if (budget >= COUNTER_EP_COST && Math.random() < 0.8) {
               return { slots: [null, null], action: "COUNTER" };
             }
           }
 
+          // 2. 【戦況の深読み】 裏の裏をかく
           if (battleContext && !isSecond) {
             const ctxType = battleContext.type;
-            const loseVsCtx = LOSE_TYPE[ctxType];
+            const loseVsCtx = LOSE_TYPE[ctxType]; // Context対策をしてくる相手を狩る手
+
+            // 50%で素直に、50%で裏をかく
             const targetType = Math.random() < 0.5 ? ctxType : loseVsCtx;
             const trickCard = findCard(hand, targetType, budget);
             if (trickCard) {
@@ -1150,16 +860,19 @@
             }
           }
 
+          // 3. 【ブラフ/温存】 相手が様子見（コスト低い）なら何もしないか、SPを狙う
           if (isSecond && pCost <= 2) {
             if (entity.sp >= MAX_SP && budget >= 5) {
               const spCard = hand.find((c) => c.isSP);
               if (spCard) return { slots: [spCard, null], action: "COMMIT" };
             }
+            // EP温存 (何もしない)
             if (budget < 5 && Math.random() < 0.5) {
               return { slots: [null, null], action: "COMMIT" };
             }
           }
 
+          // 4. 【コンボ構築】 Break -> Attack
           if (!eSlots[0]) {
             const breakCard = findCard(hand, TYPE.BREAK, budget);
             if (breakCard && budget - breakCard.cost >= 2) {
@@ -1174,6 +887,7 @@
             }
           }
 
+          // 5. 【標準動作】
           if (!eSlots[0]) {
             const safeMove =
               findCard(hand, TYPE.ATTACK, budget) ||
@@ -1187,8 +901,75 @@
           return { slots: eSlots, action: "COMMIT" };
         },
       };
+      const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
 
-      // --- Main Logic ---
+      // --- Global State ---
+      let turn = 1;
+      let battleContext = null;
+      let player, enemy;
+      let pSlots = [null, null];
+      let isCounterMode = false;
+      let hasUsedCounter = false;
+      let isAnimating = false;
+
+      // Initiative State
+      let isEnemyFirst = false;
+      let pendingEnemySlots = [null, null];
+
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      function getDeck(includeSP) {
+        const deck = JSON.parse(JSON.stringify(BASE_DECK));
+        if (includeSP) deck.push(JSON.parse(JSON.stringify(SP_CARD)));
+        shuffle(deck);
+        return deck;
+      }
+
+      function createEntity(name) {
+        const deck = getDeck(false);
+        const secret = deck.pop();
+
+        const entity = {
+          name,
+          hp: MAX_HP,
+          maxHp: MAX_HP,
+          pos: MAX_POSTURE,
+          maxPos: MAX_POSTURE,
+          ep: 5,
+          sp: 0,
+          deck,
+          hand: [],
+          secret,
+          burnout: false,
+          breakState: false,
+          justBroken: false,
+        };
+
+        if (name === "Enemy") {
+          const randomStrategyName =
+            AI_STRATEGY_NAMES[
+              Math.floor(Math.random() * AI_STRATEGY_NAMES.length)
+            ];
+          entity.strategy = randomStrategyName;
+          log(`[System] Enemy Strategy: ${randomStrategyName} assigned.`);
+        }
+
+        return entity;
+      }
+
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      function init() {
+        player = createEntity("Player");
+        enemy = createEntity("Enemy");
+        isEnemyFirst = Math.random() < 0.5;
+        startTurn();
+      }
 
       function startTurn() {
         pSlots = [null, null];
@@ -1197,7 +978,7 @@
         isEnemyFirst = !isEnemyFirst;
         battleContext = null;
 
-        // Resource & Hand Management
+        // 1. リソース回復と手札補充
         [player, enemy].forEach((e) => {
           if (e.breakState) {
             e.burnout = true;
@@ -1208,96 +989,26 @@
           e.ep = Math.min(MAX_EP, e.ep + 4);
           e.sp = Math.min(MAX_SP, e.sp + 1);
 
-          // Recycle Deck Logic needed here because deck size is small (9-10 cards)
           while (e.hand.length < 3) {
             if (e.deck.length === 0) {
-              // In this new system, we need to rebuild the deck from discard?
-              // Simplified: We don't track discard pile explicitly in original code,
-              // it implies a fresh reshuffle of base deck.
-              // Let's reuse the equipment keys logic or store the 'base deck' in entity?
-              // Correction: createEntity stored the initial deck. But we need to keep
-              // a 'master' list of cards to recycle.
-              // For this prototype, let's just re-generate the deck excluding the SP card if it's already in hand/play?
-              // Better approach: Store a `templateDeck` in entity.
-              // *Hack for Prototype*: Re-call buildDeck logic or just keep a copy.
-              // Since we don't store keys in entity easily, let's just make sure we don't run out.
-              // Actually, `createEntity` is only called once.
-              // Let's store `baseCards` in entity for recycling.
-              if (!e.baseCards) {
-                // First time empty? Should not happen if deck > 3.
-                // But if deck runs out:
-                // Rebuild deck from initial non-SP cards + Secret logic?
-                // Original code used `getDeck(false)`.
-                // Let's assume we simply Reshuffle the discard.
-                // For simplicity, we will just Regenerate the same deck based on equipment.
-                // However, we don't have the keys stored cleanly.
-                // Let's fix `createEntity` to store `baseDeckTemplate`.
-                log(`[System] ${e.name}: Deck empty! Reshuffling Discard...`);
-
-                // If we didn't store the template, we are in trouble.
-                // Fix: Let's modify `buildDeck` to return a fresh copy.
-                // Since we didn't save keys, let's assume we just recycle the cards
-                // that are NOT in hand and NOT secret.
-                // A simple way: The original code just generated a fresh BASE_DECK.
-                // Let's fallback to: We need to store the deck config in the entity.
-                // Hack: `e.deck` is empty. We need to refill it.
-              }
-            }
-            // Real Recycle Logic implementation requiring persistent card pool is complex.
-            // Simplified Recycle: Just create a fresh deck using the same pool, excluding what is in hand/secret.
-            // Since we can't easily filter "what is in hand" from a fresh generation (ID matching issues),
-            // let's just refill the deck with the original equipment cards (excluding SP if already held).
-
-            // To make this robust without huge refactor, let's just say:
-            // "If deck empty, refill with a fresh set of the same equipment cards (minus SP if unique)."
-            // But we didn't save equipment keys in `entity`...
-            // Let's save them in `createEntity`.
-            if (e.deck.length === 0) {
-              // We will simply push a generic set of cards or we need to save the keys.
-              // Let's just create a quick "Refill" function that uses the saved specific deck list.
-              // We will add `initialDeckList` to entity.
-              e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
-              shuffle(e.deck);
+              e.deck = getDeck(false);
               log(`[System] ${e.name}'s Deck Recycled`);
             }
-
             e.hand.push(e.deck.pop());
             if (e.hand.length >= 3) break;
           }
         });
 
-        // Initial setup for recycling (Retroactive fix)
-        if (!player.initialDeckList) {
-          player.initialDeckList = JSON.parse(JSON.stringify(player.deck));
-          // Note: This snapshot misses the 'Secret' and 'SP' if they were removed.
-          // Ideally we want the 'base non-unique cards'.
-          // The prompt implies a simple deck. Let's trust the logic:
-          // 10 cards total. 1 Secret (popped). 1 SP (reserved). 8 in Deck.
-          // When recycling, we probably want those 8 cards back.
-          // So `player.deck` at start (after pop) is exactly what we want to recycle?
-          // No, `createEntity` pops secret.
-          // So `initialDeckList` should be captured *after* secret pop and SP reserve.
-          player.initialDeckList = JSON.parse(JSON.stringify(player.deck));
-          enemy.initialDeckList = JSON.parse(JSON.stringify(enemy.deck));
-        }
-
-        // TURN 4 SP Injection
         if (turn === 4) {
           [player, enemy].forEach((e) => {
-            if (e.reservedSP) {
-              // Inject SP Card
-              if (e.hp <= e.maxHp * 0.3) {
-                e.deck.push(e.reservedSP);
-                log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
-              } else {
-                const idx = Math.floor(Math.random() * (e.deck.length + 1));
-                e.deck.splice(idx, 0, e.reservedSP);
-                log(`[System] ${e.name}: SP Card added to deck.`);
-              }
-              // Add to recycle list too so it comes back? Usually SP is one-time or recycle?
-              // Let's add it to recycle list just in case game goes long.
-              e.initialDeckList.push(e.reservedSP);
-              e.reservedSP = null; // Consumed
+            const spCard = JSON.parse(JSON.stringify(SP_CARD));
+            if (e.hp <= e.maxHp * 0.3) {
+              e.deck.push(spCard);
+              log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
+            } else {
+              const idx = Math.floor(Math.random() * (e.deck.length + 1));
+              e.deck.splice(idx, 0, spCard);
+              log(`[System] ${e.name}: SP Card added to deck.`);
             }
           });
         }
@@ -1321,7 +1032,7 @@
           log(`[戦況] 好機到来！先攻(${initiativeEntity.name})の手札充実。`);
         }
 
-        // AI Logic
+        // AI処理
         if (enemy.burnout) {
           pendingEnemySlots = [null, null];
           enemy.isCounterMode = false;
@@ -1458,6 +1169,7 @@
           return;
         }
 
+        // ★追加: カウンターに必要なEPのチェック
         if (!isCounterMode && player.ep < COUNTER_EP_COST) {
           alert(
             `カウンター攻撃にはEPが ${COUNTER_EP_COST} 必要です。（現在: ${player.ep}）`
@@ -1473,6 +1185,7 @@
       async function commitTurn() {
         if (isAnimating) return;
 
+        // ★変更: プレイヤーのカウンター時のコストを計算
         let pCost = 0;
         if (isCounterMode) {
           pCost = COUNTER_EP_COST;
@@ -1487,6 +1200,7 @@
 
         isAnimating = true;
 
+        // 後攻AIの判断（コストを見て再決定）
         if (!isEnemyFirst && !enemy.burnout) {
           const aiRes = AI_STRATEGIES[enemy.strategy](
             enemy,
@@ -1510,6 +1224,7 @@
         render();
 
         const eSlots = pendingEnemySlots;
+        // ★変更: 敵AIのカウンター時のコストを計算
         const eCost = enemy.isCounterMode
           ? COUNTER_EP_COST
           : (eSlots[0]?.cost || 0) + (eSlots[1]?.cost || 0);
@@ -1794,6 +1509,8 @@
             : "none";
         });
 
+        // --- Ghost Bar Logic (Updated for Counter Cost) ---
+        // ★変更: カウンター選択時もコストを反映
         const pendingCost = isCounterMode
           ? COUNTER_EP_COST
           : (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
@@ -1828,6 +1545,7 @@
         document.getElementById("p-sp-fill").style.width = `${
           (predictedSP / MAX_SP) * 100
         }%`;
+        // ----------------------------------------
 
         const ePanel = document.getElementById("e-panel");
         const pPanel = document.getElementById("p-panel");
@@ -1837,6 +1555,7 @@
 
           const intelBox = document.getElementById("e-intel-box");
           intelBox.style.display = "flex";
+          // ★変更: 敵のカウンターコストも表示に反映
           const cost = enemy.isCounterMode
             ? COUNTER_EP_COST
             : (pendingEnemySlots[0]?.cost || 0) +
@@ -1958,16 +1677,11 @@
           div.classList.remove("disabled");
         }
 
-        // Stats Display for Hand
-        let statsHtml = "";
-        if (card.dmg) statsHtml += `D:${card.dmg} `;
-        if (card.arm) statsHtml += `A:${card.arm} `;
-
         div.innerHTML = `<div class="card-type">${
           isSecret ? "SECRET" : card.type
         }</div>
                    <div class="card-cost">${card.cost}</div>
-                   <div class="card-stats">${isSecret ? "?" : statsHtml}</div>`;
+                   <div style="font-size:0.7rem">${card.type}</div>`;
 
         div.onclick = () => selectCard(card, isSecret, idx);
         return div;
@@ -2002,7 +1716,7 @@
         l.scrollTop = l.scrollHeight;
       }
 
-      window.onload = initSetup;
+      window.onload = init;
     </script>
   </body>
 </html>
