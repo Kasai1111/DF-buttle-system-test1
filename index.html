@@ -1621,6 +1621,7 @@
         return "LOSE";
       }
 
+      // --- 既存の resolveStep を以下の内容に置き換えてください ---
       async function resolveStep(
         slotNum,
         pCard,
@@ -1635,6 +1636,7 @@
         pSlotEl.classList.add("active-battle-slot");
         eSlotEl.classList.add("active-battle-slot");
 
+        // 表示更新
         if (eCard) {
           eSlotEl.className = `slot type-${eCard.type} active-battle-slot`;
           eSlotEl.innerHTML = renderCardContent(eCard);
@@ -1653,6 +1655,7 @@
 
         await sleep(1500);
 
+        // 勝敗判定
         let result = "DRAW";
         if (!pCard && !eCard) result = "DRAW";
         else if (!pCard) {
@@ -1663,6 +1666,7 @@
           result = getMatchupResult(pCard, eCard);
         }
 
+        // 戦況(Context)ボーナス判定（勝利側のみ適用）
         let contextBonus = 1.0;
         if (slotNum === 1 && battleContext && result !== "DRAW") {
           const isPlayerWin = result === "WIN";
@@ -1679,24 +1683,46 @@
           }
         }
 
-        if (result === "DRAW") {
-          if (prevResult === "WIN") {
-            log(">> Momentum! Previous Winner pushes through Draw!");
-            applyDmg(enemy, pCard, 1.5);
-            result = "WIN";
-          } else if (prevResult === "LOSE") {
-            log(">> Momentum! Previous Winner pushes through Draw!");
-            applyDmg(player, eCard, 1.5);
-            result = "LOSE";
-          } else {
-            player.hp -= 2;
-            enemy.hp -= 2;
-            log("Draw! Both take 2 dmg.");
-          }
+        // ★ Guard vs Attack の特別処理判定 ★
+        const isPlayerGuardVsAtk =
+          result === "WIN" &&
+          pCard?.type === TYPE.GUARD &&
+          eCard?.type === TYPE.ATTACK;
+        const isEnemyGuardVsAtk =
+          result === "LOSE" &&
+          eCard?.type === TYPE.GUARD &&
+          pCard?.type === TYPE.ATTACK;
+
+        if (isPlayerGuardVsAtk) {
+          // プレイヤーがガード（勝利）、敵が攻撃（敗北）
+          // 敵の攻撃値(eMul適用済)を半減させて、プレイヤーの装甲で受ける
+          log(`Guard Logic: Enemy Attack x0.5 vs Player Armor`);
+          await resolveGuardDeflect(player, pCard, eCard, eMul);
+        } else if (isEnemyGuardVsAtk) {
+          // 敵がガード（勝利）、プレイヤーが攻撃（敗北）
+          log(`Guard Logic: Player Attack x0.5 vs Enemy Armor`);
+          await resolveGuardDeflect(enemy, eCard, pCard, pMul);
         } else {
-          if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
-          else if (result === "LOSE")
-            applyDmg(player, eCard, eMul * contextBonus);
+          // --- 従来の処理 ---
+          if (result === "DRAW") {
+            if (prevResult === "WIN") {
+              log(">> Momentum! Previous Winner pushes through Draw!");
+              applyDmg(enemy, pCard, 1.5);
+              result = "WIN";
+            } else if (prevResult === "LOSE") {
+              log(">> Momentum! Previous Winner pushes through Draw!");
+              applyDmg(player, eCard, 1.5);
+              result = "LOSE";
+            } else {
+              player.hp -= 2;
+              enemy.hp -= 2;
+              log("Draw! Both take 2 dmg.");
+            }
+          } else {
+            if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
+            else if (result === "LOSE")
+              applyDmg(player, eCard, eMul * contextBonus);
+          }
         }
 
         render();
@@ -1716,6 +1742,40 @@
         clearOverlays(eSlotEl);
 
         return result;
+      }
+
+      // --- 新規追加: ガード貫通ダメージ計算関数 ---
+      async function resolveGuardDeflect(
+        defender,
+        guardCard,
+        attackCard,
+        attackerMul
+      ) {
+        // 仕様: 敗北した方の攻撃値は×0.5倍される
+        // 攻撃側の基本ダメージ * スロット補正(Slot2なら0.25倍など)
+        const rawAtk = (attackCard.dmg || 0) * attackerMul;
+
+        // 0.5倍処理
+        const reducedAtk = Math.floor(rawAtk * 0.5);
+
+        // 防御側のArmor値
+        const armor = guardCard.arm || 0;
+
+        // ダメージ計算: (攻撃 * 0.5) - 防御
+        const finalDmg = Math.max(0, reducedAtk - armor);
+
+        if (finalDmg > 0) {
+          defender.hp -= finalDmg;
+          log(
+            `GUARD! Piercing Dmg: ${finalDmg} (Atk:${reducedAtk} - Arm:${armor})`
+          );
+          // 演出として少し揺らすなどの処理を入れても良いが今回はログのみ
+        } else {
+          log(`BLOCKED! Damage 0 (Atk:${reducedAtk} vs Arm:${armor})`);
+        }
+
+        // ガード成功時はPostureダメージは受けない（あるいは微小）仕様と想定し、HPのみ減算
+        // もしHPが0以下になった場合の処理は render() と finishTurnProcessing() に委ねる
       }
 
       function showResultOverlay(el, text) {
