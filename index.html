@@ -821,45 +821,57 @@
       // --- Equipment Data Definition ---
       const EQUIPMENT = {
         WEAPONS: {
-          大剣: [
-            { type: TYPE.ATTACK, cost: 3, dmg: 18, pos: 8 },
-            { type: TYPE.ATTACK, cost: 3, dmg: 18, pos: 8 },
-            { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true },
-            { type: TYPE.GUARD, cost: 1, arm: 4 },
+          // 【大剣】一撃必殺型：コストは重いが、当たればHPの半分を持っていける
+          剛の大剣: [
+            { type: TYPE.ATTACK, cost: 4, dmg: 22, pos: 5 }, // 必殺の一撃
+            { type: TYPE.ATTACK, cost: 3, dmg: 16, pos: 4 }, // 重い攻撃
+            { type: TYPE.GUARD, cost: 2, arm: 8 }, // 剣で受ける（防御寄り）
+            { type: TYPE.SP, cost: 5, dmg: 40, pos: 20, isSP: true }, // SP: ほぼ即死級
           ],
-          短剣: [
-            { type: TYPE.ATTACK, cost: 1, dmg: 18, pos: 8 },
-            { type: TYPE.ATTACK, cost: 2, dmg: 18, pos: 8 },
-            { type: TYPE.SP, cost: 5, dmg: 25, pos: 10, isSP: true },
-            { type: TYPE.ATTACK, cost: 3, dmg: 18, pos: 8 },
+          // 【短剣】手数重視型：コスト1〜2が主体。Guardを混ぜてトリックプレイ
+          双の短剣: [
+            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 }, // 軽い攻撃
+            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 }, // 軽い攻撃
+            { type: TYPE.ATTACK, cost: 2, dmg: 10, pos: 4 }, // コンボ始動
+            { type: TYPE.SP, cost: 5, dmg: 15, pos: 0, isSP: true }, // SP: 低威力だが必中用（コスト低減してもいいかも）
+          ],
+          // 【槍】バランス・崩し型：Break属性を武器に混ぜ、相手のGuardを狩る
+          貫きの槍: [
+            { type: TYPE.ATTACK, cost: 3, dmg: 14, pos: 6 },
+            { type: TYPE.BREAK, cost: 2, dmg: 5, pos: 10 }, // 武器なのにBreakがある
+            { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 5 },
+            { type: TYPE.SP, cost: 5, dmg: 25, pos: 20, isSP: true },
           ],
         },
         ARMORS: {
-          鉄の鎧: [
-            { type: TYPE.GUARD, cost: 2, arm: 10 },
-            { type: TYPE.GUARD, cost: 3, arm: 10 },
-            { type: TYPE.GUARD, cost: 3, arm: 15 },
+          // 【重装】圧倒的防御だが、動きが鈍くなる（高コスト）
+          フルプレート: [
+            { type: TYPE.GUARD, cost: 3, arm: 18 }, // 鉄壁。ほぼダメージ通さない
+            { type: TYPE.GUARD, cost: 2, arm: 12 },
+            { type: TYPE.BREAK, cost: 4, dmg: 5, pos: 15 }, // 「タックル」：防具枠の高コストBreak
           ],
-          木の鎧: [
-            { type: TYPE.GUARD, cost: 1, arm: 5 },
+          // 【軽装】防御力は紙だが、コスト1で「とりあえずGuard」が出せる
+          レザーベスト: [
+            { type: TYPE.GUARD, cost: 1, arm: 4 }, // ダメージ軽減は期待できないが、Attackには勝てる
+            { type: TYPE.GUARD, cost: 1, arm: 4 },
             { type: TYPE.GUARD, cost: 2, arm: 8 },
-            { type: TYPE.GUARD, cost: 3, arm: 12 },
           ],
         },
         ACCESSORIES: {
-          アクセサリA: [
-            { type: TYPE.BREAK, cost: 3, dmg: 4, pos: 10 },
-            { type: TYPE.BREAK, cost: 3, dmg: 6, pos: 10 },
-            { type: TYPE.BREAK, cost: 2, dmg: 3, pos: 5 },
+          // 【力の指輪】Break枠だが、実は攻撃補助
+          パワーリング: [
+            { type: TYPE.BREAK, cost: 3, dmg: 8, pos: 8 },
+            { type: TYPE.BREAK, cost: 3, dmg: 8, pos: 8 },
+            { type: TYPE.ATTACK, cost: 5, dmg: 20, pos: 0 }, // 「隠し武器」的な超高コストAttack
           ],
-          アクセサリB: [
-            { type: TYPE.BREAK, cost: 1, dmg: 4, pos: 4 },
-            { type: TYPE.BREAK, cost: 3, dmg: 6, pos: 10 },
-            { type: TYPE.BREAK, cost: 2, dmg: 3, pos: 5 },
+          // 【羽根の靴】完全な崩し・回避特化
+          フェザーブーツ: [
+            { type: TYPE.BREAK, cost: 1, dmg: 2, pos: 6 }, // ローキック的な
+            { type: TYPE.BREAK, cost: 2, dmg: 3, pos: 8 },
+            { type: TYPE.BREAK, cost: 1, dmg: 2, pos: 6 },
           ],
         },
       };
-
       // --- Setup State ---
       let selectedWeapon = Object.keys(EQUIPMENT.WEAPONS)[0];
       let selectedArmor = Object.keys(EQUIPMENT.ARMORS)[0];
