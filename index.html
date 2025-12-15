@@ -915,17 +915,17 @@
         WEAPONS: {
           // 【大剣】
           剛の大剣: [
-            { type: TYPE.ATTACK, cost: 4, dmg: 22, pos: 5 },
-            { type: TYPE.ATTACK, cost: 3, dmg: 16, pos: 4 },
+            { type: TYPE.ATTACK, cost: 5, dmg: 22, pos: 5 },
+            { type: TYPE.ATTACK, cost: 4, dmg: 16, pos: 4 },
             { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" }, // ガード勝利時、息を整える
-            { type: TYPE.SP, cost: 5, dmg: 40, pos: 20, isSP: true },
+            { type: TYPE.SP, cost: 6, dmg: 40, pos: 20, isSP: true },
           ],
           // 【短剣】
           双の短剣: [
             { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2, ability: "SMOKE" }, // 攻撃ヒットで煙幕
             { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 },
             { type: TYPE.ATTACK, cost: 2, dmg: 10, pos: 4 },
-            { type: TYPE.SP, cost: 5, dmg: 15, pos: 0, isSP: true },
+            { type: TYPE.SP, cost: 4, dmg: 15, pos: 0, isSP: true },
           ],
           // 【槍】
           貫きの槍: [
@@ -1199,130 +1199,126 @@
       };
 
       const AI_STRATEGIES = {
+        // --- ISTJ: 効率重視・堅実な理論派 ---
+        // ルールを最大限に利用し、確実にアドバンテージを取るロジック
         ISTJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
           let hand = [...entity.hand];
           let budget = entity.ep;
 
-          const bestAtk = findBestDmg(hand, budget);
-          if (bestAtk && (bestAtk.dmg || 0) >= opponent.hp) {
-            return { slots: [bestAtk, null], action: "COMMIT" };
+          // 1. リーサル確認 (Slot 1で倒しきれるなら出す)
+          const killShot = hand.find(
+            (c) => (c.dmg || 0) >= opponent.hp && c.cost <= budget
+          );
+          if (killShot) return { slots: [killShot, null], action: "COMMIT" };
+
+          // 2. Slot 1 の決定 (アビリティとContextを優先)
+          let s1Candidates = hand.filter((c) => c.cost <= budget);
+
+          // スコアリング: Context一致 > アビリティ有効 > コスト効率
+          s1Candidates.sort((a, b) => {
+            let scoreA = 0,
+              scoreB = 0;
+            if (battleContext && a.type === battleContext.type) scoreA += 5;
+            if (battleContext && b.type === battleContext.type) scoreB += 5;
+            if (a.ability === "EP_CHARGE" && entity.ep < 4) scoreA += 4;
+            if (b.ability === "EP_CHARGE" && entity.ep < 4) scoreB += 4;
+            if (a.isSP && entity.sp >= MAX_SP) scoreA += 10;
+            if (b.isSP && entity.sp >= MAX_SP) scoreB += 10;
+            return scoreB - scoreA;
+          });
+
+          if (s1Candidates.length > 0) {
+            eSlots[0] = s1Candidates[0];
+            budget -= eSlots[0].cost;
+            hand = hand.filter((c) => c !== eSlots[0]);
           }
 
-          if (entity.pos <= 5 && pCost >= 3 && !entity.breakState) {
-            const bestGuard = findCard(hand, TYPE.GUARD, budget);
-            if (bestGuard) {
-              return { slots: [bestGuard, null], action: "COMMIT" };
+          // 3. Slot 2 の決定 (モメンタムの活用)
+          // Slot 1が強そうなら高火力、そうでなければ守備的または低コスト
+          if (eSlots[0] && budget > 0) {
+            let s2Candidates = hand.filter((c) => c.cost <= budget);
+            if (eSlots[0].dmg > 15 || eSlots[0].isSP) {
+              // Slot 1で勝つ可能性が高い -> 高火力をSlot 2に (1.7倍狙い)
+              s2Candidates.sort((a, b) => (b.dmg || 0) - (a.dmg || 0));
+            } else {
+              // 堅実なカードを選択
+              s2Candidates.sort((a, b) => (b.arm || 0) - (a.arm || 0));
             }
-          }
-
-          if (battleContext && !isSecond) {
-            const bonusCard = findCard(hand, battleContext.type, budget);
-            if (bonusCard) {
-              eSlots[0] = bonusCard;
-              budget -= bonusCard.cost;
-              hand = hand.filter((c) => c !== bonusCard);
-            }
-          }
-
-          if (isSecond && !eSlots[0]) {
-            if (pCost >= 5) {
-              const spCard = hand.find((c) => c.isSP);
-              if (spCard && budget >= 5)
-                return { slots: [spCard, null], action: "COMMIT" };
-
-              if (!entity.hasUsedCounter && budget >= COUNTER_EP_COST) {
-                return { slots: [null, null], action: "COUNTER" };
-              }
-            }
-
-            if (pCost >= 3) {
-              const counterAtk = findCard(hand, TYPE.ATTACK, budget);
-              if (counterAtk) {
-                eSlots[0] = counterAtk;
-                budget -= counterAtk.cost;
-                hand = hand.filter((c) => c !== counterAtk);
-              }
-            }
-          }
-
-          if (!eSlots[0]) {
-            const c =
-              findCard(hand, TYPE.ATTACK, budget) ||
-              findCard(hand, TYPE.BREAK, budget) ||
-              findCard(hand, TYPE.GUARD, budget);
-            if (c) {
-              eSlots[0] = c;
-              budget -= c.cost;
-              hand = hand.filter((x) => x !== c);
-            }
-          }
-
-          if (!eSlots[1] && budget > 0) {
-            const c =
-              findCard(hand, TYPE.GUARD, budget) ||
-              findCard(hand, TYPE.ATTACK, budget);
-            if (c) eSlots[1] = c;
+            if (s2Candidates.length > 0) eSlots[1] = s2Candidates[0];
           }
 
           return { slots: eSlots, action: "COMMIT" };
         },
 
+        // --- INFJ: 心理戦・搦め手重視の直感派 ---
+        // アビリティによる妨害と、カウンターを効果的に使うロジック
         INFJ: (entity, opponent, isSecond, pCost) => {
           let eSlots = [null, null];
           let hand = [...entity.hand];
           let budget = entity.ep;
 
-          if (isSecond && pCost >= 5 && !entity.hasUsedCounter) {
-            if (budget >= COUNTER_EP_COST && Math.random() < 0.8) {
-              return { slots: [null, null], action: "COUNTER" };
+          // 1. 特殊妨害: 相手がBurnoutなら最大火力を叩き込む
+          if (opponent.burnout) {
+            const bigDmgCards = hand
+              .filter((c) => c.cost <= budget)
+              .sort((a, b) => b.dmg - a.dmg);
+            return {
+              slots: [bigDmgCards[0] || null, bigDmgCards[1] || null],
+              action: "COMMIT",
+            };
+          }
+
+          // 2. カウンター判断 (後攻かつ相手が高コストを払っている場合)
+          if (
+            isSecond &&
+            pCost >= 5 &&
+            !entity.hasUsedCounter &&
+            budget >= COUNTER_EP_COST
+          ) {
+            // 相手がSPを使ってそう、あるいは大技ならカウンター
+            return { slots: [null, null], action: "COUNTER" };
+          }
+
+          // 3. アビリティ優先配置
+          // 「FEINT」で次ターンの先攻後攻を操作したり、「SMOKE」で隠したりを狙う
+          const abilityCard = hand.find(
+            (c) =>
+              (c.ability === "FEINT" || c.ability === "SMOKE") &&
+              c.cost <= budget
+          );
+          if (abilityCard) {
+            eSlots[0] = abilityCard;
+            budget -= abilityCard.cost;
+            hand = hand.filter((c) => c !== abilityCard);
+          }
+
+          // 4. BREAK 連携
+          // 相手の姿勢(Posture)が低いなら、BreakカードをSlot 1に置いてBurnoutを狙う
+          if (!eSlots[0] && opponent.pos < 10) {
+            const breaker = hand.find(
+              (c) => c.type === TYPE.BREAK && c.cost <= budget
+            );
+            if (breaker) {
+              eSlots[0] = breaker;
+              budget -= breaker.cost;
+              hand = hand.filter((c) => c !== breaker);
             }
           }
 
-          if (battleContext && !isSecond) {
-            const ctxType = battleContext.type;
-            const loseVsCtx = LOSE_TYPE[ctxType];
-            const targetType = Math.random() < 0.5 ? ctxType : loseVsCtx;
-            const trickCard = findCard(hand, targetType, budget);
-            if (trickCard) {
-              eSlots[0] = trickCard;
-              budget -= trickCard.cost;
-              hand = hand.filter((c) => c !== trickCard);
+          // 残りのスロット埋め
+          if (!eSlots[0] && hand.length > 0) {
+            const best = hand
+              .filter((c) => c.cost <= budget)
+              .sort((a, b) => b.cost - a.cost)[0];
+            if (best) {
+              eSlots[0] = best;
+              budget -= best.cost;
+              hand = hand.filter((c) => c !== best);
             }
           }
-
-          if (isSecond && pCost <= 2) {
-            if (entity.sp >= MAX_SP && budget >= 5) {
-              const spCard = hand.find((c) => c.isSP);
-              if (spCard) return { slots: [spCard, null], action: "COMMIT" };
-            }
-            if (budget < 5 && Math.random() < 0.5) {
-              return { slots: [null, null], action: "COMMIT" };
-            }
-          }
-
-          if (!eSlots[0]) {
-            const breakCard = findCard(hand, TYPE.BREAK, budget);
-            if (breakCard && budget - breakCard.cost >= 2) {
-              const followUp = findCard(
-                hand.filter((c) => c !== breakCard),
-                TYPE.ATTACK,
-                budget - breakCard.cost
-              );
-              if (followUp) {
-                return { slots: [breakCard, followUp], action: "COMMIT" };
-              }
-            }
-          }
-
-          if (!eSlots[0]) {
-            const safeMove =
-              findCard(hand, TYPE.ATTACK, budget) ||
-              findCard(hand, TYPE.GUARD, budget);
-            if (safeMove) {
-              eSlots[0] = safeMove;
-              budget -= safeMove.cost;
-            }
+          if (!eSlots[1] && hand.length > 0) {
+            eSlots[1] = hand.find((c) => c.cost <= budget) || null;
           }
 
           return { slots: eSlots, action: "COMMIT" };
