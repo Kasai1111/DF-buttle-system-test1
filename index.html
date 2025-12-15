@@ -1512,8 +1512,6 @@
 
       function selectCard(card, isSecret, handIndex) {
         if (isAnimating) return;
-        hideTooltip(); // 選択時にツールチップを閉じる
-
         hideTooltip();
         if (player.burnout) {
           alert("BURNOUT（行動不能）のため、カードを選択できません。");
@@ -2149,20 +2147,6 @@
             cardDiv.onmouseenter = (e) => showTooltip(e, c);
             cardDiv.onmousemove = (e) => moveTooltip(e);
             cardDiv.onmouseleave = () => hideTooltip();
-            // Touch Event Bindings for Enemy Cards
-            if (!isBlinded) {
-              cardDiv.ontouchstart = (e) => {
-                e.preventDefault();
-                showTooltip(e.touches[0], c);
-              };
-              cardDiv.ontouchmove = (e) => {
-                e.preventDefault();
-                moveTooltip(e.touches[0]);
-              };
-              cardDiv.ontouchend = () => {
-                // hideTooltip();
-              };
-            }
           }
 
           eZone.appendChild(cardDiv);
@@ -2275,20 +2259,6 @@
              ${abilityHtml}`;
 
         div.onclick = () => selectCard(card, isSecret, idx);
-        // Touch Event Bindings for Tooltip
-        if (!isSecret) {
-          div.ontouchstart = (e) => {
-            e.preventDefault(); // スクロール防止
-            showTooltip(e.touches[0], card);
-          };
-          div.ontouchmove = (e) => {
-            e.preventDefault();
-            moveTooltip(e.touches[0]);
-          };
-          div.ontouchend = () => {
-            // hideTooltip(); // すぐに閉じないよう、背景タップで閉じる仕組みに依存
-          };
-        }
 
         // --- Tooltip Event Binding ---
         if (!isSecret) {
