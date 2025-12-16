@@ -1061,6 +1061,7 @@
       }
 
       // --- Tooltip Logic ---
+      // --- Tooltip Logic (Updated) ---
       function showTooltip(e, card) {
         if (!card) return;
         // イベント伝播停止
@@ -1076,7 +1077,8 @@
         if (card.arm)
           statsText += `<span class="tooltip-stat">Armor ${card.arm}</span>\n`;
         if (card.isSP)
-          statsText += `<span style="color:#ba68c8">SP必殺技 (Cost 5)</span>\n`;
+          // 修正: Cost 5 固定ではなく card.cost を動的に表示
+          statsText += `<span style="color:#ba68c8">SP必殺技 (Cost ${card.cost})</span>\n`;
 
         let abilityText = "";
         if (card.ability && ABILITIES[card.ability]) {
@@ -1503,8 +1505,9 @@
             alert(`SP技を使用するにはSPゲージが最大(${MAX_SP})必要です。`);
             return;
           }
-          if (player.ep < 5) {
-            alert(`SP技の発動にはEPが5必要です。`);
+          // 修正: 固定の5ではなく、カードごとのコスト(card.cost)と比較して判定
+          if (player.ep < card.cost) {
+            alert(`SP技の発動にはEPが${card.cost}必要です。`);
             return;
           }
         }
@@ -1786,9 +1789,21 @@
               applyDmg(player, eCard, 1.5);
               result = "LOSE";
             } else {
-              player.hp -= 2;
-              enemy.hp -= 2;
-              log("Draw! Both take 2 dmg.");
+              // --- 修正箇所: ここでカードタイプを判定します ---
+              const isClash =
+                pCard &&
+                eCard &&
+                ((pCard.type === TYPE.ATTACK && eCard.type === TYPE.ATTACK) ||
+                  (pCard.type === TYPE.BREAK && eCard.type === TYPE.BREAK));
+
+              if (isClash) {
+                player.hp -= 2;
+                enemy.hp -= 2;
+                log("Draw (Clash)! Both take 2 dmg.");
+              } else {
+                log("Draw! No damage.");
+              }
+              // ---------------------------------------------
             }
           } else {
             if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
