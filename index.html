@@ -138,7 +138,21 @@
       .start-btn:hover {
         transform: scale(1.02);
       }
-
+      /* --- AI Personality Tag Styles --- */
+      .personality-tag {
+        font-size: 0.75rem;
+        color: #b0bec5; /* 青みがかったグレー */
+        border: 1px solid #546e7a;
+        background: rgba(38, 50, 56, 0.6);
+        padding: 1px 8px;
+        border-radius: 4px;
+        letter-spacing: 1px;
+        margin-left: 5px;
+        text-shadow: none;
+        font-weight: normal;
+        display: inline-block;
+        vertical-align: middle;
+      }
       /* --- Existing Game Styles --- */
       .game-container {
         width: 100%;
@@ -824,7 +838,10 @@
       <div class="panel" id="e-panel">
         <div class="initiative-badge">先攻</div>
         <div class="status-row">
-          <strong>ENEMY</strong>
+          <div style="display: flex; align-items: center">
+            <strong>ENEMY</strong>
+            <span id="e-personality" class="personality-tag"></span>
+          </div>
           <span class="burnout-tag" id="e-burnout">BURNOUT</span>
         </div>
 
@@ -1250,6 +1267,7 @@
           breakState: false,
           justBroken: false,
           stealthTurns: 0,
+          personalityWord: "", // 新規プロパティ用プレースホルダー
         };
 
         if (name === "Enemy") {
@@ -1259,7 +1277,18 @@
               Math.floor(Math.random() * AI_STRATEGY_NAMES.length)
             ];
           entity.strategy = randomStrategyName;
-          log(`[System] Enemy Strategy: ${randomStrategyName}`);
+
+          // ★ 追加: 性格ワードの抽選処理
+          const words = AI_PERSONALITIES[randomStrategyName];
+          if (words) {
+            entity.personalityWord =
+              words[Math.floor(Math.random() * words.length)];
+          }
+
+          // ログに戦略を表示（デバッグ用・あるいはプレイヤーには見せないならコメントアウト）
+          log(
+            `[System] Enemy Strategy: ${randomStrategyName} / Sign: ${entity.personalityWord}`
+          );
         }
 
         return entity;
@@ -1286,7 +1315,14 @@
         const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
         const eacc = accKeys[Math.floor(Math.random() * accKeys.length)];
         enemy = createEntity("Enemy", ew, ea, eacc);
-
+        // ★ 追加: UIへの反映
+        const pTag = document.getElementById("e-personality");
+        if (enemy.personalityWord) {
+          pTag.innerText = `《 ${enemy.personalityWord} 》`;
+          pTag.style.display = "inline-block";
+        } else {
+          pTag.style.display = "none";
+        }
         isEnemyFirst = Math.random() < 0.5;
         startTurn();
       }
@@ -1343,7 +1379,17 @@
         else if (target.burnout) mul = 1.5;
         return Math.floor((card.dmg || 0) * mul);
       }
-
+      // --- AI Personality Words Definition ---
+      const AI_PERSONALITIES = {
+        ISTJ: ["規律", "機械的", "堅実", "冷静", "保守的"],
+        INFJ: ["直感的", "静観", "見切", "深慮", "慎重"],
+        ESTP: ["好戦的", "無謀", "刹那的", "自信", "狂暴"],
+        ENTJ: ["支配的", "合理的", "好戦的", "計画的", "狂暴"],
+        INTJ: ["狡猾", "冷徹", "計画的", "静観", "冷静"],
+        ISFJ: ["臆病", "堅実", "慎重", "献身的", "不安"],
+        INTP: ["分析的", "多角的", "合理的", "変則的", "冷静"],
+        ENFP: ["気まぐれ", "撹乱", "直感的", "変則的", "楽観的"],
+      };
       // --- AI Strategies (Enhanced) ---
       const AI_STRATEGIES = {
         // 1. ISTJ: The Logistician (効率と堅実)
