@@ -629,7 +629,71 @@
           transform: translateY(0);
         }
       }
+      /* --- Ability Cut-in Announcement --- */
+      #ability-cutin {
+        position: fixed;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid #ffd700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        color: #fff;
+        padding: 20px 40px;
+        z-index: 3000;
+        text-align: center;
+        border-radius: 8px;
+        display: none; /* 初期状態は非表示 */
+        opacity: 0;
+        pointer-events: none;
+      }
 
+      #ability-cutin.active {
+        display: block;
+        animation: cutinPop 2.5s ease-out forwards;
+      }
+
+      .cutin-user {
+        font-size: 1rem;
+        color: #bbb;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+
+      .cutin-name {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #ffd700;
+        text-shadow: 0 0 10px #ff8c00;
+        margin-bottom: 5px;
+      }
+
+      .cutin-desc {
+        font-size: 0.9rem;
+        color: #e0e0e0;
+      }
+
+      @keyframes cutinPop {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.5);
+        }
+        15% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.1);
+        }
+        25% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        85% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -60%);
+        }
+      }
       /* Tooltip Styles */
       #card-tooltip {
         position: fixed;
@@ -725,7 +789,11 @@
   </head>
   <body>
     <div id="card-tooltip"></div>
-
+    <div id="ability-cutin">
+      <div class="cutin-user" id="ac-user">PLAYER</div>
+      <div class="cutin-name" id="ac-name">ABILITY NAME</div>
+      <div class="cutin-desc" id="ac-desc">Description text...</div>
+    </div>
     <div id="setup-screen">
       <h1>DUSTFALL - Equipment Setup</h1>
       <div class="setup-container">
@@ -1845,22 +1913,37 @@
         return result;
       }
 
+      // --- JavaScriptの修正箇所 ---
+
+      // アビリティ発動処理（既存の関数をこれで上書きしてください）
       async function resolveAbility(user, opponent, abilityId) {
+        const abilityInfo = ABILITIES[abilityId];
+
+        // 1. カットイン演出を表示
+        await showAbilityAnnouncement(
+          user.name,
+          abilityInfo.name,
+          abilityInfo.desc
+        );
+
+        // 2. 効果の適用
         switch (abilityId) {
           case "EP_CHARGE":
             user.ep = Math.min(MAX_EP, user.ep + 3);
-            log(`>> ${user.name} recovered 3 EP!`);
+            log(`>> [Ability] ${user.name} recovered 3 EP!`);
             break;
           case "SMOKE":
             opponent.stealthTurns = 2;
             log(
-              `>> ${user.name} deploys Smokescreen! ${opponent.name}'s vision obscured (2T).`
+              `>> [Ability] ${user.name} deploys Smokescreen! ${opponent.name}'s vision obscured (2T).`
             );
             break;
           case "FEINT":
             nextTurnInitiativeOverride =
               user.name === "Player" ? "enemy" : "player";
-            log(`>> ${user.name} prepares a Feint! (Goes Second next turn)`);
+            log(
+              `>> [Ability] ${user.name} prepares a Feint! (Goes Second next turn)`
+            );
             break;
           case "PREP_ATK":
             const atkIdx = user.deck.findIndex(
@@ -1869,15 +1952,41 @@
             if (atkIdx !== -1) {
               const c = user.deck.splice(atkIdx, 1)[0];
               user.deck.push(c);
-              log(`>> ${user.name} prepares an Attack card on top of Deck!`);
+              log(
+                `>> [Ability] ${user.name} prepares an Attack card on top of Deck!`
+              );
             } else {
               log(
-                `>> ${user.name} attempted Prep, but no Attack cards in deck.`
+                `>> [Ability] ${user.name} attempted Prep, but no Attack cards in deck.`
               );
             }
             break;
         }
-        await sleep(500);
+      }
+
+      // 新規追加: アビリティ演出用関数
+      function showAbilityAnnouncement(userName, abilityName, abilityDesc) {
+        return new Promise((resolve) => {
+          const container = document.getElementById("ability-cutin");
+          const userEl = document.getElementById("ac-user");
+          const nameEl = document.getElementById("ac-name");
+          const descEl = document.getElementById("ac-desc");
+
+          userEl.innerText = `${userName}'s Ability!`;
+          nameEl.innerText = abilityName;
+          descEl.innerText = abilityDesc; // 説明文も表示（不要ならコメントアウト可）
+
+          // アニメーションクラスを付与
+          container.classList.remove("active");
+          void container.offsetWidth; // リフローを強制してアニメーションをリセット
+          container.classList.add("active");
+
+          // アニメーション時間分待機してから処理を戻す (演出を見せるため)
+          // CSSのanimation時間が2.5sですが、ゲームのテンポを考えて1.5秒ほどで次へ進む
+          setTimeout(() => {
+            resolve();
+          }, 1800);
+        });
       }
 
       async function resolveGuardDeflect(
