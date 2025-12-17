@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>DUSTFALL Prototype - Mobile Fix</title>
+    <title>DUSTFALL Prototype - Break Fix</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -934,6 +934,7 @@
       };
 
       // --- Equipment Data Definition ---
+      // Modified: Removed 'dmg' from all Break cards to ensure they only deal Posture damage
       const EQUIPMENT = {
         WEAPONS: {
           剛の大剣: [
@@ -953,8 +954,7 @@
             {
               type: TYPE.BREAK,
               cost: 2,
-              dmg: 5,
-              pos: 10,
+              /* dmg removed */ pos: 10,
               ability: "PREP_ATK",
             },
             { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 5 },
@@ -965,7 +965,7 @@
           フルプレート: [
             { type: TYPE.GUARD, cost: 3, arm: 18 },
             { type: TYPE.GUARD, cost: 2, arm: 12 },
-            { type: TYPE.BREAK, cost: 4, dmg: 5, pos: 15 },
+            { type: TYPE.BREAK, cost: 4, /* dmg removed */ pos: 15 },
           ],
           レザーベスト: [
             { type: TYPE.GUARD, cost: 1, arm: 4 },
@@ -975,14 +975,19 @@
         },
         ACCESSORIES: {
           パワーリング: [
-            { type: TYPE.BREAK, cost: 3, dmg: 8, pos: 8 },
-            { type: TYPE.BREAK, cost: 3, dmg: 8, pos: 8 },
+            { type: TYPE.BREAK, cost: 3, /* dmg removed */ pos: 8 },
+            { type: TYPE.BREAK, cost: 3, /* dmg removed */ pos: 8 },
             { type: TYPE.ATTACK, cost: 5, dmg: 20, pos: 0 },
           ],
           フェザーブーツ: [
-            { type: TYPE.BREAK, cost: 1, dmg: 2, pos: 6, ability: "FEINT" },
-            { type: TYPE.BREAK, cost: 2, dmg: 3, pos: 8 },
-            { type: TYPE.BREAK, cost: 1, dmg: 2, pos: 6 },
+            {
+              type: TYPE.BREAK,
+              cost: 1,
+              /* dmg removed */ pos: 6,
+              ability: "FEINT",
+            },
+            { type: TYPE.BREAK, cost: 2, /* dmg removed */ pos: 8 },
+            { type: TYPE.BREAK, cost: 1, /* dmg removed */ pos: 6 },
           ],
         },
       };
@@ -1789,7 +1794,7 @@
               applyDmg(player, eCard, 1.5);
               result = "LOSE";
             } else {
-              // --- 修正箇所: ここでカードタイプを判定します ---
+              // Clash Logic
               const isClash =
                 pCard &&
                 eCard &&
@@ -1803,7 +1808,6 @@
               } else {
                 log("Draw! No damage.");
               }
-              // ---------------------------------------------
             }
           } else {
             if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
@@ -1933,12 +1937,23 @@
         if (target.breakState) finalMul *= 2.0;
         if (target.burnout && !target.breakState) finalMul *= 1.5;
 
-        let dmg = Math.floor((card.dmg || 0) * finalMul);
+        // Force 0 dmg for Break type cards
+        let dmg = 0;
+        if (card.type !== TYPE.BREAK) {
+          dmg = Math.floor((card.dmg || 0) * finalMul);
+        }
+
         let pos = Math.floor((card.pos || 0) * finalMul);
 
         target.hp -= dmg;
         target.pos -= pos;
-        log(`${target.name} takes ${dmg} Dmg`);
+
+        let logMsg = `${target.name} takes `;
+        if (dmg > 0) logMsg += `${dmg} HP Dmg`;
+        if (dmg > 0 && pos > 0) logMsg += " & ";
+        if (pos > 0) logMsg += `${pos} Posture Dmg`;
+        if (dmg === 0 && pos === 0) logMsg += "no damage";
+        log(logMsg);
 
         if (target.pos <= 0 && !target.breakState) {
           target.breakState = true;
