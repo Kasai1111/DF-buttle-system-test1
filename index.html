@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>DUSTFALL Prototype - Break Fix</title>
+    <title>DUSTFALL Prototype - Secret Revealed</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -2194,28 +2194,31 @@
           statsHtml += `<div class="stat-row"><span>🛡️</span><span>${card.arm}</span></div>`;
 
         let abilityHtml = "";
-        if (!isSecret && card.ability && ABILITIES[card.ability]) {
+        if (card.ability && ABILITIES[card.ability]) {
           abilityHtml = `<div class="ability-badge">${
             ABILITIES[card.ability].name
           }</div>`;
         }
 
-        div.innerHTML = `<div class="card-type">${
-          isSecret ? "SECRET" : card.type
-        }</div>
+        div.innerHTML = `<div class="card-type">${card.type}</div>
              <div class="card-cost">${card.cost}</div>
-             <div class="card-stats">${isSecret ? "?" : statsHtml}</div>
-             ${abilityHtml}`;
+             <div class="card-stats">${statsHtml}</div>
+             ${abilityHtml}
+             ${
+               isSecret
+                 ? '<div style="position:absolute; top:2px; right:2px; font-size:0.5rem; color:#90a4ae; background:rgba(0,0,0,0.7); padding:1px 3px; border-radius:2px;">SECRET</div>'
+                 : ""
+             }`;
 
         // --- Event Listener Logic (Fix for Mobile) ---
         if (!isTouchDevice) {
           // PC Behavior
           div.onclick = () => selectCard(card, isSecret, idx);
-          if (!isSecret) {
-            div.onmouseenter = (e) => showTooltip(e, card);
-            div.onmousemove = (e) => moveTooltip(e);
-            div.onmouseleave = () => hideTooltip();
-          }
+          // シークレットカードでもツールチップを表示するように変更（必要であれば）
+          // 今回は表面に情報が出ているので必須ではないが、詳細確認のため有効化
+          div.onmouseenter = (e) => showTooltip(e, card);
+          div.onmousemove = (e) => moveTooltip(e);
+          div.onmouseleave = () => hideTooltip();
         } else {
           // Mobile Behavior: Long Press for Tooltip, Tap for Select
           let pressTimer;
@@ -2230,10 +2233,8 @@
               // 500ms 長押し判定
               pressTimer = setTimeout(() => {
                 isLongPress = true;
-                if (!isSecret) {
-                  if (navigator.vibrate) navigator.vibrate(50);
-                  showTooltip(e, card);
-                }
+                if (navigator.vibrate) navigator.vibrate(50);
+                showTooltip(e, card);
               }, 500);
             },
             { passive: true }
