@@ -1126,7 +1126,7 @@
           desc: "【浄化】Slot1勝利時: 自身の悪い状態タグを全て解除する。",
         },
 
-        // --- NEW: Added Abilities ---
+        // --- Previous Additions ---
         OVERCLOCK: {
           id: "OVERCLOCK",
           type: "SETUP",
@@ -1143,8 +1143,6 @@
           tagName: "感染",
           desc: "【設置】Slot1勝利時: 敵に『感染』付与(3T)。毎ターン開始時にEP-2。",
         },
-
-        // --- NEW: Advanced Abilities (Previously Requested) ---
         POLARITY_SHIFT: {
           id: "POLARITY_SHIFT",
           type: "INSTANT",
@@ -1175,8 +1173,6 @@
           name: "予測演算",
           desc: "【単発】Slot1勝利時、次のターンの敵のスロット(1&2)を完全予知する。",
         },
-
-        // --- NEW: Requested Instant Abilities ---
         PHANTOM_WEIGHT: {
           id: "PHANTOM_WEIGHT",
           type: "INSTANT",
@@ -1218,6 +1214,55 @@
           type: "INSTANT",
           name: "腐食 (毒)",
           desc: "【単発】敵に毒付与(2T)。毎ターンHP-3。",
+        },
+
+        // --- NEW: Added for Execute Requests ---
+        // New Setups
+        SCAN: {
+          id: "SCAN",
+          type: "SETUP",
+          name: "Scan",
+          tag: "DETECTED",
+          tagName: "解析済",
+          desc: "【設置】Slot1勝利時: 敵に『解析済』タグを付与。",
+        },
+        SONAR: {
+          id: "SONAR",
+          type: "SETUP",
+          name: "Sonar",
+          tag: "RESONANCE",
+          tagName: "共鳴",
+          desc: "【設置】Slot1勝利時: 敵に『共鳴』タグを付与。",
+        },
+
+        // New Executes
+        DATA_DRAIN: {
+          id: "DATA_DRAIN",
+          type: "EXECUTE",
+          name: "Data Drain",
+          reqTag: "DETECTED",
+          desc: "【実行】Slot2勝利時: 敵が『解析済』ならSPを全て奪う。",
+        },
+        POSTURE_BREAK_EXEC: {
+          id: "POSTURE_BREAK_EXEC",
+          type: "EXECUTE",
+          name: "Posture Break",
+          reqTag: "ARMOR_BROKEN",
+          desc: "【実行】Slot2勝利時: 敵が『装甲破壊』なら強制ブレイク(姿勢0)。",
+        },
+        ECHO_STRIKE: {
+          id: "ECHO_STRIKE",
+          type: "EXECUTE",
+          name: "Echo Strike",
+          reqTag: "RESONANCE",
+          desc: "【実行】Slot2勝利時: 敵が『共鳴』ならダメージを2回与える(x2)。",
+        },
+        MEMORY_LEAK: {
+          id: "MEMORY_LEAK",
+          type: "EXECUTE",
+          name: "Memory Leak",
+          reqTag: "INFECTED",
+          desc: "【実行】Slot2勝利時: 敵が『感染』なら与ダメの50%分SP減少。",
         },
       };
 
@@ -1293,7 +1338,6 @@
             { type: TYPE.BREAK, cost: 4, pos: 15 },
             { type: TYPE.SP, cost: 7, dmg: 50, pos: 20, isSP: true },
           ],
-          // NEW WEAPONS
           幻影の短剣: [
             {
               type: TYPE.ATTACK,
@@ -1338,6 +1382,55 @@
             },
             { type: TYPE.BREAK, cost: 3, pos: 10 },
             { type: TYPE.SP, cost: 6, dmg: 20, pos: 20, isSP: true },
+          ],
+          // --- NEW WEAPONS for Execute Abilities ---
+          解析の杖: [
+            { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
+            { type: TYPE.BREAK, cost: 3, pos: 10, ability: "DATA_DRAIN" },
+            { type: TYPE.GUARD, cost: 2, arm: 8 },
+            { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true },
+          ],
+          共鳴の戦斧: [
+            { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2, ability: "SONAR" },
+            {
+              type: TYPE.ATTACK,
+              cost: 4,
+              dmg: 14,
+              pos: 5,
+              ability: "ECHO_STRIKE",
+            },
+            { type: TYPE.BREAK, cost: 2, pos: 8 },
+            { type: TYPE.SP, cost: 6, dmg: 45, pos: 10, isSP: true },
+          ],
+          ハッカーナイフ: [
+            {
+              type: TYPE.ATTACK,
+              cost: 1,
+              dmg: 5,
+              pos: 1,
+              ability: "VIRUS_INSTALL",
+            },
+            {
+              type: TYPE.ATTACK,
+              cost: 2,
+              dmg: 10,
+              pos: 3,
+              ability: "MEMORY_LEAK",
+            },
+            { type: TYPE.GUARD, cost: 1, arm: 4 },
+            { type: TYPE.SP, cost: 4, dmg: 20, pos: 5, isSP: true },
+          ],
+          破壊のメイス: [
+            { type: TYPE.BREAK, cost: 3, pos: 12, ability: "ARMOR_BREAK" },
+            {
+              type: TYPE.ATTACK,
+              cost: 5,
+              dmg: 18,
+              pos: 5,
+              ability: "POSTURE_BREAK_EXEC",
+            },
+            { type: TYPE.GUARD, cost: 2, arm: 6 },
+            { type: TYPE.SP, cost: 7, dmg: 55, pos: 25, isSP: true },
           ],
         },
         ARMORS: {
@@ -2262,6 +2355,11 @@
         let pFlatDmgBonus = 0; // For Desperate Strike
         let eFlatDmgBonus = 0;
 
+        let pForceBreak = false;
+        let eForceBreak = false;
+        let pMemoryLeakActive = false;
+        let eMemoryLeakActive = false;
+
         // 1. Trinity Mission Check (Slot 1 Only)
         if (slotNum === 1) {
           if (
@@ -2332,13 +2430,27 @@
             if (hasTag(enemy, ab.reqTag)) {
               log(`★ Player Trigger: ${ab.name}`);
               await showAbilityAnnouncement(player.name, ab.name, ab.desc);
-
               log(`>>> SYNERGY EXECUTION! [${ab.name}] Activated!`);
-              pBonusMul *= 3.0;
 
               if (ab.id === "FIRE_BLAST") {
+                pBonusMul *= 3.0;
                 enemy.burnout = true;
                 log(">> Execute Effect: Enemy Burnout Applied!");
+              } else if (ab.id === "FATAL_THRUST") {
+                pBonusMul *= 3.0;
+              } else if (ab.id === "DATA_DRAIN") {
+                const drain = enemy.sp;
+                enemy.sp = 0;
+                player.sp = Math.min(MAX_SP, player.sp + drain);
+                log(`>> DATA DRAIN: Stole ${drain} SP!`);
+              } else if (ab.id === "POSTURE_BREAK_EXEC") {
+                pForceBreak = true;
+                log(">> POSTURE BREAK: Immediate Break Status!");
+              } else if (ab.id === "ECHO_STRIKE") {
+                pBonusMul *= 2.0;
+                log(">> ECHO STRIKE: Damage x2!");
+              } else if (ab.id === "MEMORY_LEAK") {
+                pMemoryLeakActive = true;
               }
             }
           }
@@ -2386,13 +2498,27 @@
             if (hasTag(player, ab.reqTag)) {
               log(`★ Enemy Trigger: ${ab.name}`);
               await showAbilityAnnouncement(enemy.name, ab.name, ab.desc);
-
               log(`>>> SYNERGY EXECUTION! [${ab.name}] Activated!`);
-              eBonusMul *= 3.0;
 
               if (ab.id === "FIRE_BLAST") {
+                eBonusMul *= 3.0;
                 player.burnout = true;
                 log(">> Execute Effect: Player Burnout Applied!");
+              } else if (ab.id === "FATAL_THRUST") {
+                eBonusMul *= 3.0;
+              } else if (ab.id === "DATA_DRAIN") {
+                const drain = player.sp;
+                player.sp = 0;
+                enemy.sp = Math.min(MAX_SP, enemy.sp + drain);
+                log(`>> DATA DRAIN: Stole ${drain} SP!`);
+              } else if (ab.id === "POSTURE_BREAK_EXEC") {
+                eForceBreak = true;
+                log(">> POSTURE BREAK: Immediate Break Status!");
+              } else if (ab.id === "ECHO_STRIKE") {
+                eBonusMul *= 2.0;
+                log(">> ECHO STRIKE: Damage x2!");
+              } else if (ab.id === "MEMORY_LEAK") {
+                eMemoryLeakActive = true;
               }
             }
           }
@@ -2419,10 +2545,32 @@
           if (result === "DRAW") {
             // Clash or Momentum
             if (prevResult === "WIN") {
-              applyDmg(enemy, pCard, 1.5 * pBonusMul, pFlatDmgBonus);
+              const dmg = applyDmg(
+                enemy,
+                pCard,
+                1.5 * pBonusMul,
+                pFlatDmgBonus,
+                pForceBreak
+              );
+              if (pMemoryLeakActive && dmg > 0) {
+                const loss = Math.floor(dmg * 0.5);
+                enemy.sp = Math.max(0, enemy.sp - loss);
+                log(`>> MEMORY LEAK: Enemy lost ${loss} SP!`);
+              }
               result = "WIN";
             } else if (prevResult === "LOSE") {
-              applyDmg(player, eCard, 1.5 * eBonusMul, eFlatDmgBonus);
+              const dmg = applyDmg(
+                player,
+                eCard,
+                1.5 * eBonusMul,
+                eFlatDmgBonus,
+                eForceBreak
+              );
+              if (eMemoryLeakActive && dmg > 0) {
+                const loss = Math.floor(dmg * 0.5);
+                player.sp = Math.max(0, player.sp - loss);
+                log(`>> MEMORY LEAK: Player lost ${loss} SP!`);
+              }
               result = "LOSE";
             } else {
               if (pCard && eCard) {
@@ -2432,10 +2580,33 @@
               }
             }
           } else {
-            if (result === "WIN")
-              applyDmg(enemy, pCard, pMul * pBonusMul, pFlatDmgBonus);
-            else if (result === "LOSE")
-              applyDmg(player, eCard, eMul * eBonusMul, eFlatDmgBonus);
+            if (result === "WIN") {
+              const dmg = applyDmg(
+                enemy,
+                pCard,
+                pMul * pBonusMul,
+                pFlatDmgBonus,
+                pForceBreak
+              );
+              if (pMemoryLeakActive && dmg > 0) {
+                const loss = Math.floor(dmg * 0.5);
+                enemy.sp = Math.max(0, enemy.sp - loss);
+                log(`>> MEMORY LEAK: Enemy lost ${loss} SP!`);
+              }
+            } else if (result === "LOSE") {
+              const dmg = applyDmg(
+                player,
+                eCard,
+                eMul * eBonusMul,
+                eFlatDmgBonus,
+                eForceBreak
+              );
+              if (eMemoryLeakActive && dmg > 0) {
+                const loss = Math.floor(dmg * 0.5);
+                player.sp = Math.max(0, player.sp - loss);
+                log(`>> MEMORY LEAK: Player lost ${loss} SP!`);
+              }
+            }
           }
         }
 
@@ -2576,6 +2747,13 @@
             opponent.corrosionTurns = 2;
             log(`>> [Corrosion] Opponent Poisoned for 2 turns!`);
             break;
+          // New Setups are mainly for tagging, no instant logic needed usually
+          case "SCAN":
+            // Tag added by SETUP type logic automatically
+            break;
+          case "SONAR":
+            // Tag added by SETUP type logic automatically
+            break;
         }
         return 0;
       }
@@ -2656,18 +2834,18 @@
         });
       }
 
-      function applyDmg(target, card, mul, flatBonus = 0) {
-        if (!card && flatBonus === 0) return;
+      function applyDmg(target, card, mul, flatBonus = 0, forceBreak = false) {
+        if (!card && flatBonus === 0) return 0;
 
         // MANA BARRIER Check (Except SP)
         if (target.isManaBarrier && card && !card.isSP) {
           log(`BARRIER! ${target.name} negates damage!`);
-          return;
+          return 0;
         }
 
         if (target.damageImmune) {
           log(`IMMUNE! ${target.name} takes no damage (Iron Will)!`);
-          return;
+          return 0;
         }
 
         let finalMul = mul;
@@ -2702,7 +2880,12 @@
         if (dmg === 0 && pos === 0) logMsg += "no damage";
         log(logMsg);
 
-        if (target.pos <= 0 && !target.breakState) {
+        if (forceBreak && !target.breakState) {
+          target.pos = 0;
+          target.breakState = true;
+          target.justBroken = true;
+          log(`!!! ${target.name} FORCED BREAK !!!`);
+        } else if (target.pos <= 0 && !target.breakState) {
           target.breakState = true;
           target.justBroken = true;
           target.pos = 0;
@@ -2710,6 +2893,7 @@
         } else if (target.pos < 0) {
           target.pos = 0;
         }
+        return dmg;
       }
 
       // UI Render
