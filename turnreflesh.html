@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>DUSTFALL Prototype - Break Fix</title>
+    <title>DUSTFALL Prototype - Strategic Puzzle</title>
     <style>
       :root {
         --bg-color: #121212;
@@ -35,7 +35,6 @@
         margin: 0;
         padding: 10px;
         min-height: 100vh;
-        /* スマホでのハイライト色を透明に */
         -webkit-tap-highlight-color: transparent;
       }
       h1 {
@@ -99,7 +98,6 @@
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.2s;
-        /* スマホでの操作性向上 */
         touch-action: manipulation;
       }
       .equip-btn:hover {
@@ -138,7 +136,21 @@
       .start-btn:hover {
         transform: scale(1.02);
       }
-
+      /* --- AI Personality Tag Styles --- */
+      .personality-tag {
+        font-size: 0.75rem;
+        color: #b0bec5;
+        border: 1px solid #546e7a;
+        background: rgba(38, 50, 56, 0.6);
+        padding: 1px 8px;
+        border-radius: 4px;
+        letter-spacing: 1px;
+        margin-left: 5px;
+        text-shadow: none;
+        font-weight: normal;
+        display: inline-block;
+        vertical-align: middle;
+      }
       /* --- Existing Game Styles --- */
       .game-container {
         width: 100%;
@@ -157,27 +169,6 @@
         transition: border-color 0.3s;
       }
 
-      /* 先攻表示 */
-      .panel.initiative {
-        border-color: var(--accent-color);
-        box-shadow: 0 0 10px rgba(255, 152, 0, 0.2);
-      }
-      .initiative-badge {
-        position: absolute;
-        top: -10px;
-        right: 10px;
-        background: var(--accent-color);
-        color: #000;
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-weight: bold;
-        display: none;
-      }
-      .panel.initiative .initiative-badge {
-        display: block;
-      }
-
       /* Intel Box */
       .intel-box {
         background: rgba(0, 0, 0, 0.3);
@@ -191,9 +182,9 @@
         align-items: center;
       }
       .intel-val {
-        color: #fff;
+        color: #e57373;
         font-weight: bold;
-        font-size: 1rem;
+        font-size: 1.1rem;
       }
 
       /* Bars */
@@ -311,7 +302,6 @@
         user-select: none;
         transition: transform 0.2s;
         flex-shrink: 0;
-        /* スマホ向け: ダブルタップズーム等の防止 */
         touch-action: manipulation;
       }
       .card:hover {
@@ -366,7 +356,7 @@
         transform: scale(0.9);
       }
 
-      /* Matchup Badges (Win/Lose Indicator) */
+      /* Matchup Badges */
       .matchup-badge {
         position: absolute;
         font-size: 0.65rem;
@@ -477,6 +467,36 @@
       }
       .res-draw {
         color: #bdbdbd;
+      }
+
+      /* Trinity Mission Success Overlay */
+      .trinity-success-overlay {
+        position: absolute;
+        top: -30px;
+        width: 140%;
+        text-align: center;
+        background: rgba(255, 215, 0, 0.9);
+        color: #000;
+        font-weight: bold;
+        padding: 4px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        z-index: 100;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        animation: bouncePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 2px solid #fff;
+      }
+
+      @keyframes bouncePop {
+        0% {
+          transform: scale(0);
+        }
+        60% {
+          transform: scale(1.2);
+        }
+        100% {
+          transform: scale(1);
+        }
       }
 
       @keyframes popIn {
@@ -629,7 +649,71 @@
           transform: translateY(0);
         }
       }
+      /* --- Ability Cut-in Announcement --- */
+      #ability-cutin {
+        position: fixed;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid #ffd700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        color: #fff;
+        padding: 20px 40px;
+        z-index: 3000;
+        text-align: center;
+        border-radius: 8px;
+        display: none;
+        opacity: 0;
+        pointer-events: none;
+      }
 
+      #ability-cutin.active {
+        display: block;
+        animation: cutinPop 2.5s ease-out forwards;
+      }
+
+      .cutin-user {
+        font-size: 1rem;
+        color: #bbb;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+      }
+
+      .cutin-name {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #ffd700;
+        text-shadow: 0 0 10px #ff8c00;
+        margin-bottom: 5px;
+      }
+
+      .cutin-desc {
+        font-size: 0.9rem;
+        color: #e0e0e0;
+      }
+
+      @keyframes cutinPop {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.5);
+        }
+        15% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.1);
+        }
+        25% {
+          transform: translate(-50%, -50%) scale(1);
+        }
+        85% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -60%);
+        }
+      }
       /* Tooltip Styles */
       #card-tooltip {
         position: fixed;
@@ -725,7 +809,11 @@
   </head>
   <body>
     <div id="card-tooltip"></div>
-
+    <div id="ability-cutin">
+      <div class="cutin-user" id="ac-user">PLAYER</div>
+      <div class="cutin-name" id="ac-name">ABILITY NAME</div>
+      <div class="cutin-desc" id="ac-desc">Description text...</div>
+    </div>
     <div id="setup-screen">
       <h1>DUSTFALL - Equipment Setup</h1>
       <div class="setup-container">
@@ -754,9 +842,11 @@
     <div class="game-container">
       <h1>DUSTFALL - Battle Phase</h1>
       <div class="panel" id="e-panel">
-        <div class="initiative-badge">先攻</div>
         <div class="status-row">
-          <strong>ENEMY</strong>
+          <div style="display: flex; align-items: center">
+            <strong>ENEMY</strong>
+            <span id="e-personality" class="personality-tag"></span>
+          </div>
           <span class="burnout-tag" id="e-burnout">BURNOUT</span>
         </div>
 
@@ -775,20 +865,20 @@
           <span class="sp-val">SP: <span id="e-sp"></span></span>
         </div>
 
-        <div class="intel-box" id="e-intel-box" style="display: none">
-          <span>⚠ 合計消費コスト:</span>
-          <span class="intel-val" id="e-pending-cost">0</span>
+        <div class="intel-box" id="e-intel-box">
+          <span>⚠ NEXT ACTION COST:</span>
+          <span class="intel-val" id="e-pending-cost">0 EP</span>
         </div>
 
         <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
         <div style="font-size: 0.8rem; text-align: center; color: #888">
-          ENEMY HAND (VS Slot 1 / Slot 2)
+          ENEMY HAND (Set Phase Complete)
         </div>
         <div class="card-area" id="enemy-hand-view"></div>
       </div>
 
       <div id="battle-context" class="context-banner">
-        戦況: <span id="context-msg">なし</span>
+        <span id="context-msg"></span>
       </div>
 
       <div style="text-align: center">
@@ -808,7 +898,6 @@
       </div>
 
       <div class="panel" id="p-panel">
-        <div class="initiative-badge">先攻</div>
         <div class="status-row">
           <strong>PLAYER</strong>
           <span class="burnout-tag" id="p-burnout">BURNOUT</span>
@@ -876,8 +965,10 @@
           text-align: center;
         "
       >
-        SPは全てに勝利<br />
-        <span style="color: #ffd700">Win + Slot1 = Ability!</span>
+        <span style="color: #ffd700">ELEMENTAL SURGE!</span><br />
+        チャンス発生時<br />
+        指定属性で<br />
+        Slot1勝利せよ！
       </div>
     </div>
 
@@ -885,8 +976,6 @@
       /**
        * DUSTFALL - Equipment & Battle Logic
        */
-
-      // タッチデバイス判定
       const isTouchDevice =
         "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
@@ -924,7 +1013,7 @@
         FEINT: {
           id: "FEINT",
           name: "Feint",
-          desc: "勝利時、次のターンのイニシアチブ（先攻・後攻）を強制的に操作。",
+          desc: "勝利時、相手のEPを2減らす（妨害）。",
         },
         PREP_ATK: {
           id: "PREP_ATK",
@@ -933,8 +1022,6 @@
         },
       };
 
-      // --- Equipment Data Definition ---
-      // Modified: Removed 'dmg' from all Break cards to ensure they only deal Posture damage
       const EQUIPMENT = {
         WEAPONS: {
           剛の大剣: [
@@ -951,12 +1038,7 @@
           ],
           貫きの槍: [
             { type: TYPE.ATTACK, cost: 3, dmg: 14, pos: 6 },
-            {
-              type: TYPE.BREAK,
-              cost: 2,
-              /* dmg removed */ pos: 10,
-              ability: "PREP_ATK",
-            },
+            { type: TYPE.BREAK, cost: 2, pos: 10, ability: "PREP_ATK" },
             { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 5 },
             { type: TYPE.SP, cost: 5, dmg: 25, pos: 20, isSP: true },
           ],
@@ -965,7 +1047,7 @@
           フルプレート: [
             { type: TYPE.GUARD, cost: 3, arm: 18 },
             { type: TYPE.GUARD, cost: 2, arm: 12 },
-            { type: TYPE.BREAK, cost: 4, /* dmg removed */ pos: 15 },
+            { type: TYPE.BREAK, cost: 4, pos: 15 },
           ],
           レザーベスト: [
             { type: TYPE.GUARD, cost: 1, arm: 4 },
@@ -975,19 +1057,14 @@
         },
         ACCESSORIES: {
           パワーリング: [
-            { type: TYPE.BREAK, cost: 3, /* dmg removed */ pos: 8 },
-            { type: TYPE.BREAK, cost: 3, /* dmg removed */ pos: 8 },
+            { type: TYPE.BREAK, cost: 3, pos: 8 },
+            { type: TYPE.BREAK, cost: 3, pos: 8 },
             { type: TYPE.ATTACK, cost: 5, dmg: 20, pos: 0 },
           ],
           フェザーブーツ: [
-            {
-              type: TYPE.BREAK,
-              cost: 1,
-              /* dmg removed */ pos: 6,
-              ability: "FEINT",
-            },
-            { type: TYPE.BREAK, cost: 2, /* dmg removed */ pos: 8 },
-            { type: TYPE.BREAK, cost: 1, /* dmg removed */ pos: 6 },
+            { type: TYPE.BREAK, cost: 1, pos: 6, ability: "FEINT" },
+            { type: TYPE.BREAK, cost: 2, pos: 8 },
+            { type: TYPE.BREAK, cost: 1, pos: 6 },
           ],
         },
       };
@@ -997,19 +1074,15 @@
       let selectedAcc = Object.keys(EQUIPMENT.ACCESSORIES)[0];
 
       let turn = 1;
-      let battleContext = null;
       let player, enemy;
       let pSlots = [null, null];
       let isCounterMode = false;
       let hasUsedCounter = false;
       let isAnimating = false;
-      let isEnemyFirst = false;
       let pendingEnemySlots = [null, null];
-      let nextTurnInitiativeOverride = null;
 
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-      // --- Setup Functions ---
       function initSetup() {
         renderEquipOptions("weapon", EQUIPMENT.WEAPONS, selectedWeapon);
         renderEquipOptions("armor", EQUIPMENT.ARMORS, selectedArmor);
@@ -1047,9 +1120,7 @@
         el.innerHTML = "";
         cards.forEach((c) => {
           const div = createCardDiv(c, false, -99);
-          // Previewではクリック無効
           div.onclick = null;
-          // タッチイベントも無効化
           if (isTouchDevice) {
             div.ontouchstart = null;
             div.ontouchend = null;
@@ -1065,11 +1136,8 @@
         initBattle();
       }
 
-      // --- Tooltip Logic ---
-      // --- Tooltip Logic (Updated) ---
       function showTooltip(e, card) {
         if (!card) return;
-        // イベント伝播停止
         if (e && e.stopPropagation) e.stopPropagation();
 
         const tt = document.getElementById("card-tooltip");
@@ -1082,7 +1150,6 @@
         if (card.arm)
           statsText += `<span class="tooltip-stat">Armor ${card.arm}</span>\n`;
         if (card.isSP)
-          // 修正: Cost 5 固定ではなく card.cost を動的に表示
           statsText += `<span style="color:#ba68c8">SP必殺技 (Cost ${card.cost})</span>\n`;
 
         let abilityText = "";
@@ -1107,8 +1174,6 @@
         if (!e) return;
 
         let clientX, clientY;
-
-        // タッチイベントとマウスイベントの座標取得の差異を吸収
         if (e.touches && e.touches.length > 0) {
           clientX = e.touches[0].clientX;
           clientY = e.touches[0].clientY;
@@ -1116,23 +1181,17 @@
           clientX = e.clientX;
           clientY = e.clientY;
         } else {
-          // Fallback
           return;
         }
 
-        // スマホの場合、指で隠れないように上に表示する調整
         const offsetX = 15;
         const offsetY = isTouchDevice ? -150 : 15;
 
-        // 画面外にはみ出さない簡易補正
-        // 右端チェック
         let leftPos = Math.min(clientX + offsetX, window.innerWidth - 260);
-        // 左端チェック（マイナスにならないように）
         if (leftPos < 10) leftPos = 10;
 
-        // 下端・上端チェック
         let topPos = clientY + offsetY;
-        if (topPos < 10) topPos = clientY + 30; // 上にはみ出るなら下に表示
+        if (topPos < 10) topPos = clientY + 30;
 
         tt.style.left = leftPos + "px";
         tt.style.top = topPos + "px";
@@ -1143,7 +1202,6 @@
         tt.style.display = "none";
       }
 
-      // --- Battle Init Logic ---
       function buildDeck(wKey, aKey, accKey) {
         const wCards = JSON.parse(JSON.stringify(EQUIPMENT.WEAPONS[wKey]));
         const aCards = JSON.parse(JSON.stringify(EQUIPMENT.ARMORS[aKey]));
@@ -1182,6 +1240,9 @@
           breakState: false,
           justBroken: false,
           stealthTurns: 0,
+          personalityWord: "",
+          isTrinityReady: false, // 手札条件クリア
+          trinityTarget: null, // "Attack", "Guard", or "Break"
         };
 
         if (name === "Enemy") {
@@ -1191,7 +1252,15 @@
               Math.floor(Math.random() * AI_STRATEGY_NAMES.length)
             ];
           entity.strategy = randomStrategyName;
-          log(`[System] Enemy Strategy: ${randomStrategyName}`);
+
+          const words = AI_PERSONALITIES[randomStrategyName];
+          if (words) {
+            entity.personalityWord =
+              words[Math.floor(Math.random() * words.length)];
+          }
+          log(
+            `[System] Enemy Strategy: ${randomStrategyName} / Sign: ${entity.personalityWord}`
+          );
         }
 
         return entity;
@@ -1218,135 +1287,410 @@
         const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
         const eacc = accKeys[Math.floor(Math.random() * accKeys.length)];
         enemy = createEntity("Enemy", ew, ea, eacc);
-
-        isEnemyFirst = Math.random() < 0.5;
+        const pTag = document.getElementById("e-personality");
+        if (enemy.personalityWord) {
+          pTag.innerText = `《 ${enemy.personalityWord} 》`;
+          pTag.style.display = "inline-block";
+        } else {
+          pTag.style.display = "none";
+        }
         startTurn();
       }
 
-      // --- AI Strategies ---
+      // --- AI Logic ---
+      function analyzePlayerHand(playerEntity) {
+        const hand = playerEntity.hand;
+        const total = hand.length;
+        if (total === 0) return { likelyType: null, hasSP: false, maxDmg: 0 };
+
+        let atkCount = 0,
+          grdCount = 0,
+          brkCount = 0;
+        let maxDmg = 0;
+        let hasSP = false;
+
+        hand.forEach((c) => {
+          if (c.type === TYPE.ATTACK) atkCount++;
+          if (c.type === TYPE.GUARD) grdCount++;
+          if (c.type === TYPE.BREAK) brkCount++;
+          if (c.isSP) hasSP = true;
+          if (c.dmg && c.dmg > maxDmg) maxDmg = c.dmg;
+        });
+
+        let likelyType = TYPE.ATTACK;
+        if (grdCount > atkCount && grdCount > brkCount) likelyType = TYPE.GUARD;
+        if (brkCount > atkCount && brkCount > grdCount) likelyType = TYPE.BREAK;
+
+        return { atkCount, grdCount, brkCount, likelyType, hasSP, maxDmg };
+      }
+
+      function getWinRate(myCard, likelyPlayerType) {
+        if (!myCard) return 0;
+        if (myCard.isSP) return 0.99;
+        if (!likelyPlayerType) return 0.5;
+        if (myCard.type === likelyPlayerType) return 0.5;
+        if (WIN_MAP[myCard.type] === likelyPlayerType) return 0.8;
+        return 0.2;
+      }
+
+      function simulateDamage(card, target, isBreakState) {
+        if (!card || card.type === TYPE.GUARD) return 0;
+        let mul = 1.0;
+        if (isBreakState) mul = 2.0;
+        else if (target.burnout) mul = 1.5;
+        return Math.floor((card.dmg || 0) * mul);
+      }
+
+      const AI_PERSONALITIES = {
+        ISTJ: ["規律", "機械的", "堅実", "冷静", "保守的"],
+        INFJ: ["直感的", "静観", "見切", "深慮", "慎重"],
+        ESTP: ["好戦的", "無謀", "刹那的", "自信", "狂暴"],
+        ENTJ: ["支配的", "合理的", "好戦的", "計画的", "狂暴"],
+        INTJ: ["狡猾", "冷徹", "計画的", "静観", "冷静"],
+        ISFJ: ["臆病", "堅実", "慎重", "献身的", "不安"],
+        INTP: ["分析的", "多角的", "合理的", "変則的", "冷静"],
+        ENFP: ["気まぐれ", "撹乱", "直感的", "変則的", "楽観的"],
+      };
+
       const AI_STRATEGIES = {
-        ISTJ: (entity, opponent, isSecond, pCost) => {
-          let eSlots = [null, null];
+        ISTJ: (entity, opponent, pCost) => {
+          const pAnalysis = analyzePlayerHand(opponent);
           let hand = [...entity.hand];
           let budget = entity.ep;
+          let eSlots = [null, null];
 
-          const killShot = hand.find(
-            (c) => (c.dmg || 0) >= opponent.hp && c.cost <= budget
-          );
-          if (killShot) return { slots: [killShot, null], action: "COMMIT" };
+          const killCombo = findLethalCombo(hand, budget, opponent);
+          if (killCombo) return { slots: killCombo, action: "COMMIT" };
 
-          let s1Candidates = hand.filter((c) => c.cost <= budget);
-          s1Candidates.sort((a, b) => {
-            let scoreA = 0,
-              scoreB = 0;
-            if (battleContext && a.type === battleContext.type) scoreA += 5;
-            if (battleContext && b.type === battleContext.type) scoreB += 5;
-            if (a.ability === "EP_CHARGE" && entity.ep < 4) scoreA += 4;
-            if (b.ability === "EP_CHARGE" && entity.ep < 4) scoreB += 4;
-            if (a.isSP && entity.sp >= MAX_SP) scoreA += 10;
-            if (b.isSP && entity.sp >= MAX_SP) scoreB += 10;
-            return scoreB - scoreA;
-          });
-
-          if (s1Candidates.length > 0) {
-            eSlots[0] = s1Candidates[0];
-            budget -= eSlots[0].cost;
-            hand = hand.filter((c) => c !== eSlots[0]);
+          const threatLevel = pAnalysis.maxDmg > 15 || opponent.sp === MAX_SP;
+          if (entity.hp < MAX_HP * 0.4 || threatLevel) {
+            const bestGuard = hand.find(
+              (c) => c.type === TYPE.GUARD && c.cost <= budget
+            );
+            if (bestGuard) {
+              eSlots[0] = bestGuard;
+              budget -= bestGuard.cost;
+              hand = hand.filter((c) => c !== bestGuard);
+            }
           }
 
-          if (eSlots[0] && budget > 0) {
-            let s2Candidates = hand.filter((c) => c.cost <= budget);
-            if (eSlots[0].dmg > 15 || eSlots[0].isSP) {
-              s2Candidates.sort((a, b) => (b.dmg || 0) - (a.dmg || 0));
-            } else {
-              s2Candidates.sort((a, b) => (b.arm || 0) - (a.arm || 0));
+          if (!eSlots[0]) {
+            let targetType = null;
+            if (pAnalysis.likelyType === TYPE.GUARD) targetType = TYPE.BREAK;
+            else if (pAnalysis.likelyType === TYPE.ATTACK)
+              targetType = TYPE.GUARD;
+            else targetType = TYPE.ATTACK;
+
+            const counterCard = hand.find(
+              (c) => c.type === targetType && c.cost <= budget
+            );
+            if (counterCard) {
+              eSlots[0] = counterCard;
+              budget -= counterCard.cost;
+              hand = hand.filter((c) => c !== counterCard);
             }
-            if (s2Candidates.length > 0) eSlots[1] = s2Candidates[0];
+          }
+
+          const fillSlots = (slotIdx) => {
+            if (eSlots[slotIdx]) return;
+            const charger = hand.find(
+              (c) => c.ability === "EP_CHARGE" && c.cost <= budget
+            );
+            if (charger) {
+              eSlots[slotIdx] = charger;
+              budget -= charger.cost;
+              hand = hand.filter((c) => c !== charger);
+            } else {
+              const cheap = hand
+                .filter((c) => c.cost <= budget)
+                .sort((a, b) => a.cost - b.cost)[0];
+              if (cheap) {
+                eSlots[slotIdx] = cheap;
+                budget -= cheap.cost;
+                hand = hand.filter((c) => c !== cheap);
+              }
+            }
+          };
+          fillSlots(0);
+          fillSlots(1);
+          return { slots: eSlots, action: "COMMIT" };
+        },
+        INFJ: (entity, opponent, pCost) => {
+          const pAnalysis = analyzePlayerHand(opponent);
+          const danger = opponent.sp === MAX_SP && opponent.ep >= 5;
+          if (
+            !entity.hasUsedCounter &&
+            entity.ep >= COUNTER_EP_COST &&
+            danger
+          ) {
+            if (Math.random() < 0.7)
+              return { slots: [null, null], action: "COUNTER" };
+          }
+
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+          let eSlots = [null, null];
+
+          if (!eSlots[0]) {
+            hand.sort(
+              (a, b) =>
+                getWinRate(b, pAnalysis.likelyType) -
+                getWinRate(a, pAnalysis.likelyType)
+            );
+            const bestMatch = hand.find((c) => c.cost <= budget);
+            if (bestMatch) {
+              eSlots[0] = bestMatch;
+              budget -= bestMatch.cost;
+              hand = hand.filter((c) => c !== bestMatch);
+            }
+          }
+          if (hand.length > 0 && budget > 0) {
+            eSlots[1] = hand.find((c) => c.cost <= budget) || null;
           }
           return { slots: eSlots, action: "COMMIT" };
         },
-
-        INFJ: (entity, opponent, isSecond, pCost) => {
-          let eSlots = [null, null];
+        ESTP: (entity, opponent, pCost) => {
           let hand = [...entity.hand];
           let budget = entity.ep;
-
-          if (opponent.burnout) {
-            const bigDmgCards = hand
-              .filter((c) => c.cost <= budget)
-              .sort((a, b) => b.dmg - a.dmg);
-            return {
-              slots: [bigDmgCards[0] || null, bigDmgCards[1] || null],
-              action: "COMMIT",
-            };
-          }
-
-          if (
-            isSecond &&
-            pCost >= 5 &&
-            !entity.hasUsedCounter &&
-            budget >= COUNTER_EP_COST
-          ) {
-            return { slots: [null, null], action: "COUNTER" };
-          }
-
-          const abilityCard = hand.find(
-            (c) =>
-              (c.ability === "FEINT" || c.ability === "SMOKE") &&
-              c.cost <= budget
-          );
-          if (abilityCard) {
-            eSlots[0] = abilityCard;
-            budget -= abilityCard.cost;
-            hand = hand.filter((c) => c !== abilityCard);
-          }
-
-          if (!eSlots[0] && opponent.pos < 10) {
-            const breaker = hand.find(
-              (c) => c.type === TYPE.BREAK && c.cost <= budget
+          const spCard = hand.find((c) => c.isSP && c.cost <= budget);
+          if (spCard) {
+            const followUp = hand.find(
+              (c) => c !== spCard && c.cost <= budget - spCard.cost
             );
-            if (breaker) {
-              eSlots[0] = breaker;
-              budget -= breaker.cost;
-              hand = hand.filter((c) => c !== breaker);
+            return { slots: [spCard, followUp || null], action: "COMMIT" };
+          }
+          hand.sort((a, b) => {
+            const powerA = (a.dmg || 0) + (a.pos || 0) * 1.5;
+            const powerB = (b.dmg || 0) + (b.pos || 0) * 1.5;
+            return powerB - powerA;
+          });
+          const eSlots = [null, null];
+          if (hand[0] && hand[0].cost <= budget) {
+            eSlots[0] = hand[0];
+            budget -= hand[0].cost;
+            hand.shift();
+          }
+          if (hand.length > 0) {
+            const slot2 = hand.find((c) => c.cost <= budget);
+            eSlots[1] = slot2 || null;
+          }
+          return { slots: eSlots, action: "COMMIT" };
+        },
+        ENTJ: (entity, opponent, pCost) => {
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+          const breakers = hand.filter(
+            (c) => c.type === TYPE.BREAK && c.cost <= budget
+          );
+          for (let brk of breakers) {
+            if (!opponent.breakState && opponent.pos <= (brk.pos || 0)) {
+              const remBudget = budget - brk.cost;
+              const remHand = hand.filter((c) => c !== brk);
+              const finisher = remHand
+                .filter((c) => c.cost <= remBudget)
+                .sort((a, b) => (b.dmg || 0) - (a.dmg || 0))[0];
+              if (finisher) {
+                return { slots: [brk, finisher], action: "COMMIT" };
+              }
             }
           }
+          if (opponent.breakState || opponent.burnout) {
+            hand.sort((a, b) => (b.dmg || 0) - (a.dmg || 0));
+          } else {
+            hand.sort((a, b) => (b.pos || 0) - (a.pos || 0));
+          }
+          const eSlots = [null, null];
+          if (hand[0] && hand[0].cost <= budget) {
+            eSlots[0] = hand[0];
+            budget -= hand[0].cost;
+            hand.shift();
+          }
+          if (hand[0]) {
+            eSlots[1] = hand.find((c) => c.cost <= budget) || null;
+          }
+          return { slots: eSlots, action: "COMMIT" };
+        },
+        INTJ: (entity, opponent, pCost) => {
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+          const killCombo = findLethalCombo(hand, budget, opponent);
+          if (killCombo) return { slots: killCombo, action: "COMMIT" };
 
-          if (!eSlots[0] && hand.length > 0) {
-            const best = hand
-              .filter((c) => c.cost <= budget)
-              .sort((a, b) => b.cost - a.cost)[0];
+          if (entity.hp < MAX_HP * 0.3) {
+            const guard = hand.find(
+              (c) => c.type === TYPE.GUARD && c.cost <= budget
+            );
+            if (guard) return { slots: [guard, null], action: "COMMIT" };
+          }
+          const pAnalysis = analyzePlayerHand(opponent);
+          let counterType = TYPE.ATTACK;
+          if (pAnalysis.likelyType === TYPE.ATTACK) counterType = TYPE.GUARD;
+          else if (pAnalysis.likelyType === TYPE.GUARD)
+            counterType = TYPE.BREAK;
+
+          const smartMove = hand.find(
+            (c) => c.type === counterType && c.cost <= budget
+          );
+          const secretCard = entity.secret;
+          const useSecret =
+            secretCard &&
+            secretCard.cost <= budget - (smartMove ? smartMove.cost : 0);
+
+          const eSlots = [null, null];
+          if (smartMove) {
+            eSlots[0] = smartMove;
+            budget -= smartMove.cost;
+          } else {
+            eSlots[0] =
+              hand.find((c) => c.cost <= budget && c.cost <= 2) || null;
+            if (eSlots[0]) budget -= eSlots[0].cost;
+          }
+          if (useSecret && eSlots[0]) {
+            eSlots[1] = hand.find((c) => c === secretCard) || null;
+            if (!eSlots[1] && entity.secret) {
+              const nextBest = hand
+                .filter((c) => c !== eSlots[0] && c.cost <= budget)
+                .sort((a, b) => b.cost - a.cost)[0];
+              eSlots[1] = nextBest || null;
+            }
+          } else {
+            const nextBest = hand.filter(
+              (c) => c !== eSlots[0] && c.cost <= budget
+            )[0];
+            eSlots[1] = nextBest || null;
+          }
+          return { slots: eSlots, action: "COMMIT" };
+        },
+        ISFJ: (entity, opponent, pCost) => {
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+          const pAnalysis = analyzePlayerHand(opponent);
+          const isThreatened =
+            pAnalysis.maxDmg > 10 ||
+            opponent.pos < 5 ||
+            entity.pos < MAX_POSTURE * 0.5;
+
+          const guards = hand
+            .filter((c) => c.type === TYPE.GUARD && c.cost <= budget)
+            .sort((a, b) => b.arm - a.arm);
+
+          const eSlots = [null, null];
+          if (isThreatened && guards.length > 0) {
+            eSlots[0] = guards[0];
+            budget -= guards[0].cost;
+            hand = hand.filter((c) => c !== guards[0]);
+            const guard2 = hand.find(
+              (c) => c.type === TYPE.GUARD && c.cost <= budget
+            );
+            if (guard2) {
+              eSlots[1] = guard2;
+            } else {
+              eSlots[1] = hand.find((c) => c.cost <= budget) || null;
+            }
+          } else {
+            const attack = hand.find(
+              (c) => c.type === TYPE.ATTACK && c.cost <= budget
+            );
+            eSlots[0] = attack || hand.find((c) => c.cost <= budget) || null;
+            if (eSlots[0]) budget -= eSlots[0].cost;
+            eSlots[1] =
+              hand.find((c) => c !== eSlots[0] && c.cost <= budget) || null;
+          }
+          return { slots: eSlots, action: "COMMIT" };
+        },
+        INTP: (entity, opponent, pCost) => {
+          const pAnalysis = analyzePlayerHand(opponent);
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+          let eSlots = [null, null];
+
+          if (!eSlots[0]) {
+            hand.sort((a, b) => {
+              const rateA = getWinRate(a, pAnalysis.likelyType);
+              const rateB = getWinRate(b, pAnalysis.likelyType);
+              const bonusA = a.ability ? 0.2 : 0;
+              const bonusB = b.ability ? 0.2 : 0;
+              return rateB + bonusB - (rateA + bonusA);
+            });
+            const best = hand.find((c) => c.cost <= budget);
+            eSlots[0] = best || null;
             if (best) {
-              eSlots[0] = best;
               budget -= best.cost;
               hand = hand.filter((c) => c !== best);
             }
           }
-          if (!eSlots[1] && hand.length > 0) {
-            eSlots[1] = hand.find((c) => c.cost <= budget) || null;
+          eSlots[1] = hand.find((c) => c.cost <= budget) || null;
+          return { slots: eSlots, action: "COMMIT" };
+        },
+        ENFP: (entity, opponent, pCost) => {
+          let hand = [...entity.hand];
+          let budget = entity.ep;
+          let eSlots = [null, null];
+          const tricks = hand.filter(
+            (c) =>
+              (c.ability === "SMOKE" || c.ability === "FEINT") &&
+              c.cost <= budget
+          );
+          if (tricks.length > 0) {
+            eSlots[0] = tricks[Math.floor(Math.random() * tricks.length)];
+            budget -= eSlots[0].cost;
+            hand = hand.filter((c) => c !== eSlots[0]);
+          } else {
+            const attacks = hand.filter(
+              (c) => c.type === TYPE.ATTACK && c.cost <= budget
+            );
+            if (attacks.length > 0) {
+              eSlots[0] = attacks[Math.floor(Math.random() * attacks.length)];
+              budget -= eSlots[0].cost;
+              hand = hand.filter((c) => c !== eSlots[0]);
+            }
+          }
+          if (!eSlots[0]) {
+            eSlots[0] = hand.find((c) => c.cost <= budget) || null;
+            if (eSlots[0]) {
+              budget -= eSlots[0].cost;
+              hand = hand.filter((c) => c !== eSlots[0]);
+            }
+          }
+          if (hand.length > 0) {
+            const bigMoves = hand
+              .filter((c) => c.cost <= budget)
+              .sort((a, b) => b.cost - a.cost);
+            eSlots[1] = bigMoves[0] || null;
           }
           return { slots: eSlots, action: "COMMIT" };
         },
       };
 
-      // --- Main Logic ---
+      function findLethalCombo(hand, budget, opponent) {
+        const n = hand.length;
+        for (let i = 0; i < n; i++) {
+          const c1 = hand[i];
+          if (c1.cost > budget) continue;
+          const dmg1 = simulateDamage(c1, opponent, opponent.breakState);
+          if (dmg1 >= opponent.hp) return [c1, null];
+          const budget2 = budget - c1.cost;
+          for (let j = 0; j < n; j++) {
+            if (i === j) continue;
+            const c2 = hand[j];
+            if (c2.cost > budget2) continue;
+            let isBreakNext = opponent.breakState;
+            if (!isBreakNext && c1.pos >= opponent.pos) isBreakNext = true;
+            const dmg2 = simulateDamage(c2, opponent, isBreakNext);
+            if (dmg1 + dmg2 >= opponent.hp) {
+              return [c1, c2];
+            }
+          }
+        }
+        return null;
+      }
+
+      // --- Main Logic (Refactored) ---
 
       function startTurn() {
         pSlots = [null, null];
         isCounterMode = false;
         isAnimating = false;
-
-        if (nextTurnInitiativeOverride === "enemy") {
-          isEnemyFirst = true;
-          log("[Effect] Feint activates: Enemy takes Initiative!");
-        } else if (nextTurnInitiativeOverride === "player") {
-          isEnemyFirst = false;
-          log("[Effect] Feint activates: Player takes Initiative!");
-        } else {
-          isEnemyFirst = !isEnemyFirst;
-        }
-        nextTurnInitiativeOverride = null;
-        battleContext = null;
 
         [player, enemy].forEach((e) => {
           if (e.stealthTurns > 0) e.stealthTurns--;
@@ -1358,7 +1702,9 @@
           }
           e.ep = Math.min(MAX_EP, e.ep + 4);
           e.sp = Math.min(MAX_SP, e.sp + 1);
+          e.trinityTarget = null; // Reset per turn
 
+          // 手札補充
           while (e.hand.length < 3) {
             if (e.deck.length === 0) {
               if (!e.initialDeckList) {
@@ -1392,14 +1738,8 @@
         if (turn === 4) {
           [player, enemy].forEach((e) => {
             if (e.reservedSP) {
-              if (e.hp <= e.maxHp * 0.3) {
-                e.deck.push(e.reservedSP);
-                log(`[System] ${e.name}: CRISIS! SP Card set to TOP.`);
-              } else {
-                const idx = Math.floor(Math.random() * (e.deck.length + 1));
-                e.deck.splice(idx, 0, e.reservedSP);
-                log(`[System] ${e.name}: SP Card added to deck.`);
-              }
+              const idx = Math.floor(Math.random() * (e.deck.length + 1));
+              e.deck.splice(idx, 0, e.reservedSP);
               e.reservedSP = null;
             }
           });
@@ -1409,41 +1749,120 @@
         document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
         document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
 
-        const initiativeEntity = isEnemyFirst ? enemy : player;
-        const typesInHand = new Set(initiativeEntity.hand.map((c) => c.type));
-        const hasAllTypes =
-          typesInHand.has(TYPE.ATTACK) &&
-          typesInHand.has(TYPE.GUARD) &&
-          typesInHand.has(TYPE.BREAK);
+        // --- トリニティ判定（準備状態＆ターゲット決定） ---
+        checkTrinityReady();
 
-        if (hasAllTypes) {
-          const targetTypes = [TYPE.ATTACK, TYPE.GUARD, TYPE.BREAK];
-          const target =
-            targetTypes[Math.floor(Math.random() * targetTypes.length)];
-          battleContext = { type: target, holderName: initiativeEntity.name };
-          log(`[戦況] 好機到来！先攻(${initiativeEntity.name})の手札充実。`);
-        }
-
+        // --- 敵の行動決定（常に先行実行） ---
         if (enemy.burnout) {
           pendingEnemySlots = [null, null];
           enemy.isCounterMode = false;
           log("[System] Enemy is BURNOUT. Skipping turn.");
         } else {
-          const aiRes = AI_STRATEGIES[enemy.strategy](
-            enemy,
-            player,
-            !isEnemyFirst,
-            0
-          );
+          // プレイヤーのコスト0と仮定して敵AIを回す
+          const aiRes = AI_STRATEGIES[enemy.strategy](enemy, player, 0);
           pendingEnemySlots = aiRes.slots;
+
+          // 敵もトリニティReadyなら、Slot1に指定カードを置くように優先する
+          if (
+            enemy.isTrinityReady &&
+            enemy.trinityTarget &&
+            !enemy.isCounterMode
+          ) {
+            // スロット1が既にターゲットと一致していればOK
+            if (
+              pendingEnemySlots[0] &&
+              pendingEnemySlots[0].type === enemy.trinityTarget
+            ) {
+              // 変更なし
+            } else {
+              // 手持ちからターゲットカードを探す
+              // (pendingSlotsに使われているものを考慮しつつ、AIの選択を上書きする簡易ロジック)
+              const availableTarget = enemy.hand.find(
+                (c) => c.type === enemy.trinityTarget
+              );
+
+              // スロット2にあるならスワップ
+              if (
+                pendingEnemySlots[1] &&
+                pendingEnemySlots[1].type === enemy.trinityTarget
+              ) {
+                const temp = pendingEnemySlots[0];
+                pendingEnemySlots[0] = pendingEnemySlots[1];
+                pendingEnemySlots[1] = temp;
+              }
+              // 手札にあるがスロットに使われていないならSlot1にねじ込む (コストチェック省略の簡易版)
+              else if (availableTarget) {
+                // 元のSlot1を退避してでもミッションを狙う
+                pendingEnemySlots[0] = availableTarget;
+                // コストオーバー対策等はここでは厳密に行わない（ゲームとしての面白さ優先）
+              }
+            }
+          }
+
           if (aiRes.action === "COUNTER") enemy.isCounterMode = true;
           else enemy.isCounterMode = false;
         }
 
         log(`--- TURN ${turn} START ---`);
-        if (isEnemyFirst) log("Enemy has Initiative (First).");
-        else log("Player has Initiative (First).");
         render();
+      }
+
+      // 新: トリニティ「Ready」判定 & ターゲットランダム指定
+      function checkTrinityReady() {
+        const check = (ent) => {
+          const types = new Set(ent.hand.map((c) => c.type));
+          ent.isTrinityReady =
+            types.has("Attack") && types.has("Guard") && types.has("Break");
+
+          if (ent.isTrinityReady) {
+            // ランダムにターゲットを決定
+            const targets = ["Attack", "Guard", "Break"];
+            ent.trinityTarget =
+              targets[Math.floor(Math.random() * targets.length)];
+          } else {
+            ent.trinityTarget = null;
+          }
+        };
+        check(player);
+        check(enemy);
+
+        // バナー表示更新（Ready状態）
+        const ctxBanner = document.getElementById("battle-context");
+        const ctxMsg = document.getElementById("context-msg");
+        let activeMsgs = [];
+
+        if (player.isTrinityReady) {
+          activeMsgs.push(
+            `<span style="color:#ffeb3b">PLAYER CHANCE:</span> Slot1で <span style="font-weight:bold; color:#fff; text-decoration:underline">${player.trinityTarget}</span> 勝利せよ！`
+          );
+        }
+        if (enemy.isTrinityReady) {
+          activeMsgs.push(
+            `<span style="color:#ef5350">ENEMY CHANCE:</span> Slot1で <span style="font-weight:bold; color:#fff; text-decoration:underline">${enemy.trinityTarget}</span> 勝利を狙う！`
+          );
+        }
+
+        if (activeMsgs.length > 0) {
+          ctxBanner.style.display = "block";
+          ctxMsg.innerHTML = activeMsgs.join("<br>");
+          // 色味の調整（プレイヤー優先、両方なら中間色）
+          if (player.isTrinityReady && enemy.isTrinityReady) {
+            ctxBanner.style.background = "linear-gradient(90deg, #555, #999)";
+            ctxBanner.style.border = "1px solid #fff";
+          } else if (player.isTrinityReady) {
+            ctxBanner.style.background =
+              "linear-gradient(90deg, #f9a825, #fbc02d)";
+            ctxBanner.style.border = "1px solid #fff176";
+            ctxBanner.style.color = "#000";
+          } else {
+            ctxBanner.style.background =
+              "linear-gradient(90deg, #3e2723, #bf360c)";
+            ctxBanner.style.border = "1px solid #ffab91";
+            ctxBanner.style.color = "#fff";
+          }
+        } else {
+          ctxBanner.style.display = "none";
+        }
       }
 
       function finishTurnProcessing() {
@@ -1510,7 +1929,6 @@
             alert(`SP技を使用するにはSPゲージが最大(${MAX_SP})必要です。`);
             return;
           }
-          // 修正: 固定の5ではなく、カードごとのコスト(card.cost)と比較して判定
           if (player.ep < card.cost) {
             alert(`SP技の発動にはEPが${card.cost}必要です。`);
             return;
@@ -1539,12 +1957,9 @@
         render();
       }
 
-      // 画面全体タップでツールチップを閉じる
       document.addEventListener("click", (e) => {
         const tt = document.getElementById("card-tooltip");
-        if (tt.style.display === "block") {
-          hideTooltip();
-        }
+        if (tt.style.display === "block") hideTooltip();
       });
       document.getElementById("card-tooltip").onclick = (e) => {
         e.stopPropagation();
@@ -1593,27 +2008,6 @@
         }
 
         isAnimating = true;
-
-        if (!isEnemyFirst && !enemy.burnout) {
-          const aiRes = AI_STRATEGIES[enemy.strategy](
-            enemy,
-            player,
-            true,
-            pCost
-          );
-          pendingEnemySlots = aiRes.slots;
-          if (aiRes.action === "COUNTER") {
-            enemy.isCounterMode = true;
-            pendingEnemySlots = [null, null];
-            log(`⚠ Enemy enters COUNTER Stance!`);
-          } else {
-            enemy.isCounterMode = false;
-          }
-        } else if (isEnemyFirst && !enemy.burnout) {
-          enemy.isCounterMode = false;
-        }
-
-        render();
 
         const eSlots = pendingEnemySlots;
         const eCost = enemy.isCounterMode
@@ -1688,12 +2082,12 @@
           null
         );
         if (res1 === "WIN") {
-          pMul = 1.7;
+          pMul = 1.2;
           eMul = 0.25;
-          log(">> WIN Bonus: Next x1.7");
+          log(">> WIN Bonus: Next x1.2");
         } else if (res1 === "LOSE") {
           pMul = 0.25;
-          eMul = 1.7;
+          eMul = 1.2;
           log(">> LOSE Penalty: Next x0.25");
         }
 
@@ -1753,21 +2147,6 @@
         else if (!eCard) result = "WIN";
         else result = getMatchupResult(pCard, eCard);
 
-        let contextBonus = 1.0;
-        if (slotNum === 1 && battleContext && result !== "DRAW") {
-          const isPlayerWin = result === "WIN";
-          const isPlayerHolder = battleContext.holderName === "Player";
-          if (isPlayerWin === isPlayerHolder) {
-            const winningCard = isPlayerWin ? pCard : eCard;
-            if (winningCard && winningCard.type === battleContext.type) {
-              contextBonus = 1.5;
-              log(`>> 【戦況掌握】${battleContext.type}での勝利！効果 1.5倍！`);
-              if (isPlayerWin) pSlotEl.style.boxShadow = "0 0 25px gold";
-              else eSlotEl.style.boxShadow = "0 0 25px gold";
-            }
-          }
-        }
-
         const isPlayerGuardVsAtk =
           result === "WIN" &&
           pCard?.type === TYPE.GUARD &&
@@ -1777,24 +2156,52 @@
           eCard?.type === TYPE.GUARD &&
           pCard?.type === TYPE.ATTACK;
 
+        // --- TRINITY MISSION CHECK ---
+        // 指定属性がSlot1で勝利した場合に発動
+        let pBonusMul = 1.0;
+        let eBonusMul = 1.0;
+        if (slotNum === 1) {
+          // Player Check
+          if (
+            result === "WIN" &&
+            player.trinityTarget &&
+            pCard &&
+            pCard.type === player.trinityTarget
+          ) {
+            pBonusMul = 1.5;
+            showTrinitySuccess(pSlotEl, "PLAYER");
+            log(`>>> PLAYER MISSION COMPLETE! (Dmg x1.5)`);
+          }
+          // Enemy Check
+          if (
+            result === "LOSE" &&
+            enemy.trinityTarget &&
+            eCard &&
+            eCard.type === enemy.trinityTarget
+          ) {
+            eBonusMul = 1.5;
+            showTrinitySuccess(eSlotEl, "ENEMY");
+            log(`>>> ENEMY MISSION COMPLETE! (Dmg x1.5)`);
+          }
+        }
+
         if (isPlayerGuardVsAtk) {
           log(`Guard Logic: Enemy Attack x0.5 vs Player Armor`);
-          await resolveGuardDeflect(player, pCard, eCard, eMul);
+          await resolveGuardDeflect(player, pCard, eCard, eMul * eBonusMul);
         } else if (isEnemyGuardVsAtk) {
           log(`Guard Logic: Player Attack x0.5 vs Enemy Armor`);
-          await resolveGuardDeflect(enemy, eCard, pCard, pMul);
+          await resolveGuardDeflect(enemy, eCard, pCard, pMul * pBonusMul);
         } else {
           if (result === "DRAW") {
             if (prevResult === "WIN") {
               log(">> Momentum! Previous Winner pushes through Draw!");
-              applyDmg(enemy, pCard, 1.5);
+              applyDmg(enemy, pCard, 1.5 * pBonusMul);
               result = "WIN";
             } else if (prevResult === "LOSE") {
               log(">> Momentum! Previous Winner pushes through Draw!");
-              applyDmg(player, eCard, 1.5);
+              applyDmg(player, eCard, 1.5 * eBonusMul);
               result = "LOSE";
             } else {
-              // Clash Logic
               const isClash =
                 pCard &&
                 eCard &&
@@ -1810,9 +2217,10 @@
               }
             }
           } else {
-            if (result === "WIN") applyDmg(enemy, pCard, pMul * contextBonus);
+            if (result === "WIN")
+              applyDmg(enemy, pCard, pMul * pBonusMul); // Player Attack Logic
             else if (result === "LOSE")
-              applyDmg(player, eCard, eMul * contextBonus);
+              applyDmg(player, eCard, eMul * eBonusMul); // Enemy Attack Logic
           }
         }
 
@@ -1845,22 +2253,32 @@
         return result;
       }
 
+      function showTrinitySuccess(el, who) {
+        const div = document.createElement("div");
+        div.className = "trinity-success-overlay";
+        div.innerHTML = `★ ${who} CRITICAL ★<br>x1.5 BOOST!`;
+        el.appendChild(div);
+      }
+
       async function resolveAbility(user, opponent, abilityId) {
+        const abilityInfo = ABILITIES[abilityId];
+        await showAbilityAnnouncement(
+          user.name,
+          abilityInfo.name,
+          abilityInfo.desc
+        );
         switch (abilityId) {
           case "EP_CHARGE":
             user.ep = Math.min(MAX_EP, user.ep + 3);
-            log(`>> ${user.name} recovered 3 EP!`);
+            log(`>> [Ability] ${user.name} recovered 3 EP!`);
             break;
           case "SMOKE":
             opponent.stealthTurns = 2;
-            log(
-              `>> ${user.name} deploys Smokescreen! ${opponent.name}'s vision obscured (2T).`
-            );
+            log(`>> [Ability] ${user.name} deploys Smokescreen!`);
             break;
           case "FEINT":
-            nextTurnInitiativeOverride =
-              user.name === "Player" ? "enemy" : "player";
-            log(`>> ${user.name} prepares a Feint! (Goes Second next turn)`);
+            opponent.ep = Math.max(0, opponent.ep - 2);
+            log(`>> [Ability] Feint! ${opponent.name} lost 2 EP.`);
             break;
           case "PREP_ATK":
             const atkIdx = user.deck.findIndex(
@@ -1869,15 +2287,31 @@
             if (atkIdx !== -1) {
               const c = user.deck.splice(atkIdx, 1)[0];
               user.deck.push(c);
-              log(`>> ${user.name} prepares an Attack card on top of Deck!`);
-            } else {
-              log(
-                `>> ${user.name} attempted Prep, but no Attack cards in deck.`
-              );
+              log(`>> [Ability] ${user.name} prepares Attack card.`);
             }
             break;
         }
-        await sleep(500);
+      }
+
+      function showAbilityAnnouncement(userName, abilityName, abilityDesc) {
+        return new Promise((resolve) => {
+          const container = document.getElementById("ability-cutin");
+          const userEl = document.getElementById("ac-user");
+          const nameEl = document.getElementById("ac-name");
+          const descEl = document.getElementById("ac-desc");
+
+          userEl.innerText = `${userName}'s Ability!`;
+          nameEl.innerText = abilityName;
+          descEl.innerText = abilityDesc;
+
+          container.classList.remove("active");
+          void container.offsetWidth;
+          container.classList.add("active");
+
+          setTimeout(() => {
+            resolve();
+          }, 1800);
+        });
       }
 
       async function resolveGuardDeflect(
@@ -1893,11 +2327,9 @@
 
         if (finalDmg > 0) {
           defender.hp -= finalDmg;
-          log(
-            `GUARD! Piercing Dmg: ${finalDmg} (Atk:${reducedAtk} - Arm:${armor})`
-          );
+          log(`GUARD! Dmg: ${finalDmg}`);
         } else {
-          log(`BLOCKED! Damage 0 (Atk:${reducedAtk} vs Arm:${armor})`);
+          log(`BLOCKED!`);
         }
       }
 
@@ -1912,7 +2344,9 @@
       }
 
       function clearOverlays(el) {
-        const overs = el.querySelectorAll(".slot-result-overlay");
+        const overs = el.querySelectorAll(
+          ".slot-result-overlay, .trinity-success-overlay"
+        );
         overs.forEach((o) => o.remove());
       }
 
@@ -1934,10 +2368,10 @@
       function applyDmg(target, card, mul) {
         if (!card) return;
         let finalMul = mul;
+
         if (target.breakState) finalMul *= 2.0;
         if (target.burnout && !target.breakState) finalMul *= 1.5;
 
-        // Force 0 dmg for Break type cards
         let dmg = 0;
         if (card.type !== TYPE.BREAK) {
           dmg = Math.floor((card.dmg || 0) * finalMul);
@@ -1960,7 +2394,6 @@
           target.justBroken = true;
           target.pos = 0;
           log(`!!! ${target.name} POSTURE BREAK !!!`);
-          log(`>> Next Turn: BURNOUT & x2 Dmg`);
         } else if (target.pos < 0) {
           target.pos = 0;
         }
@@ -2019,23 +2452,14 @@
           (predictedSP / MAX_SP) * 100
         }%`;
 
-        const ePanel = document.getElementById("e-panel");
-        const pPanel = document.getElementById("p-panel");
-        if (isEnemyFirst) {
-          ePanel.classList.add("initiative");
-          pPanel.classList.remove("initiative");
-          const intelBox = document.getElementById("e-intel-box");
-          intelBox.style.display = "flex";
-          const cost = enemy.isCounterMode
-            ? COUNTER_EP_COST
-            : (pendingEnemySlots[0]?.cost || 0) +
-              (pendingEnemySlots[1]?.cost || 0);
-          document.getElementById("e-pending-cost").innerText = cost + " EP";
-        } else {
-          pPanel.classList.add("initiative");
-          ePanel.classList.remove("initiative");
-          document.getElementById("e-intel-box").style.display = "none";
-        }
+        // 敵パネル：常に消費コストを表示
+        const intelBox = document.getElementById("e-intel-box");
+        intelBox.style.display = "flex";
+        const cost = enemy.isCounterMode
+          ? COUNTER_EP_COST
+          : (pendingEnemySlots[0]?.cost || 0) +
+            (pendingEnemySlots[1]?.cost || 0);
+        document.getElementById("e-pending-cost").innerText = cost + " EP";
 
         const eZone = document.getElementById("enemy-hand-view");
         eZone.innerHTML = "";
@@ -2092,13 +2516,11 @@
           }
 
           if (!isBlinded) {
-            // 敵カードのツールチップ処理 (タッチ対応含む)
             if (!isTouchDevice) {
               cardDiv.onmouseenter = (e) => showTooltip(e, c);
               cardDiv.onmousemove = (e) => moveTooltip(e);
               cardDiv.onmouseleave = () => hideTooltip();
             } else {
-              // スマホ向け: タップで詳細表示 (敵カードは選択しないのでタップだけでOK)
               cardDiv.onclick = (e) => {
                 showTooltip(e, c);
               };
@@ -2143,28 +2565,6 @@
           btnCommit.disabled = pendingCost > player.ep;
           btnCommit.style.background = "var(--accent-color)";
         }
-
-        const ctxBanner = document.getElementById("battle-context");
-        const ctxMsg = document.getElementById("context-msg");
-
-        if (battleContext) {
-          ctxBanner.style.display = "block";
-          const holderText =
-            battleContext.holderName === "Player" ? "あなた" : "敵";
-          if (battleContext.holderName === "Enemy") {
-            ctxBanner.style.background =
-              "linear-gradient(90deg, #3e2723, #bf360c)";
-            ctxBanner.style.border = "1px solid #ffab91";
-          } else {
-            ctxBanner.style.background =
-              "linear-gradient(90deg, #1a237e, #0277bd)";
-            ctxBanner.style.border = "1px solid #81d4fa";
-          }
-
-          ctxMsg.innerHTML = `${holderText}のスロット1が <span class="context-highlight">${battleContext.type}</span> で勝利時、威力1.5倍！`;
-        } else {
-          ctxBanner.style.display = "none";
-        }
       }
 
       function createCardDiv(card, isSecret, idx) {
@@ -2194,30 +2594,28 @@
           statsHtml += `<div class="stat-row"><span>🛡️</span><span>${card.arm}</span></div>`;
 
         let abilityHtml = "";
-        if (!isSecret && card.ability && ABILITIES[card.ability]) {
+        if (card.ability && ABILITIES[card.ability]) {
           abilityHtml = `<div class="ability-badge">${
             ABILITIES[card.ability].name
           }</div>`;
         }
 
-        div.innerHTML = `<div class="card-type">${
-          isSecret ? "SECRET" : card.type
-        }</div>
+        div.innerHTML = `<div class="card-type">${card.type}</div>
              <div class="card-cost">${card.cost}</div>
-             <div class="card-stats">${isSecret ? "?" : statsHtml}</div>
-             ${abilityHtml}`;
+             <div class="card-stats">${statsHtml}</div>
+             ${abilityHtml}
+             ${
+               isSecret
+                 ? '<div style="position:absolute; top:2px; right:2px; font-size:0.5rem; color:#90a4ae; background:rgba(0,0,0,0.7); padding:1px 3px; border-radius:2px;">SECRET</div>'
+                 : ""
+             }`;
 
-        // --- Event Listener Logic (Fix for Mobile) ---
         if (!isTouchDevice) {
-          // PC Behavior
           div.onclick = () => selectCard(card, isSecret, idx);
-          if (!isSecret) {
-            div.onmouseenter = (e) => showTooltip(e, card);
-            div.onmousemove = (e) => moveTooltip(e);
-            div.onmouseleave = () => hideTooltip();
-          }
+          div.onmouseenter = (e) => showTooltip(e, card);
+          div.onmousemove = (e) => moveTooltip(e);
+          div.onmouseleave = () => hideTooltip();
         } else {
-          // Mobile Behavior: Long Press for Tooltip, Tap for Select
           let pressTimer;
           let isLongPress = false;
           let isScrolling = false;
@@ -2227,13 +2625,10 @@
             (e) => {
               isLongPress = false;
               isScrolling = false;
-              // 500ms 長押し判定
               pressTimer = setTimeout(() => {
                 isLongPress = true;
-                if (!isSecret) {
-                  if (navigator.vibrate) navigator.vibrate(50);
-                  showTooltip(e, card);
-                }
+                if (navigator.vibrate) navigator.vibrate(50);
+                showTooltip(e, card);
               }, 500);
             },
             { passive: true }
@@ -2251,19 +2646,16 @@
           div.addEventListener("touchend", (e) => {
             clearTimeout(pressTimer);
             if (isLongPress) {
-              // 長押し時はクリック処理を防ぐ
               if (e.cancelable) e.preventDefault();
             }
           });
 
-          // クリックイベントで選択処理を実行（長押しでなければ）
           div.onclick = (e) => {
             if (!isLongPress && !isScrolling) {
               selectCard(card, isSecret, idx);
             }
           };
         }
-
         return div;
       }
 
