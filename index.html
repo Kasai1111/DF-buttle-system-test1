@@ -347,6 +347,22 @@
       .card.disabled {
         opacity: 0.5;
         filter: grayscale(1);
+        cursor: not-allowed;
+        position: relative;
+      }
+      /* Jamming effect */
+      .card.jammed::after {
+        content: "JAMMED";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        color: #ff5252;
+        font-weight: bold;
+        font-size: 1rem;
+        border: 2px solid #ff5252;
+        padding: 2px;
+        background: rgba(0, 0, 0, 0.8);
       }
 
       .type-Attack {
@@ -1128,7 +1144,7 @@
           desc: "【設置】Slot1勝利時: 敵に『感染』付与(3T)。毎ターン開始時にEP-2。",
         },
 
-        // --- NEW: Advanced Abilities (Requested) ---
+        // --- NEW: Advanced Abilities (Previously Requested) ---
         POLARITY_SHIFT: {
           id: "POLARITY_SHIFT",
           type: "INSTANT",
@@ -1158,6 +1174,50 @@
           type: "INSTANT",
           name: "予測演算",
           desc: "【単発】Slot1勝利時、次のターンの敵のスロット(1&2)を完全予知する。",
+        },
+
+        // --- NEW: Requested Instant Abilities ---
+        PHANTOM_WEIGHT: {
+          id: "PHANTOM_WEIGHT",
+          type: "INSTANT",
+          name: "幻影の重り",
+          desc: "【単発】次ターン、Slot1の判定コストを6として扱う(EP消費はそのまま)。",
+        },
+        JAMMING: {
+          id: "JAMMING",
+          type: "INSTANT",
+          name: "ジャミング",
+          desc: "【単発】次ターン、敵の手札1枚を使用不可にする。",
+        },
+        MANA_BARRIER: {
+          id: "MANA_BARRIER",
+          type: "INSTANT",
+          name: "マナ障壁",
+          desc: "【単発】HPダメ無効(SP除)。代償:EP-3。",
+        },
+        EMERGENCY_REPAIR: {
+          id: "EMERGENCY_REPAIR",
+          type: "INSTANT",
+          name: "緊急修復",
+          desc: "【単発】HPを10回復する。",
+        },
+        ENERGY_DRAIN: {
+          id: "ENERGY_DRAIN",
+          type: "INSTANT",
+          name: "EPドレイン",
+          desc: "【単発】敵EP-3。",
+        },
+        STUN_SHOT: {
+          id: "STUN_SHOT",
+          type: "INSTANT",
+          name: "スタンショット",
+          desc: "【単発】敵手札の最大コストカードのコスト+3。",
+        },
+        CORROSION: {
+          id: "CORROSION",
+          type: "INSTANT",
+          name: "腐食 (毒)",
+          desc: "【単発】敵に毒付与(2T)。毎ターンHP-3。",
         },
       };
 
@@ -1199,7 +1259,6 @@
             { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 5 },
             { type: TYPE.SP, cost: 5, dmg: 25, pos: 20, isSP: true },
           ],
-          // New Weapon for Polarity/Prediction
           因果の杖: [
             {
               type: TYPE.BREAK,
@@ -1216,7 +1275,6 @@
             { type: TYPE.ATTACK, cost: 2, dmg: 10, pos: 2 },
             { type: TYPE.SP, cost: 5, dmg: 30, pos: 5, isSP: true },
           ],
-          // New Weapon for Gravity/Desperate
           重力の戦鎚: [
             {
               type: TYPE.ATTACK,
@@ -1235,6 +1293,52 @@
             { type: TYPE.BREAK, cost: 4, pos: 15 },
             { type: TYPE.SP, cost: 7, dmg: 50, pos: 20, isSP: true },
           ],
+          // NEW WEAPONS
+          幻影の短剣: [
+            {
+              type: TYPE.ATTACK,
+              cost: 2,
+              dmg: 8,
+              pos: 2,
+              ability: "PHANTOM_WEIGHT",
+            },
+            {
+              type: TYPE.ATTACK,
+              cost: 1,
+              dmg: 5,
+              pos: 2,
+              ability: "CORROSION",
+            },
+            { type: TYPE.GUARD, cost: 1, arm: 5 },
+            { type: TYPE.SP, cost: 5, dmg: 30, pos: 10, isSP: true },
+          ],
+          ジャミング装置: [
+            { type: TYPE.BREAK, cost: 2, pos: 8, ability: "JAMMING" },
+            {
+              type: TYPE.BREAK,
+              cost: 2,
+              pos: 8,
+              ability: "ENERGY_DRAIN",
+            },
+            { type: TYPE.GUARD, cost: 2, arm: 8 },
+            { type: TYPE.SP, cost: 4, dmg: 10, pos: 30, isSP: true },
+          ],
+          守護の杖: [
+            {
+              type: TYPE.GUARD,
+              cost: 2,
+              arm: 5,
+              ability: "MANA_BARRIER",
+            },
+            {
+              type: TYPE.GUARD,
+              cost: 1,
+              arm: 5,
+              ability: "EMERGENCY_REPAIR",
+            },
+            { type: TYPE.BREAK, cost: 3, pos: 10 },
+            { type: TYPE.SP, cost: 6, dmg: 20, pos: 20, isSP: true },
+          ],
         },
         ARMORS: {
           フルプレート: [
@@ -1247,7 +1351,6 @@
             { type: TYPE.GUARD, cost: 1, arm: 4 },
             { type: TYPE.GUARD, cost: 2, arm: 8, ability: "FEINT" },
           ],
-          // New Armor for Iron Will
           要塞の鎧: [
             {
               type: TYPE.GUARD,
@@ -1269,6 +1372,11 @@
             { type: TYPE.GUARD, cost: 2, arm: 10, ability: "PURIFY" },
             { type: TYPE.GUARD, cost: 2, arm: 10 },
             { type: TYPE.BREAK, cost: 2, pos: 5 },
+          ],
+          重撃のハンマー: [
+            { type: TYPE.BREAK, cost: 2, pos: 8, ability: "STUN_SHOT" },
+            { type: TYPE.ATTACK, cost: 3, dmg: 10, pos: 5 },
+            { type: TYPE.GUARD, cost: 2, arm: 6 },
           ],
         },
       };
@@ -1461,10 +1569,16 @@
           // NEW: Duration counters for abilities
           overclockTurns: 0,
           virusTurns: 0,
+          corrosionTurns: 0,
           // NEW: Flags for new abilities
           damageImmune: false,
           doubleEpNext: false,
           revealSlots: false,
+          phantomWeightPending: false,
+          isPhantomWeight: false,
+          isJammedPending: false,
+          jammedIndices: [],
+          isManaBarrier: false,
         };
 
         if (name === "Enemy") {
@@ -1529,21 +1643,26 @@
 
         let eSlots = [null, null];
 
-        // Simple strategy: Play strongest affordable cards
-        hand.sort((a, b) => b.cost - a.cost);
+        // Filter out jammed cards
+        let usableHand = hand.filter(
+          (_, idx) => !entity.jammedIndices.includes(idx)
+        );
 
-        if (hand[0]) {
-          let cost = entity.tags.has("OVERLOAD") ? 0 : hand[0].cost;
+        // Simple strategy: Play strongest affordable cards
+        usableHand.sort((a, b) => b.cost - a.cost);
+
+        if (usableHand[0]) {
+          let cost = entity.tags.has("OVERLOAD") ? 0 : usableHand[0].cost;
           if (cost <= budget) {
-            eSlots[0] = hand[0];
+            eSlots[0] = usableHand[0];
             budget -= cost;
-            hand.shift();
+            usableHand.shift();
           }
         }
-        if (hand[0]) {
-          let cost = entity.tags.has("OVERLOAD") ? 0 : hand[0].cost;
+        if (usableHand[0]) {
+          let cost = entity.tags.has("OVERLOAD") ? 0 : usableHand[0].cost;
           if (cost <= budget) {
-            eSlots[1] = hand[0];
+            eSlots[1] = usableHand[0];
           }
         }
         return { slots: eSlots, action: "COMMIT" };
@@ -1588,6 +1707,24 @@
         [player, enemy].forEach((e) => {
           if (e.stealthTurns > 0) e.stealthTurns--;
           e.damageImmune = false; // Reset Iron Will effect
+          e.isManaBarrier = false; // Reset Mana Barrier
+          e.isPhantomWeight = false; // Reset Phantom Weight
+
+          if (e.phantomWeightPending) {
+            e.isPhantomWeight = true;
+            e.phantomWeightPending = false;
+            log(`>> ${e.name} Phantom Weight Active: Slot 1 is Cost 6!`);
+          }
+
+          e.jammedIndices = []; // Reset Jamming
+          if (e.isJammedPending) {
+            // Select a random index to jam (0, 1, or 2)
+            // Note: Hand is usually 3 cards, but can be fewer. Jam logic applies to indices.
+            const jammedIdx = Math.floor(Math.random() * 3);
+            e.jammedIndices.push(jammedIdx);
+            e.isJammedPending = false;
+            log(`>> ${e.name} is JAMMED! Card #${jammedIdx + 1} unusable.`);
+          }
 
           if (e.breakState) {
             e.burnout = true;
@@ -1615,6 +1752,13 @@
               e.tags.delete("INFECTED");
               log(`[Virus] ${e.name}'s Infection cured.`);
             }
+          }
+
+          // --- Corrosion Logic (DoT) ---
+          if (e.corrosionTurns > 0) {
+            e.hp -= 3;
+            log(`[Corrosion] ${e.name} takes 3 poison damage.`);
+            e.corrosionTurns--;
           }
 
           // --- Overclock Logic ---
@@ -1695,8 +1839,13 @@
             const availableTarget = enemy.hand.find(
               (c) => c.type === enemy.trinityTarget
             );
+            // Check if availableTarget is jammed
+            // Need index... simple search
+            const targetIdx = enemy.hand.indexOf(availableTarget);
+
             if (
               availableTarget &&
+              !enemy.jammedIndices.includes(targetIdx) &&
               (!pendingEnemySlots[0] ||
                 pendingEnemySlots[0].type !== enemy.trinityTarget)
             ) {
@@ -1713,11 +1862,6 @@
         }
 
         log(`--- TURN ${turn} START ---`);
-        // If prediction is active, turn off the flag now that we're about to render with it active
-        // But we keep it 'on' locally during render until next turn.
-        // Handled: flag `revealSlots` stays true until END of turn or start of next.
-        // Actually, better to reset it at end of turn processing, or here if we set it last turn.
-        // We will reset it in `finishTurnProcessing`.
 
         render();
       }
@@ -1821,6 +1965,12 @@
         }
         if (isCounterMode) {
           alert("カウンターモード中はカードを選択できません。");
+          return;
+        }
+
+        // JAMMING CHECK
+        if (!isSecret && player.jammedIndices.includes(handIndex)) {
+          alert("このカードはジャミングで使用不能です！");
           return;
         }
 
@@ -2042,8 +2192,15 @@
       function getMatchupResult(pCard, eCard, isSlot2 = false) {
         if (!eCard) return "WIN";
         if (pCard.type === eCard.type) {
-          if (pCard.cost > eCard.cost) return "WIN";
-          if (eCard.cost > pCard.cost) return "LOSE";
+          // PHANTOM WEIGHT LOGIC (Slot 1 only)
+          let pCost = pCard.cost;
+          let eCost = eCard.cost;
+
+          if (!isSlot2 && player.isPhantomWeight) pCost = 6;
+          if (!isSlot2 && enemy.isPhantomWeight) eCost = 6;
+
+          if (pCost > eCost) return "WIN";
+          if (eCost > pCost) return "LOSE";
           return "DRAW";
         }
         if (pCard.type === TYPE.SP) return "WIN";
@@ -2319,6 +2476,7 @@
       function clearTags(target) {
         target.tags.clear();
         target.virusTurns = 0;
+        target.corrosionTurns = 0;
         target.overclockTurns = 0; // Removing overload early implies losing the buff? Or cure? For now, clear all.
         log(`>> Effect: ${target.name} Cleansed all status tags!`);
       }
@@ -2378,6 +2536,46 @@
             opponent.revealSlots = true;
             log(`>> [Prediction] Enemy slots will be exposed next turn!`);
             break;
+          // --- NEW INSTANT ABILITIES ---
+          case "PHANTOM_WEIGHT":
+            user.phantomWeightPending = true;
+            log(`>> [Phantom Weight] Next turn Slot 1 acts as Cost 6!`);
+            break;
+          case "JAMMING":
+            opponent.isJammedPending = true;
+            log(`>> [Jamming] Opponent card will be disabled next turn!`);
+            break;
+          case "MANA_BARRIER":
+            user.isManaBarrier = true;
+            user.ep = Math.max(0, user.ep - 3);
+            log(`>> [Mana Barrier] Barrier Active! (Cost 3 EP)`);
+            break;
+          case "EMERGENCY_REPAIR":
+            user.hp = Math.min(user.maxHp, user.hp + 10);
+            log(`>> [Repair] Recovered 10 HP!`);
+            break;
+          case "ENERGY_DRAIN":
+            opponent.ep = Math.max(0, opponent.ep - 3);
+            log(`>> [Energy Drain] Drained 3 EP from opponent!`);
+            break;
+          case "STUN_SHOT":
+            let maxCost = -1;
+            let maxIdx = -1;
+            opponent.hand.forEach((c, i) => {
+              if (c.cost > maxCost) {
+                maxCost = c.cost;
+                maxIdx = i;
+              }
+            });
+            if (maxIdx !== -1) {
+              opponent.hand[maxIdx].cost += 3;
+              log(`>> [Stun Shot] Opponent's highest cost card +3 Cost!`);
+            }
+            break;
+          case "CORROSION":
+            opponent.corrosionTurns = 2;
+            log(`>> [Corrosion] Opponent Poisoned for 2 turns!`);
+            break;
         }
         return 0;
       }
@@ -2409,8 +2607,8 @@
         attackCard,
         attackerMul
       ) {
-        if (defender.damageImmune) {
-          log(`IMMUNE! ${defender.name} takes no damage (Iron Will)!`);
+        if (defender.damageImmune || defender.isManaBarrier) {
+          log(`IMMUNE! ${defender.name} takes no damage!`);
           return;
         }
         const rawAtk = (attackCard.dmg || 0) * attackerMul;
@@ -2460,6 +2658,13 @@
 
       function applyDmg(target, card, mul, flatBonus = 0) {
         if (!card && flatBonus === 0) return;
+
+        // MANA BARRIER Check (Except SP)
+        if (target.isManaBarrier && card && !card.isSP) {
+          log(`BARRIER! ${target.name} negates damage!`);
+          return;
+        }
+
         if (target.damageImmune) {
           log(`IMMUNE! ${target.name} takes no damage (Iron Will)!`);
           return;
@@ -2555,6 +2760,20 @@
             badge.className = "tag-badge";
             badge.style.background = "#e040fb";
             badge.innerText = "PREDICTED";
+            tagContainer.appendChild(badge);
+          }
+          if (e.corrosionTurns > 0) {
+            const badge = document.createElement("span");
+            badge.className = "tag-badge";
+            badge.style.background = "#ab47bc";
+            badge.innerText = `POISON (${e.corrosionTurns})`;
+            tagContainer.appendChild(badge);
+          }
+          if (e.isPhantomWeight) {
+            const badge = document.createElement("span");
+            badge.className = "tag-badge";
+            badge.style.background = "#90a4ae";
+            badge.innerText = `COST OVERRIDE`;
             tagContainer.appendChild(badge);
           }
         });
@@ -2685,7 +2904,13 @@
           pZone.appendChild(createCardDiv(player.secret, true, -1));
         }
         player.hand.forEach((c, i) => {
-          pZone.appendChild(createCardDiv(c, false, i));
+          const div = createCardDiv(c, false, i);
+          // Jamming Visual
+          if (player.jammedIndices.includes(i)) {
+            div.classList.add("jammed");
+            div.classList.add("disabled");
+          }
+          pZone.appendChild(div);
         });
 
         if (!isAnimating) {
