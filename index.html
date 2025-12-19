@@ -1689,6 +1689,7 @@
           damageImmune: false,
           doubleEpNext: false,
           revealSlots: false,
+          revealPending: false, // Added for PREDICTION Fix
           phantomWeightPending: false,
           isPhantomWeight: false,
           isJammedPending: false,
@@ -1931,13 +1932,6 @@
       }
 
       // MBTI Profiles (Weights)
-      // aggression: 攻撃優先度 (Dmg)
-      // defense: 防御優先度 (被弾嫌悪)
-      // breakFocus: 姿勢破壊優先度 (Posture)
-      // efficiency: EP温存優先度 (0=使い切り, high=温存)
-      // setupPriority: Setupアビリティの評価
-      // trinityFocus: 指定属性勝利の執着度
-      // counterBias: カウンター発動率
       const AI_PROFILES = {
         ISTJ: {
           aggression: 1.0,
@@ -2044,6 +2038,14 @@
           e.isManaBarrier = false;
           e.isPhantomWeight = false;
 
+          // Reveal Slots Logic Fix
+          e.revealSlots = false;
+          if (e.revealPending) {
+            e.revealSlots = true;
+            e.revealPending = false;
+            log(`>> PREDICTION Effect: ${e.name}'s slots are revealed!`);
+          }
+
           if (e.phantomWeightPending) {
             e.isPhantomWeight = true;
             e.phantomWeightPending = false;
@@ -2134,10 +2136,6 @@
           enemy.initialDeckList = enemy.deck.filter((c) => !c.isSP);
         }
 
-        if (enemy.revealSlots) {
-          log(">> PREDICTION: Enemy slots are revealed this turn!");
-        }
-
         updateSlotUI("e", [null, null]);
         document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
         document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
@@ -2220,7 +2218,7 @@
 
       function finishTurnProcessing() {
         [player, enemy].forEach((e) => {
-          e.revealSlots = false;
+          e.revealSlots = false; // Reset happens at startTurn based on pending
           if (e.breakState) {
             if (e.justBroken) {
               e.justBroken = false;
@@ -2873,7 +2871,7 @@
             return sacrifice;
             break;
           case "PREDICTION":
-            opponent.revealSlots = true;
+            opponent.revealPending = true; // CHANGED: Set Pending instead of immediate
             log(`>> [Prediction] Enemy slots will be exposed next turn!`);
             break;
           case "PHANTOM_WEIGHT":
