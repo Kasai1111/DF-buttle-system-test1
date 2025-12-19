@@ -1064,25 +1064,25 @@
         EP_CHARGE: {
           id: "EP_CHARGE",
           type: "INSTANT",
-          name: "EP Charge",
+          name: "EPチャージ",
           desc: "【単発】Slot1勝利時、自身のEPを3回復する。",
         },
         SMOKE: {
           id: "SMOKE",
           type: "INSTANT",
-          name: "Smokescreen",
+          name: "目隠し",
           desc: "【単発】Slot1勝利時、2ターンの間 敵の手札を強制的に隠す。",
         },
         FEINT: {
           id: "FEINT",
           type: "INSTANT",
-          name: "Feint",
+          name: "EPロスト",
           desc: "【単発】Slot1勝利時、相手のEPを2減らす（妨害）。",
         },
         PREP_ATK: {
           id: "PREP_ATK",
           type: "INSTANT",
-          name: "Weapon Prep",
+          name: "アタッカー",
           desc: "【単発】Slot1勝利時、山札から「Attack」カードを探す。",
         },
 
@@ -1090,7 +1090,7 @@
         ARMOR_BREAK: {
           id: "ARMOR_BREAK",
           type: "SETUP",
-          name: "Armor Break",
+          name: "装甲破壊",
           tag: "ARMOR_BROKEN",
           tagName: "装甲破壊",
           desc: "【設置】Slot1勝利時: 敵に『装甲破壊』タグを付与。",
@@ -1098,14 +1098,14 @@
         FATAL_THRUST: {
           id: "FATAL_THRUST",
           type: "EXECUTE",
-          name: "Fatal Thrust",
+          name: "クリティカルヒット",
           reqTag: "ARMOR_BROKEN",
           desc: "【実行】Slot2勝利時: 敵が『装甲破壊』ならダメージ3倍。",
         },
         OIL_JAR: {
           id: "OIL_JAR",
           type: "SETUP",
-          name: "Oil Jar",
+          name: "灯油",
           tag: "OILED",
           tagName: "油まみれ",
           desc: "【設置】Slot1勝利時: 敵に『油まみれ』タグを付与。",
@@ -1113,7 +1113,7 @@
         FIRE_BLAST: {
           id: "FIRE_BLAST",
           type: "EXECUTE",
-          name: "Fire Blast",
+          name: "火炎放射",
           reqTag: "OILED",
           desc: "【実行】Slot2勝利時: 敵が『油』ならDmg 2倍 + 敵Burnout付与。",
         },
@@ -1122,15 +1122,15 @@
         PURIFY: {
           id: "PURIFY",
           type: "CLEAR",
-          name: "Purify",
-          desc: "【浄化】Slot1勝利時: 自身の悪い状態タグを全て解除する。",
+          name: "浄化",
+          desc: "【単発】Slot1勝利時: 自身の悪い状態タグを全て解除する。",
         },
 
         // --- Previous Additions ---
         OVERCLOCK: {
           id: "OVERCLOCK",
           type: "SETUP",
-          name: "Limit Over",
+          name: "リミットオーバー",
           tag: "OVERLOAD",
           tagName: "過負荷",
           desc: "【設置】Slot1勝利時: 自身に『過負荷』付与(3T)。全コスト0になるが、終了時に強制Burnout。",
@@ -1138,7 +1138,7 @@
         VIRUS_INSTALL: {
           id: "VIRUS_INSTALL",
           type: "SETUP",
-          name: "Virus",
+          name: "ウイルス",
           tag: "INFECTED",
           tagName: "感染",
           desc: "【設置】Slot1勝利時: 敵に『感染』付与(3T)。毎ターン開始時にEP-2。",
@@ -1167,12 +1167,7 @@
           name: "捨て身の一撃",
           desc: "【単発/劣勢時】Slot1勝利時、現在姿勢値を半減しその分攻撃力に加算。",
         },
-        PREDICTION: {
-          id: "PREDICTION",
-          type: "INSTANT",
-          name: "予測演算",
-          desc: "【単発】Slot1勝利時、次のターンの敵のスロット(1&2)を完全予知する。",
-        },
+
         PHANTOM_WEIGHT: {
           id: "PHANTOM_WEIGHT",
           type: "INSTANT",
@@ -1182,19 +1177,19 @@
         JAMMING: {
           id: "JAMMING",
           type: "INSTANT",
-          name: "ジャミング",
+          name: "ハック",
           desc: "【単発】次ターン、敵の手札1枚を使用不可にする。",
         },
         MANA_BARRIER: {
           id: "MANA_BARRIER",
           type: "INSTANT",
-          name: "マナ障壁",
+          name: "無敵",
           desc: "【単発】HPダメ無効(SP除)。代償:EP-3。",
         },
         EMERGENCY_REPAIR: {
           id: "EMERGENCY_REPAIR",
           type: "INSTANT",
-          name: "緊急修復",
+          name: "緊急回復",
           desc: "【単発】HPを10回復する。",
         },
         ENERGY_DRAIN: {
@@ -1221,7 +1216,7 @@
         SCAN: {
           id: "SCAN",
           type: "SETUP",
-          name: "Scan",
+          name: "スキャン",
           tag: "DETECTED",
           tagName: "解析済",
           desc: "【設置】Slot1勝利時: 敵に『解析済』タグを付与。",
@@ -1229,7 +1224,7 @@
         SONAR: {
           id: "SONAR",
           type: "SETUP",
-          name: "Sonar",
+          name: "二重化",
           tag: "RESONANCE",
           tagName: "共鳴",
           desc: "【設置】Slot1勝利時: 敵に『共鳴』タグを付与。",
@@ -1239,28 +1234,28 @@
         DATA_DRAIN: {
           id: "DATA_DRAIN",
           type: "EXECUTE",
-          name: "Data Drain",
+          name: "SPドレイン",
           reqTag: "DETECTED",
           desc: "【実行】Slot2勝利時: 敵が『解析済』ならSPを全て奪う。",
         },
         POSTURE_BREAK_EXEC: {
           id: "POSTURE_BREAK_EXEC",
           type: "EXECUTE",
-          name: "Posture Break",
+          name: "強制バーンアウト",
           reqTag: "ARMOR_BROKEN",
           desc: "【実行】Slot2勝利時: 敵が『装甲破壊』なら強制ブレイク(姿勢0)。",
         },
         ECHO_STRIKE: {
           id: "ECHO_STRIKE",
           type: "EXECUTE",
-          name: "Echo Strike",
+          name: "2連撃",
           reqTag: "RESONANCE",
           desc: "【実行】Slot2勝利時: 敵が『共鳴』ならダメージを2回与える(x2)。",
         },
         MEMORY_LEAK: {
           id: "MEMORY_LEAK",
           type: "EXECUTE",
-          name: "Memory Leak",
+          name: "SPロスト",
           reqTag: "INFECTED",
           desc: "【実行】Slot2勝利時: 敵が『感染』なら与ダメの50%分SP減少。",
         },
