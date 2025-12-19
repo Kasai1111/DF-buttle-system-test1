@@ -6,24 +6,27 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>DUSTFALL Prototype - Advanced Abilities</title>
+    <title>DUSTFALL - Scavenger Protocol</title>
     <style>
       :root {
-        --bg-color: #121212;
-        --panel-bg: #1e1e1e;
-        --text-color: #e0e0e0;
-        --accent-color: #ff9800;
-        --atk-color: #e57373;
-        --grd-color: #64b5f6;
-        --brk-color: #fff176;
-        --sp-color: #ba68c8;
-        --secret-color: #90a4ae;
+        --bg-color: #0d1117;
+        --panel-bg: #161b22;
+        --text-color: #c9d1d9;
+        --accent-color: #f2cc60; /* Scavenger Gold */
+        --atk-color: #ff7b72; /* Red */
+        --grd-color: #79c0ff; /* Blue */
+
+        /* 【変更点1】 Breakの色を紫から黄色に変更 */
+        --brk-color: #ffd33d; /* Yellow */
+
+        --sp-color: #a841d8;
+        --secret-color: #8b949e;
 
         /* Visual Assist Vars */
-        --ep-color: #29b6f6;
-        --ep-ghost: #01579b;
-        --sp-bar-color: #ab47bc;
-        --sp-ghost: #4a148c;
+        --ep-color: #3fb950;
+        --ep-ghost: #238636;
+        --sp-bar-color: #a371f7;
+        --sp-ghost: #6e40c9;
       }
       body {
         font-family: "Helvetica Neue", Arial, sans-serif;
@@ -41,6 +44,8 @@
         margin: 10px 0;
         font-size: 1.2rem;
         border-bottom: 2px solid var(--accent-color);
+        text-transform: uppercase;
+        letter-spacing: 2px;
       }
 
       /* --- Setup Screen Styles --- */
@@ -73,14 +78,15 @@
         background: var(--panel-bg);
         padding: 15px;
         border-radius: 8px;
-        border: 1px solid #444;
+        border: 1px solid #30363d;
       }
       .equip-title {
         font-weight: bold;
         color: var(--accent-color);
         margin-bottom: 10px;
-        border-bottom: 1px solid #444;
+        border-bottom: 1px solid #30363d;
         padding-bottom: 5px;
+        font-size: 0.9rem;
       }
 
       .equip-options {
@@ -91,21 +97,22 @@
       }
 
       .equip-btn {
-        background: #333;
-        color: #fff;
-        border: 1px solid #555;
-        padding: 10px 20px;
+        background: #21262d;
+        color: #c9d1d9;
+        border: 1px solid #30363d;
+        padding: 10px 16px;
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.2s;
         touch-action: manipulation;
+        font-size: 0.85rem;
       }
       .equip-btn:hover {
-        background: #444;
+        background: #30363d;
       }
       .equip-btn.active {
         background: var(--accent-color);
-        color: #000;
+        color: #0d1117;
         font-weight: bold;
         border-color: var(--accent-color);
       }
@@ -114,15 +121,16 @@
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
-        background: #111;
+        background: #0d1117;
         padding: 10px;
         border-radius: 6px;
         min-height: 110px;
+        border: 1px solid #30363d;
       }
 
       .start-btn {
         padding: 15px;
-        background: linear-gradient(45deg, #43a047, #66bb6a);
+        background: linear-gradient(45deg, #238636, #2ea043);
         color: white;
         border: none;
         font-size: 1.2rem;
@@ -130,7 +138,7 @@
         border-radius: 8px;
         cursor: pointer;
         margin-top: 20px;
-        box-shadow: 0 4px 10px rgba(67, 160, 71, 0.4);
+        box-shadow: 0 4px 10px rgba(46, 160, 67, 0.4);
         touch-action: manipulation;
       }
       .start-btn:hover {
@@ -139,9 +147,9 @@
       /* --- AI Personality Tag Styles --- */
       .personality-tag {
         font-size: 0.75rem;
-        color: #b0bec5;
-        border: 1px solid #546e7a;
-        background: rgba(38, 50, 56, 0.6);
+        color: #8b949e;
+        border: 1px solid #30363d;
+        background: rgba(22, 27, 34, 0.6);
         padding: 1px 8px;
         border-radius: 4px;
         letter-spacing: 1px;
@@ -164,25 +172,25 @@
         background: var(--panel-bg);
         padding: 10px;
         border-radius: 8px;
-        border: 1px solid #333;
+        border: 1px solid #30363d;
         position: relative;
         transition: border-color 0.3s;
       }
 
       /* Intel Box */
       .intel-box {
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px dashed #555;
+        background: rgba(13, 17, 23, 0.5);
+        border: 1px dashed #30363d;
         padding: 5px;
         margin-top: 5px;
         font-size: 0.85rem;
-        color: #aaa;
+        color: #8b949e;
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
       .intel-val {
-        color: #e57373;
+        color: var(--ep-color);
         font-weight: bold;
         font-size: 1.1rem;
       }
@@ -196,22 +204,23 @@
       }
       .bar-label {
         font-size: 0.75rem;
-        color: #888;
+        color: #8b949e;
         margin-bottom: 2px;
         display: flex;
         justify-content: space-between;
       }
       .bar-wrap {
         width: 100%;
-        background: #333;
+        background: #0d1117;
         height: 8px;
         border-radius: 4px;
         overflow: hidden;
         margin-bottom: 8px;
         position: relative;
+        border: 1px solid #30363d;
       }
       .hp-bar {
-        background: #d32f2f;
+        background: #da3633;
         height: 100%;
         width: 100%;
         transition: width 0.3s;
@@ -219,7 +228,7 @@
         z-index: 2;
       }
       .pos-bar {
-        background: #fbc02d;
+        background: #d29922;
         height: 100%;
         width: 100%;
         transition: width 0.3s;
@@ -267,10 +276,14 @@
       }
 
       .burnout-tag {
-        color: red;
+        color: #ff7b72;
         font-weight: bold;
         animation: blink 1s infinite;
         display: none;
+        border: 1px solid #ff7b72;
+        padding: 0 4px;
+        border-radius: 4px;
+        font-size: 0.7rem;
       }
       @keyframes blink {
         50% {
@@ -278,7 +291,7 @@
         }
       }
 
-      /* --- Tag System Styles (New) --- */
+      /* --- Tag System Styles --- */
       .active-tags-container {
         display: flex;
         gap: 5px;
@@ -291,9 +304,9 @@
         font-size: 0.65rem;
         padding: 2px 6px;
         border-radius: 4px;
-        background: #455a64;
-        color: #fff;
-        border: 1px solid #78909c;
+        background: #30363d;
+        color: #e6edf3;
+        border: 1px solid #484f58;
         display: inline-block;
         animation: slideInTag 0.3s;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
@@ -321,7 +334,7 @@
         width: 70px;
         height: 100px;
         border-radius: 6px;
-        border: 2px solid #555;
+        border: 2px solid #30363d;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -329,7 +342,7 @@
         font-size: 0.75rem;
         cursor: pointer;
         position: relative;
-        background: #333;
+        background: #161b22;
         user-select: none;
         transition: transform 0.2s;
         flex-shrink: 0;
@@ -337,7 +350,7 @@
       }
       .card:hover {
         transform: translateY(-3px);
-        border-color: #888;
+        border-color: #8b949e;
       }
       .card.selected {
         border-color: var(--accent-color);
@@ -357,10 +370,10 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(-45deg);
-        color: #ff5252;
+        color: #ff7b72;
         font-weight: bold;
         font-size: 1rem;
-        border: 2px solid #ff5252;
+        border: 2px solid #ff7b72;
         padding: 2px;
         background: rgba(0, 0, 0, 0.8);
       }
@@ -373,15 +386,15 @@
       }
       .type-Break {
         border-top: 4px solid var(--brk-color);
-        color: #ffffaa;
+        color: #f0f6fc;
       }
       .type-SP {
         border-top: 4px solid var(--sp-color);
-        background: #301b30;
+        background: #1f1b2e;
       }
       .type-Secret {
         border-top: 4px solid var(--secret-color);
-        background: #263238;
+        background: #21262d;
       }
 
       .card-cost {
@@ -395,21 +408,20 @@
 
       .ability-badge {
         font-size: 0.6rem;
-        color: #ffd700;
+        color: var(--accent-color);
         margin-top: 2px;
-        border: 1px solid #ffd700;
+        border: 1px solid var(--accent-color);
         border-radius: 3px;
         padding: 0 2px;
         transform: scale(0.9);
       }
-      /* New Ability Type Styles */
       .ability-setup {
-        color: #64b5f6;
-        border-color: #64b5f6;
+        color: #58a6ff;
+        border-color: #58a6ff;
       }
       .ability-exec {
-        color: #ff5252;
-        border-color: #ff5252;
+        color: #ff7b72;
+        border-color: #ff7b72;
       }
 
       /* Matchup Badges */
@@ -447,19 +459,19 @@
         }
       }
       .mb-win {
-        background: #4caf50;
+        background: #238636;
         color: #fff;
-        border: 1px solid #a5d6a7;
+        border: 1px solid #2ea043;
       }
       .mb-lose {
-        background: #f44336;
+        background: #da3633;
         color: #fff;
-        border: 1px solid #ef9a9a;
+        border: 1px solid #f85149;
       }
       .mb-draw {
-        background: #9e9e9e;
+        background: #6e7681;
         color: #fff;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #8b949e;
       }
 
       /* Slots */
@@ -472,26 +484,26 @@
       .slot {
         width: 80px;
         height: 110px;
-        border: 2px dashed #666;
+        border: 2px dashed #484f58;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         font-size: 0.8rem;
-        color: #888;
+        color: #8b949e;
         position: relative;
         transition: all 0.3s ease;
         cursor: pointer;
         touch-action: manipulation;
       }
       .slot:hover {
-        border-color: #999;
+        border-color: #8b949e;
       }
       .active-battle-slot {
-        border: 2px solid #fff !important;
+        border: 2px solid #f0f6fc !important;
         box-shadow: 0 0 15px var(--accent-color);
         transform: scale(1.1);
-        background-color: #2a2a2a;
+        background-color: #21262d;
         z-index: 10;
         color: #fff;
       }
@@ -514,15 +526,15 @@
         z-index: 20;
       }
       .res-win {
-        color: #66bb6a;
-        text-shadow: 0 0 5px #66bb6a;
+        color: #3fb950;
+        text-shadow: 0 0 5px #3fb950;
       }
       .res-lose {
-        color: #ef5350;
-        text-shadow: 0 0 5px #ef5350;
+        color: #ff7b72;
+        text-shadow: 0 0 5px #ff7b72;
       }
       .res-draw {
-        color: #bdbdbd;
+        color: #8b949e;
       }
 
       /* Trinity Mission Success Overlay */
@@ -531,14 +543,14 @@
         top: -30px;
         width: 140%;
         text-align: center;
-        background: rgba(255, 215, 0, 0.9);
+        background: rgba(242, 204, 96, 0.9);
         color: #000;
         font-weight: bold;
         padding: 4px;
         border-radius: 4px;
         font-size: 0.7rem;
         z-index: 100;
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        box-shadow: 0 0 15px rgba(242, 204, 96, 0.8);
         animation: bouncePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         border: 2px solid #fff;
       }
@@ -590,15 +602,15 @@
         color: #000;
       }
       #btn-commit:disabled {
-        background: #555;
+        background: #484f58;
         cursor: not-allowed;
       }
       #btn-counter {
-        background: #7b1fa2;
+        background: #8957e5;
         color: #fff;
       }
       #btn-counter.active {
-        background: #e1bee7;
+        background: #d2a8ff;
         color: #4a148c;
         border: 2px solid #fff;
       }
@@ -607,11 +619,12 @@
         height: 100px;
         overflow-y: auto;
         background: #000;
-        color: #0f0;
+        color: #3fb950;
         padding: 8px;
         font-family: monospace;
         font-size: 0.85rem;
         border-radius: 4px;
+        border: 1px solid #30363d;
       }
 
       /* Type Chart */
@@ -620,8 +633,8 @@
         right: 20px;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(30, 30, 30, 0.95);
-        border: 1px solid #444;
+        background: rgba(22, 27, 34, 0.95);
+        border: 1px solid #30363d;
         border-radius: 12px;
         padding: 15px;
         display: flex;
@@ -634,7 +647,7 @@
       }
       .tc-title {
         font-size: 0.75rem;
-        color: #888;
+        color: #8b949e;
         margin-bottom: 5px;
         text-transform: uppercase;
         letter-spacing: 1px;
@@ -649,50 +662,51 @@
         justify-content: center;
         font-weight: bold;
         font-size: 0.8rem;
-        color: #222;
+        color: #0d1117;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
         position: relative;
         z-index: 2;
       }
       .tc-atk {
         background: var(--atk-color);
-        border: 2px solid #ef9a9a;
+        border: 2px solid #ffa198;
       }
       .tc-brk {
         background: var(--brk-color);
-        border: 2px solid #fff59d;
+        /* 変更: チャートの枠線色も黄色系に調整 */
+        border: 2px solid #ffeeba;
       }
       .tc-grd {
         background: var(--grd-color);
-        border: 2px solid #90caf9;
+        border: 2px solid #a5d6ff;
       }
       .tc-arrow {
         font-size: 1.5rem;
-        color: #666;
+        color: #8b949e;
         line-height: 0.8;
       }
       .tc-loop-arrow {
         font-size: 0.7rem;
-        color: #666;
+        color: #8b949e;
         margin-top: -5px;
       }
 
       .context-banner {
-        background: linear-gradient(90deg, #2c3e50, #4ca1af);
-        border: 1px solid #80deea;
-        color: #e0f7fa;
+        background: linear-gradient(90deg, #1f2937, #374151);
+        border: 1px solid #4b5563;
+        color: #e5e7eb;
         padding: 8px 15px;
         text-align: center;
         margin: 10px 0;
         font-size: 0.95rem;
         border-radius: 4px;
-        box-shadow: 0 0 10px rgba(76, 161, 175, 0.5);
+        box-shadow: 0 0 10px rgba(75, 85, 99, 0.5);
         display: none;
         animation: slideIn 0.5s ease-out;
       }
       .context-highlight {
         font-weight: bold;
-        color: #ffeb3b;
+        color: var(--accent-color);
         text-decoration: underline;
       }
       @keyframes slideIn {
@@ -711,9 +725,9 @@
         top: 40%;
         left: 50%;
         transform: translate(-50%, -50%) scale(0.9);
-        background: rgba(0, 0, 0, 0.95);
-        border: 2px solid #ffd700;
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        background: rgba(13, 17, 23, 0.95);
+        border: 2px solid var(--accent-color);
+        box-shadow: 0 0 20px rgba(242, 204, 96, 0.5);
         color: #fff;
         padding: 20px 40px;
         z-index: 3000;
@@ -731,7 +745,7 @@
 
       .cutin-user {
         font-size: 1rem;
-        color: #bbb;
+        color: #8b949e;
         margin-bottom: 5px;
         text-transform: uppercase;
       }
@@ -739,14 +753,14 @@
       .cutin-name {
         font-size: 1.8rem;
         font-weight: bold;
-        color: #ffd700;
-        text-shadow: 0 0 10px #ff8c00;
+        color: var(--accent-color);
+        text-shadow: 0 0 10px #b08800;
         margin-bottom: 5px;
       }
 
       .cutin-desc {
         font-size: 0.9rem;
-        color: #e0e0e0;
+        color: #c9d1d9;
       }
 
       @keyframes cutinPop {
@@ -770,23 +784,28 @@
           transform: translate(-50%, -60%);
         }
       }
-      /* Tooltip Styles */
+      /* --- 【変更点2】 Tooltip Styles の改善 --- */
       #card-tooltip {
         position: fixed;
-        background: rgba(20, 20, 20, 0.98);
+        background: rgba(22, 27, 34, 0.98);
         border: 1px solid var(--accent-color);
         color: #fff;
         padding: 12px;
         border-radius: 8px;
         pointer-events: auto;
         z-index: 2000;
-        max-width: 250px;
+        /* 幅を広げ、レスポンシブ対応 */
+        width: max-content;
+        max-width: 340px;
+        min-width: 280px;
+
         display: none;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 1);
         font-size: 0.85rem;
         line-height: 1.4;
-        white-space: pre-wrap;
+        white-space: normal; /* 折り返しを有効に */
         cursor: pointer;
+        text-align: left; /* 左揃えを強制 */
       }
 
       #card-tooltip::after {
@@ -804,17 +823,25 @@
         margin-bottom: 5px;
         border-bottom: 1px solid #444;
         padding-bottom: 3px;
+        text-align: left;
       }
 
       #card-tooltip .tooltip-stat {
         color: #ffcc80;
         font-weight: bold;
+        display: inline-block;
+        margin-right: 8px;
       }
 
+      /* 説明文の左揃えと余白調整 */
       #card-tooltip .tooltip-desc {
         margin-top: 8px;
         color: #e0e0e0;
         font-size: 0.8rem;
+        text-align: left;
+        line-height: 1.5;
+        border-top: 1px solid #444;
+        padding-top: 5px;
       }
 
       /* カード表面のステータス表示 */
@@ -871,7 +898,7 @@
       <div class="cutin-desc" id="ac-desc">Description text...</div>
     </div>
     <div id="setup-screen">
-      <h1>DUSTFALL - Equipment Setup</h1>
+      <h1>DUSTFALL - Scavenger Setup</h1>
       <div class="setup-container">
         <div class="equip-section">
           <div class="equip-title">1. WEAPON (4 Cards)</div>
@@ -928,7 +955,7 @@
           <span class="intel-val" id="e-pending-cost">0 EP</span>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
+        <hr style="border: 0; border-top: 1px solid #30363d; margin: 5px 0" />
         <div style="font-size: 0.8rem; text-align: center; color: #888">
           ENEMY HAND
         </div>
@@ -992,7 +1019,7 @@
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
+        <hr style="border: 0; border-top: 1px solid #30363d; margin: 5px 0" />
         <div class="card-area" id="player-hand-view"></div>
       </div>
 
@@ -1025,7 +1052,7 @@
           text-align: center;
         "
       >
-        <span style="color: #ffd700">ELEMENTAL SURGE!</span><br />
+        <span style="color: var(--accent-color)">ELEMENTAL SURGE!</span><br />
         チャンス発生時<br />
         指定属性で<br />
         Slot1勝利せよ！
@@ -1064,65 +1091,71 @@
         EP_CHARGE: {
           id: "EP_CHARGE",
           type: "INSTANT",
-          name: "EPチャージ",
+          name: "急速充電",
           desc: "【単発】Slot1勝利時、自身のEPを3回復する。",
         },
         SMOKE: {
           id: "SMOKE",
           type: "INSTANT",
-          name: "目隠し",
+          name: "煙幕",
           desc: "【単発】Slot1勝利時、2ターンの間 敵の手札を強制的に隠す。",
         },
         FEINT: {
           id: "FEINT",
           type: "INSTANT",
-          name: "EPロスト",
+          name: "フェイント",
           desc: "【単発】Slot1勝利時、相手のEPを2減らす（妨害）。",
         },
         PREP_ATK: {
           id: "PREP_ATK",
           type: "INSTANT",
-          name: "アタッカー",
+          name: "予備動作",
           desc: "【単発】Slot1勝利時、山札から「Attack」カードを探す。",
+        },
+        PREDICTION: {
+          id: "PREDICTION",
+          type: "INSTANT",
+          name: "未来予測",
+          desc: "【単発】Slot1勝利時、次ターンの敵のセットカードを可視化する。",
         },
 
         // --- Synergy Abilities (Setup & Execute) ---
         ARMOR_BREAK: {
           id: "ARMOR_BREAK",
           type: "SETUP",
-          name: "装甲破壊",
+          name: "装甲溶解",
           tag: "ARMOR_BROKEN",
-          tagName: "装甲破壊",
-          desc: "【設置】Slot1勝利時: 敵に『装甲破壊』タグを付与。",
+          tagName: "装甲劣化",
+          desc: "【設置】Slot1勝利時: 敵に『装甲劣化』タグを付与。",
         },
         FATAL_THRUST: {
           id: "FATAL_THRUST",
           type: "EXECUTE",
-          name: "クリティカルヒット",
+          name: "急所突き",
           reqTag: "ARMOR_BROKEN",
-          desc: "【実行】Slot2勝利時: 敵が『装甲破壊』ならダメージ3倍。",
+          desc: "【実行】Slot2勝利時: 敵が『装甲劣化』ならダメージ3倍。",
         },
         OIL_JAR: {
           id: "OIL_JAR",
           type: "SETUP",
-          name: "灯油",
+          name: "燃料散布",
           tag: "OILED",
-          tagName: "油まみれ",
-          desc: "【設置】Slot1勝利時: 敵に『油まみれ』タグを付与。",
+          tagName: "引火性",
+          desc: "【設置】Slot1勝利時: 敵に『引火性』タグを付与。",
         },
         FIRE_BLAST: {
           id: "FIRE_BLAST",
           type: "EXECUTE",
-          name: "火炎放射",
+          name: "点火",
           reqTag: "OILED",
-          desc: "【実行】Slot2勝利時: 敵が『油』ならDmg 2倍 + 敵Burnout付与。",
+          desc: "【実行】Slot2勝利時: 敵が『引火性』ならDmg 2倍 + 敵Burnout付与。",
         },
 
         // Utility: Cleanse
         PURIFY: {
           id: "PURIFY",
           type: "CLEAR",
-          name: "浄化",
+          name: "ナノ洗浄",
           desc: "【単発】Slot1勝利時: 自身の悪い状態タグを全て解除する。",
         },
 
@@ -1130,15 +1163,15 @@
         OVERCLOCK: {
           id: "OVERCLOCK",
           type: "SETUP",
-          name: "リミットオーバー",
+          name: "リミッター解除",
           tag: "OVERLOAD",
-          tagName: "過負荷",
-          desc: "【設置】Slot1勝利時: 自身に『過負荷』付与(3T)。全コスト0になるが、終了時に強制Burnout。",
+          tagName: "暴走",
+          desc: "【設置】Slot1勝利時: 自身に『暴走』付与(3T)。全コスト0になるが、終了時に強制Burnout。",
         },
         VIRUS_INSTALL: {
           id: "VIRUS_INSTALL",
           type: "SETUP",
-          name: "ウイルス",
+          name: "ウイルス送信",
           tag: "INFECTED",
           tagName: "感染",
           desc: "【設置】Slot1勝利時: 敵に『感染』付与(3T)。毎ターン開始時にEP-2。",
@@ -1146,19 +1179,19 @@
         POLARITY_SHIFT: {
           id: "POLARITY_SHIFT",
           type: "INSTANT",
-          name: "属性反転",
+          name: "位相反転",
           desc: "【単発】Slot1勝利時、このターンSlot2の三竦みを逆転させる（AttackがGuardに勝つ等）。",
         },
         GRAVITY: {
           id: "GRAVITY",
           type: "INSTANT",
-          name: "重圧 (Gravity)",
+          name: "グラビティ",
           desc: "【単発】Slot1勝利時、敵Slot2のコスト+3。EP不足なら強制破壊。",
         },
         IRON_WILL: {
           id: "IRON_WILL",
           type: "INSTANT",
-          name: "不屈の防壁",
+          name: "不屈の精神",
           desc: "【単発/HP30%以下】Slot1勝利時、被ダメ0＆次ターンEP回復2倍。",
         },
         DESPERATE_STRIKE: {
@@ -1171,43 +1204,43 @@
         PHANTOM_WEIGHT: {
           id: "PHANTOM_WEIGHT",
           type: "INSTANT",
-          name: "幻影の重り",
+          name: "幻影質量",
           desc: "【単発】次ターン、Slot1の判定コストを6として扱う(EP消費はそのまま)。",
         },
         JAMMING: {
           id: "JAMMING",
           type: "INSTANT",
-          name: "ハック",
+          name: "ジャミング",
           desc: "【単発】次ターン、敵の手札1枚を使用不可にする。",
         },
         MANA_BARRIER: {
           id: "MANA_BARRIER",
           type: "INSTANT",
-          name: "無敵",
+          name: "電磁バリア",
           desc: "【単発】HPダメ無効(SP除)。代償:EP-3。",
         },
         EMERGENCY_REPAIR: {
           id: "EMERGENCY_REPAIR",
           type: "INSTANT",
-          name: "緊急回復",
+          name: "緊急修復",
           desc: "【単発】HPを10回復する。",
         },
         ENERGY_DRAIN: {
           id: "ENERGY_DRAIN",
           type: "INSTANT",
-          name: "EPドレイン",
+          name: "EP吸収",
           desc: "【単発】敵EP-3。",
         },
         STUN_SHOT: {
           id: "STUN_SHOT",
           type: "INSTANT",
-          name: "スタンショット",
+          name: "スタン弾",
           desc: "【単発】敵手札の最大コストカードのコスト+3。",
         },
         CORROSION: {
           id: "CORROSION",
           type: "INSTANT",
-          name: "腐食 (毒)",
+          name: "有毒ガス",
           desc: "【単発】敵に毒付与(2T)。毎ターンHP-3。",
         },
 
@@ -1224,7 +1257,7 @@
         SONAR: {
           id: "SONAR",
           type: "SETUP",
-          name: "二重化",
+          name: "ソナー",
           tag: "RESONANCE",
           tagName: "共鳴",
           desc: "【設置】Slot1勝利時: 敵に『共鳴』タグを付与。",
@@ -1234,28 +1267,28 @@
         DATA_DRAIN: {
           id: "DATA_DRAIN",
           type: "EXECUTE",
-          name: "SPドレイン",
+          name: "SP強奪",
           reqTag: "DETECTED",
           desc: "【実行】Slot2勝利時: 敵が『解析済』ならSPを全て奪う。",
         },
         POSTURE_BREAK_EXEC: {
           id: "POSTURE_BREAK_EXEC",
           type: "EXECUTE",
-          name: "強制バーンアウト",
+          name: "クラッシュ",
           reqTag: "ARMOR_BROKEN",
-          desc: "【実行】Slot2勝利時: 敵が『装甲破壊』なら強制ブレイク(姿勢0)。",
+          desc: "【実行】Slot2勝利時: 敵が『装甲劣化』なら強制ブレイク(姿勢0)。",
         },
         ECHO_STRIKE: {
           id: "ECHO_STRIKE",
           type: "EXECUTE",
-          name: "2連撃",
+          name: "エコー衝撃",
           reqTag: "RESONANCE",
           desc: "【実行】Slot2勝利時: 敵が『共鳴』ならダメージを2回与える(x2)。",
         },
         MEMORY_LEAK: {
           id: "MEMORY_LEAK",
           type: "EXECUTE",
-          name: "SPロスト",
+          name: "SP破壊",
           reqTag: "INFECTED",
           desc: "【実行】Slot2勝利時: 敵が『感染』なら与ダメの50%分SP減少。",
         },
@@ -1263,64 +1296,12 @@
 
       const EQUIPMENT = {
         WEAPONS: {
-          剛の大剣: [
-            { type: TYPE.ATTACK, cost: 6, dmg: 22, pos: 5 },
-            { type: TYPE.ATTACK, cost: 4, dmg: 16, pos: 4 },
-            { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" },
-            { type: TYPE.SP, cost: 6, dmg: 40, pos: 20, isSP: true },
-          ],
-          双の短剣: [
-            {
-              type: TYPE.ATTACK,
-              cost: 1,
-              dmg: 6,
-              pos: 2,
-              ability: "VIRUS_INSTALL",
-            },
-            {
-              type: TYPE.ATTACK,
-              cost: 2,
-              dmg: 8,
-              pos: 2,
-              ability: "FIRE_BLAST",
-            },
-            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2, ability: "OIL_JAR" },
-            { type: TYPE.SP, cost: 4, dmg: 15, pos: 0, isSP: true },
-          ],
-          貫きの槍: [
-            {
-              type: TYPE.ATTACK,
-              cost: 3,
-              dmg: 14,
-              pos: 6,
-              ability: "FATAL_THRUST",
-            },
-            { type: TYPE.BREAK, cost: 2, pos: 10, ability: "ARMOR_BREAK" },
-            { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 5 },
-            { type: TYPE.SP, cost: 5, dmg: 25, pos: 20, isSP: true },
-          ],
-          因果の杖: [
-            {
-              type: TYPE.BREAK,
-              cost: 3,
-              pos: 10,
-              ability: "POLARITY_SHIFT",
-            },
-            {
-              type: TYPE.GUARD,
-              cost: 2,
-              arm: 5,
-              ability: "PREDICTION",
-            },
-            { type: TYPE.ATTACK, cost: 2, dmg: 10, pos: 2 },
-            { type: TYPE.SP, cost: 5, dmg: 30, pos: 5, isSP: true },
-          ],
-          重力の戦鎚: [
+          鉄塊の大剣: [
             {
               type: TYPE.ATTACK,
               cost: 5,
               dmg: 18,
-              pos: 10,
+              pos: 5,
               ability: "GRAVITY",
             },
             {
@@ -1333,71 +1314,37 @@
             { type: TYPE.BREAK, cost: 4, pos: 15 },
             { type: TYPE.SP, cost: 7, dmg: 50, pos: 20, isSP: true },
           ],
-          幻影の短剣: [
+          熱断の刀: [
+            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2, ability: "OIL_JAR" },
             {
               type: TYPE.ATTACK,
               cost: 2,
               dmg: 8,
               pos: 2,
-              ability: "PHANTOM_WEIGHT",
+              ability: "FIRE_BLAST",
             },
+            { type: TYPE.GUARD, cost: 2, arm: 6 },
+            { type: TYPE.SP, cost: 5, dmg: 30, pos: 5, isSP: true },
+          ],
+          スタンパイル: [
+            { type: TYPE.BREAK, cost: 2, pos: 10, ability: "ARMOR_BREAK" },
             {
               type: TYPE.ATTACK,
-              cost: 1,
-              dmg: 5,
-              pos: 2,
-              ability: "CORROSION",
-            },
-            { type: TYPE.GUARD, cost: 1, arm: 5 },
-            { type: TYPE.SP, cost: 5, dmg: 30, pos: 10, isSP: true },
-          ],
-          ジャミング装置: [
-            { type: TYPE.BREAK, cost: 2, pos: 8, ability: "JAMMING" },
-            {
-              type: TYPE.BREAK,
-              cost: 2,
-              pos: 8,
-              ability: "ENERGY_DRAIN",
-            },
-            { type: TYPE.GUARD, cost: 2, arm: 8 },
-            { type: TYPE.SP, cost: 4, dmg: 10, pos: 30, isSP: true },
-          ],
-          守護の杖: [
-            {
-              type: TYPE.GUARD,
-              cost: 2,
-              arm: 5,
-              ability: "MANA_BARRIER",
-            },
-            {
-              type: TYPE.GUARD,
-              cost: 1,
-              arm: 5,
-              ability: "EMERGENCY_REPAIR",
-            },
-            { type: TYPE.BREAK, cost: 3, pos: 10 },
-            { type: TYPE.SP, cost: 6, dmg: 20, pos: 20, isSP: true },
-          ],
-          // --- NEW WEAPONS for Execute Abilities ---
-          解析の杖: [
-            { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
-            { type: TYPE.BREAK, cost: 3, pos: 10, ability: "DATA_DRAIN" },
-            { type: TYPE.GUARD, cost: 2, arm: 8 },
-            { type: TYPE.SP, cost: 5, dmg: 35, pos: 15, isSP: true },
-          ],
-          共鳴の戦斧: [
-            { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2, ability: "SONAR" },
-            {
-              type: TYPE.ATTACK,
-              cost: 4,
+              cost: 3,
               dmg: 14,
-              pos: 5,
-              ability: "ECHO_STRIKE",
+              pos: 6,
+              ability: "FATAL_THRUST",
             },
-            { type: TYPE.BREAK, cost: 2, pos: 8 },
-            { type: TYPE.SP, cost: 6, dmg: 45, pos: 10, isSP: true },
+            {
+              type: TYPE.ATTACK,
+              cost: 5,
+              dmg: 18,
+              pos: 5,
+              ability: "POSTURE_BREAK_EXEC",
+            },
+            { type: TYPE.SP, cost: 6, dmg: 40, pos: 20, isSP: true },
           ],
-          ハッカーナイフ: [
+          ハックナイフ: [
             {
               type: TYPE.ATTACK,
               cost: 1,
@@ -1412,58 +1359,120 @@
               pos: 3,
               ability: "MEMORY_LEAK",
             },
-            { type: TYPE.GUARD, cost: 1, arm: 4 },
+            { type: TYPE.BREAK, cost: 2, pos: 8, ability: "JAMMING" },
             { type: TYPE.SP, cost: 4, dmg: 20, pos: 5, isSP: true },
           ],
-          破壊のメイス: [
-            { type: TYPE.BREAK, cost: 3, pos: 12, ability: "ARMOR_BREAK" },
+          共鳴ブラスター: [
+            { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
+            { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2, ability: "SONAR" },
             {
               type: TYPE.ATTACK,
-              cost: 5,
-              dmg: 18,
+              cost: 4,
+              dmg: 14,
               pos: 5,
-              ability: "POSTURE_BREAK_EXEC",
+              ability: "ECHO_STRIKE",
             },
-            { type: TYPE.GUARD, cost: 2, arm: 6 },
-            { type: TYPE.SP, cost: 7, dmg: 55, pos: 25, isSP: true },
+            { type: TYPE.SP, cost: 6, dmg: 45, pos: 10, isSP: true },
           ],
         },
         ARMORS: {
-          フルプレート: [
-            { type: TYPE.GUARD, cost: 3, arm: 18 },
-            { type: TYPE.GUARD, cost: 2, arm: 12 },
-            { type: TYPE.BREAK, cost: 4, pos: 15 },
+          廃材の鎧: [
+            {
+              type: TYPE.GUARD,
+              cost: 2,
+              arm: 8,
+              ability: "PREP_ATK",
+            },
+            { type: TYPE.GUARD, cost: 1, arm: 5 },
+            { type: TYPE.BREAK, cost: 3, pos: 10 },
           ],
-          レザーベスト: [
-            { type: TYPE.GUARD, cost: 1, arm: 4 },
-            { type: TYPE.GUARD, cost: 1, arm: 4 },
+          光学迷彩コート: [
+            { type: TYPE.GUARD, cost: 2, arm: 6, ability: "SMOKE" },
             { type: TYPE.GUARD, cost: 2, arm: 8, ability: "FEINT" },
+            { type: TYPE.GUARD, cost: 1, arm: 4 },
           ],
-          要塞の鎧: [
+          反応装甲: [
             {
               type: TYPE.GUARD,
               cost: 4,
               arm: 20,
               ability: "IRON_WILL",
             },
-            { type: TYPE.GUARD, cost: 2, arm: 10 },
+            {
+              type: TYPE.GUARD,
+              cost: 2,
+              arm: 10,
+              ability: "MANA_BARRIER",
+            },
             { type: TYPE.BREAK, cost: 3, pos: 8 },
+          ],
+          自動修復スーツ: [
+            {
+              type: TYPE.GUARD,
+              cost: 2,
+              arm: 6,
+              ability: "EMERGENCY_REPAIR",
+            },
+            { type: TYPE.GUARD, cost: 2, arm: 8, ability: "PURIFY" },
+            { type: TYPE.GUARD, cost: 1, arm: 5 },
+          ],
+          EP炉心: [
+            { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" },
+            {
+              type: TYPE.BREAK,
+              cost: 2,
+              pos: 8,
+              ability: "ENERGY_DRAIN",
+            },
+            { type: TYPE.GUARD, cost: 1, arm: 5 },
           ],
         },
         ACCESSORIES: {
-          パワーリング: [
+          解除キー: [
             { type: TYPE.BREAK, cost: 3, pos: 8, ability: "OVERCLOCK" },
             { type: TYPE.BREAK, cost: 3, pos: 8 },
             { type: TYPE.ATTACK, cost: 5, dmg: 20, pos: 0 },
           ],
-          聖騎士の盾: [
-            { type: TYPE.GUARD, cost: 2, arm: 10, ability: "PURIFY" },
-            { type: TYPE.GUARD, cost: 2, arm: 10 },
-            { type: TYPE.BREAK, cost: 2, pos: 5 },
-          ],
-          重撃のハンマー: [
-            { type: TYPE.BREAK, cost: 2, pos: 8, ability: "STUN_SHOT" },
+          戦術バイザー: [
+            {
+              type: TYPE.GUARD,
+              cost: 2,
+              arm: 6,
+              ability: "PREDICTION",
+            },
+            { type: TYPE.BREAK, cost: 2, pos: 6, ability: "SCAN" },
             { type: TYPE.ATTACK, cost: 3, dmg: 10, pos: 5 },
+          ],
+          位相ズラし装置: [
+            {
+              type: TYPE.BREAK,
+              cost: 3,
+              pos: 10,
+              ability: "POLARITY_SHIFT",
+            },
+            {
+              type: TYPE.ATTACK,
+              cost: 2,
+              dmg: 8,
+              pos: 2,
+              ability: "PHANTOM_WEIGHT",
+            },
+            { type: TYPE.GUARD, cost: 2, arm: 6 },
+          ],
+          汚染アンプル: [
+            {
+              type: TYPE.ATTACK,
+              cost: 1,
+              dmg: 5,
+              pos: 2,
+              ability: "CORROSION",
+            },
+            { type: TYPE.BREAK, cost: 2, pos: 8, ability: "STUN_SHOT" },
+            { type: TYPE.GUARD, cost: 1, arm: 4 },
+          ],
+          解析端末: [
+            { type: TYPE.BREAK, cost: 3, pos: 10, ability: "DATA_DRAIN" },
+            { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
             { type: TYPE.GUARD, cost: 2, arm: 6 },
           ],
         },
@@ -1553,17 +1562,18 @@
         if (card.arm)
           statsText += `<span class="tooltip-stat">Armor ${card.arm}</span>\n`;
         if (card.isSP)
-          statsText += `<span style="color:#ba68c8">SP必殺技 (Cost ${card.cost})</span>\n`;
+          statsText += `<span style="color:var(--sp-bar-color)">SP必殺技 (Cost ${card.cost})</span>\n`;
 
         let abilityText = "";
         if (card.ability && ABILITIES[card.ability]) {
           const ab = ABILITIES[card.ability];
           // 色分けのためのスタイル選択
-          let typeColor = "#ffd700"; // Default Instant
-          if (ab.type === "SETUP") typeColor = "#64b5f6";
-          if (ab.type === "EXECUTE") typeColor = "#ff5252";
+          let typeColor = "#f2cc60"; // Default Instant
+          if (ab.type === "SETUP") typeColor = "#79c0ff";
+          if (ab.type === "EXECUTE") typeColor = "#ff7b72";
 
-          abilityText = `<div class="tooltip-desc" style="border-top:1px solid #444; margin-top:5px; padding-top:5px;">
+          // CSSで制御するため、inline-styleを最小限に
+          abilityText = `<div class="tooltip-desc">
             <span style="color:${typeColor}; font-weight:bold">${ab.name}</span><br>
             ${ab.desc}
             </div>`;
@@ -1597,7 +1607,7 @@
         const offsetX = 15;
         const offsetY = isTouchDevice ? -150 : 15;
 
-        let leftPos = Math.min(clientX + offsetX, window.innerWidth - 260);
+        let leftPos = Math.min(clientX + offsetX, window.innerWidth - 350); // 幅考慮で調整
         if (leftPos < 10) leftPos = 10;
 
         let topPos = clientY + offsetY;
@@ -2937,7 +2947,7 @@
           if (e.revealSlots) {
             const badge = document.createElement("span");
             badge.className = "tag-badge";
-            badge.style.background = "#e040fb";
+            badge.style.background = "#d2a8ff";
             badge.innerText = "PREDICTED";
             tagContainer.appendChild(badge);
           }
@@ -3245,7 +3255,7 @@
         if (!c) return "Empty";
         let abHtml = "";
         if (c.ability && ABILITIES[c.ability]) {
-          abHtml = `<div style="font-size:0.6rem; color:#ffd700; margin-top:-2px">${
+          abHtml = `<div style="font-size:0.6rem; color:var(--accent-color); margin-top:-2px">${
             ABILITIES[c.ability].name
           }</div>`;
         }
