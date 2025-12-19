@@ -863,6 +863,118 @@
         gap: 3px;
       }
 
+      /* --- Rule Button & Modal Styles --- */
+      .rule-open-btn {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 4000;
+        background: rgba(22, 27, 34, 0.8);
+        border: 1px solid #8b949e;
+        color: #c9d1d9;
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      }
+      .rule-open-btn:hover {
+        background: #30363d;
+        color: #fff;
+      }
+
+      .modal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        z-index: 5000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(2px);
+      }
+
+      .modal-content {
+        background-color: #161b22;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid var(--accent-color);
+        width: 90%;
+        max-width: 600px;
+        max-height: 85vh;
+        overflow-y: auto;
+        color: #c9d1d9;
+        border-radius: 8px;
+        position: relative;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+      }
+
+      .close-btn {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        line-height: 20px;
+      }
+
+      .close-btn:hover,
+      .close-btn:focus {
+        color: #fff;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .rule-section {
+        margin-bottom: 20px;
+        border-bottom: 1px solid #30363d;
+        padding-bottom: 15px;
+      }
+      .rule-section:last-child {
+        border-bottom: none;
+      }
+      .rule-h2 {
+        color: var(--accent-color);
+        font-size: 1.1rem;
+        margin-top: 0;
+        margin-bottom: 10px;
+        border-left: 4px solid var(--accent-color);
+        padding-left: 8px;
+      }
+      .rule-h3 {
+        color: #fff;
+        font-size: 0.95rem;
+        margin: 10px 0 5px 0;
+      }
+      .rule-list {
+        padding-left: 20px;
+        margin: 5px 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+      .rule-list li {
+        margin-bottom: 6px;
+      }
+      .txt-strong {
+        color: #fff;
+        font-weight: bold;
+      }
+      .txt-atk {
+        color: var(--atk-color);
+      }
+      .txt-brk {
+        color: var(--brk-color);
+      }
+      .txt-grd {
+        color: var(--grd-color);
+      }
+      .txt-sp {
+        color: var(--sp-color);
+        font-weight: bold;
+      }
+
       @media (max-width: 900px) {
         .type-chart-container {
           position: static;
@@ -892,6 +1004,152 @@
     </style>
   </head>
   <body>
+    <button class="rule-open-btn" onclick="openRules()">RULES</button>
+
+    <div id="rule-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeRules()">&times;</span>
+        <h2
+          style="
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+          "
+        >
+          BATTLE RULES
+        </h2>
+
+        <div class="rule-section">
+          <h2 class="rule-h2">基本ルール: 三すくみ</h2>
+          <ul class="rule-list">
+            <li>
+              <span class="txt-atk">Attack</span> は
+              <span class="txt-brk">Break</span> に勝つ
+            </li>
+            <li>
+              <span class="txt-brk">Break</span> は
+              <span class="txt-grd">Guard</span> に勝つ
+            </li>
+            <li>
+              <span class="txt-grd">Guard</span> は
+              <span class="txt-atk">Attack</span> に勝つ
+            </li>
+            <li>
+              <span class="txt-sp">SPカード</span>
+              はAttack/Break/Guardすべてに勝利する。
+            </li>
+          </ul>
+        </div>
+
+        <div class="rule-section">
+          <h2 class="rule-h2">カードの種類と効果</h2>
+          <ul class="rule-list">
+            <li>
+              <span class="txt-atk">Attack</span>: 相手の<span
+                class="txt-strong"
+                >HP</span
+              >にダメージを与える。
+            </li>
+            <li>
+              <span class="txt-brk">Break</span>: 相手の<span class="txt-strong"
+                >姿勢値</span
+              >にダメージを与える。
+            </li>
+            <li>
+              <span class="txt-grd">Guard</span>:
+              相手のAttackダメージを、カードの防御値分だけ軽減する。
+            </li>
+            <li>
+              <span class="txt-sp">SP</span>:
+              強力な必殺技。SPゲージ最大(5)かつ必要EPがある場合のみ使用可能。
+            </li>
+          </ul>
+        </div>
+
+        <div class="rule-section">
+          <h2 class="rule-h2">スロットボーナス</h2>
+          <ul class="rule-list">
+            <li>
+              <strong>Slot 1 で勝利した場合:</strong><br />
+              Slot 2 での自身のダメージ・効果が
+              <span class="txt-strong">1.2倍</span> になる。
+            </li>
+            <li>
+              <strong>Slot 1 で敗北した場合:</strong><br />
+              Slot 2 での自身のダメージ・効果が
+              <span class="txt-strong">0.25倍</span> に激減する。
+            </li>
+          </ul>
+        </div>
+
+        <div class="rule-section">
+          <h2 class="rule-h2">EP と バーンアウト</h2>
+          <ul class="rule-list">
+            <li>
+              カードの使用にはEP(エネルギー)を消費する。残EPの範囲内でカードをセットできる。
+            </li>
+            <li>
+              ターン終了時にEPが <span class="txt-strong">0</span> の場合、<span
+                style="color: #ff7b72; font-weight: bold"
+                >BURNOUT</span
+              >
+              状態になる。
+            </li>
+            <li>
+              <strong>BURNOUT効果:</strong>
+              次のターン行動不能となり、受けるダメージが増加する。
+            </li>
+            <li>姿勢値が0になってもBURNOUT状態(Break)となる。</li>
+          </ul>
+        </div>
+
+        <div class="rule-section">
+          <h2 class="rule-h2">アビリティとタグ</h2>
+          <ul class="rule-list">
+            <li>
+              <strong>単発アビリティ:</strong> Slot 1 勝利時に即座に効果発動。
+            </li>
+            <li>
+              <strong>設置アビリティ:</strong> Slot 1
+              勝利時に、相手または自身に「タグ」を付与する。
+            </li>
+            <li>
+              <strong>実行アビリティ:</strong> Slot 2
+              勝利時に、対象に特定の「タグ」が付与されていれば強力な追加効果が発動。
+            </li>
+            <li>
+              「タグ」自体にも、継続ダメージやEP減少などの副次効果がある場合がある。
+            </li>
+          </ul>
+        </div>
+
+        <div class="rule-section">
+          <h2 class="rule-h2">SP と カウンター</h2>
+          <ul class="rule-list">
+            <li>
+              <strong>SP相殺:</strong>
+              お互いがSPカードを出した場合、効果は相殺され無効となる。
+            </li>
+            <li>
+              <strong>カウンター攻撃:</strong>
+              コマンド選択時に「SPカウンター」を選ぶと、相手がSPカードを出した場合に無効化し、反撃する。相手がSP以外なら失敗(EPのみ消費)。
+            </li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px">
+          <button
+            class="equip-btn active"
+            onclick="closeRules()"
+            style="width: 100%"
+          >
+            CLOSE
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="card-tooltip"></div>
     <div id="ability-cutin">
       <div class="cutin-user" id="ac-user">PLAYER</div>
@@ -1641,6 +1899,23 @@
         tt.style.display = "none";
       }
 
+      // --- Rule Modal Functions ---
+      function openRules() {
+        document.getElementById("rule-modal").style.display = "block";
+      }
+
+      function closeRules() {
+        document.getElementById("rule-modal").style.display = "none";
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("rule-modal");
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+
       function buildDeck(wKey, aKey, accKey) {
         const wCards = JSON.parse(JSON.stringify(EQUIPMENT.WEAPONS[wKey]));
         const aCards = JSON.parse(JSON.stringify(EQUIPMENT.ARMORS[aKey]));
@@ -2105,7 +2380,33 @@
           }
 
           e.trinityTarget = null;
+        });
 
+        // --- ADDED: SP CARD INJECTION LOGIC (Turn 4) ---
+        if (turn === 4) {
+          [player, enemy].forEach((e) => {
+            if (e.reservedSP) {
+              // HP check (30% or less)
+              if (e.hp <= e.maxHp * 0.3) {
+                // Top of deck (end of array)
+                e.deck.push(e.reservedSP);
+                log(
+                  `[System] ${e.name}: Crisis Bonus! SP Card added to TOP of deck.`
+                );
+              } else {
+                // Random position
+                const idx = Math.floor(Math.random() * (e.deck.length + 1));
+                e.deck.splice(idx, 0, e.reservedSP);
+                log(`[System] ${e.name}: SP Card added to deck.`);
+              }
+              e.reservedSP = null; // Prevent re-adding
+            }
+          });
+        }
+        // ------------------------------------------------
+
+        // Draw Loop
+        [player, enemy].forEach((e) => {
           while (e.hand.length < 3) {
             if (e.deck.length === 0) {
               if (!e.initialDeckList) {
@@ -3103,14 +3404,14 @@
             const badge = document.createElement("span");
             badge.className = "tag-badge";
             badge.style.background = "#d2a8ff";
-            badge.innerText = "PREDICTED";
+            badge.innerText = "スロット公開";
             tagContainer.appendChild(badge);
           }
           if (e.corrosionTurns > 0) {
             const badge = document.createElement("span");
             badge.className = "tag-badge";
             badge.style.background = "#ab47bc";
-            badge.innerText = `POISON (${e.corrosionTurns})`;
+            badge.innerText = `毒 (${e.corrosionTurns})`;
             tagContainer.appendChild(badge);
           }
           if (e.isPhantomWeight) {
