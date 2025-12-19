@@ -356,8 +356,7 @@
         touch-action: manipulation;
       }
       .card:hover {
-        transform: translateY(-3px);
-        border-color: #8b949e;
+        transform: translateY(-8px);
       }
       .card.selected {
         border-color: var(--accent-color);
@@ -945,7 +944,7 @@
           </div>
           <div>
             <div class="bar-label">
-              <span>姿勢値</span>
+              <span>姿勢値: <span id="e-pos"></span></span>
             </div>
             <div class="bar-wrap">
               <div class="pos-bar" id="e-pos-bar"></div>
@@ -955,9 +954,23 @@
 
         <div class="active-tags-container" id="e-tags"></div>
 
-        <div style="font-size: 0.8rem; color: #888; display: flex; gap: 10px">
-          <span class="ep-val">EP: <span id="e-ep"></span></span>
-          <span class="sp-val">SP: <span id="e-sp"></span></span>
+        <div class="resource-grid">
+          <div>
+            <div class="bar-label">
+              <span>EP: <span id="e-ep"></span></span>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar-fill ep-fill" id="e-ep-fill"></div>
+            </div>
+          </div>
+          <div>
+            <div class="bar-label">
+              <span>SP: <span id="e-sp"></span></span>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar-fill sp-fill" id="e-sp-fill"></div>
+            </div>
+          </div>
         </div>
 
         <div class="intel-box" id="e-intel-box">
@@ -1011,7 +1024,9 @@
             <div class="bar-wrap"><div class="hp-bar" id="p-hp-bar"></div></div>
           </div>
           <div>
-            <div class="bar-label"><span>姿勢値</span></div>
+            <div class="bar-label">
+              <span>姿勢値: <span id="p-pos"></span></span>
+            </div>
             <div class="bar-wrap">
               <div class="pos-bar" id="p-pos-bar"></div>
             </div>
@@ -2932,6 +2947,12 @@
             document.getElementById(`e-ep`).innerText = e.ep;
             document.getElementById(`e-sp`).innerText = e.sp;
           }
+
+          // Update Posture Value (New)
+          document.getElementById(`${prefix}-pos`).innerText = Math.floor(
+            e.pos
+          );
+
           document.getElementById(`${prefix}-hp-bar`).style.width = `${Math.max(
             0,
             (e.hp / MAX_HP) * 100
@@ -3022,6 +3043,14 @@
         }%`;
         document.getElementById("p-sp-fill").style.width = `${
           (predictedSP / MAX_SP) * 100
+        }%`;
+
+        // Update Enemy Bars (New Logic)
+        document.getElementById("e-ep-fill").style.width = `${
+          (enemy.ep / MAX_EP) * 100
+        }%`;
+        document.getElementById("e-sp-fill").style.width = `${
+          (enemy.sp / MAX_SP) * 100
         }%`;
 
         // 敵パネル：常に消費コストを表示
