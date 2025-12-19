@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>DUSTFALL - Scavenger Protocol</title>
+    <title>DUSTFALL</title>
     <style>
       :root {
         --bg-color: #0d1117;
@@ -15,10 +15,7 @@
         --accent-color: #f2cc60; /* Scavenger Gold */
         --atk-color: #ff7b72; /* Red */
         --grd-color: #79c0ff; /* Blue */
-
-        /* 【変更点1】 Breakの色を紫から黄色に変更 */
         --brk-color: #ffd33d; /* Yellow */
-
         --sp-color: #a841d8;
         --secret-color: #8b949e;
 
@@ -36,12 +33,12 @@
         flex-direction: column;
         align-items: center;
         margin: 0;
-        padding: 10px;
+        padding: 5px; /* 余白を少し縮小 */
         min-height: 100vh;
         -webkit-tap-highlight-color: transparent;
       }
       h1 {
-        margin: 10px 0;
+        margin: 5px 0; /* マージン縮小 */
         font-size: 1.2rem;
         border-bottom: 2px solid var(--accent-color);
         text-transform: uppercase;
@@ -165,12 +162,12 @@
         max-width: 600px;
         display: none; /* Initially hidden */
         flex-direction: column;
-        gap: 10px;
-        padding-bottom: 50px;
+        gap: 8px; /* パネル間の隙間を少し詰める */
+        padding-bottom: 20px;
       }
       .panel {
         background: var(--panel-bg);
-        padding: 10px;
+        padding: 8px 10px; /* パディングを少し調整 */
         border-radius: 8px;
         border: 1px solid #30363d;
         position: relative;
@@ -181,8 +178,8 @@
       .intel-box {
         background: rgba(13, 17, 23, 0.5);
         border: 1px dashed #30363d;
-        padding: 5px;
-        margin-top: 5px;
+        padding: 4px 8px;
+        margin-top: 4px;
         font-size: 0.85rem;
         color: #8b949e;
         display: flex;
@@ -199,9 +196,18 @@
       .status-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 5px;
+        margin-bottom: 4px;
         font-size: 0.9rem;
       }
+
+      /* 【変更点】ステータスバーを横並びにするグリッド */
+      .status-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 5px;
+      }
+
       .bar-label {
         font-size: 0.75rem;
         color: #8b949e;
@@ -215,7 +221,7 @@
         height: 8px;
         border-radius: 4px;
         overflow: hidden;
-        margin-bottom: 8px;
+        margin-bottom: 0; /* グリッド内で制御するためリセット */
         position: relative;
         border: 1px solid #30363d;
       }
@@ -295,10 +301,11 @@
       .active-tags-container {
         display: flex;
         gap: 5px;
-        margin: 5px 0;
+        margin: 4px 0;
         flex-wrap: wrap;
         min-height: 20px;
-        padding-bottom: 5px;
+        /* バーの下に移動するためpadding調整 */
+        padding-bottom: 0;
       }
       .tag-badge {
         font-size: 0.65rem;
@@ -616,7 +623,7 @@
       }
 
       #log {
-        height: 100px;
+        height: 80px; /* ログの高さを少し調整して全体を収めやすく */
         overflow-y: auto;
         background: #000;
         color: #3fb950;
@@ -673,7 +680,6 @@
       }
       .tc-brk {
         background: var(--brk-color);
-        /* 変更: チャートの枠線色も黄色系に調整 */
         border: 2px solid #ffeeba;
       }
       .tc-grd {
@@ -697,7 +703,7 @@
         color: #e5e7eb;
         padding: 8px 15px;
         text-align: center;
-        margin: 10px 0;
+        margin: 5px 0; /* マージン縮小 */
         font-size: 0.95rem;
         border-radius: 4px;
         box-shadow: 0 0 10px rgba(75, 85, 99, 0.5);
@@ -784,7 +790,7 @@
           transform: translate(-50%, -60%);
         }
       }
-      /* --- 【変更点2】 Tooltip Styles の改善 --- */
+      /* --- Tooltip Styles --- */
       #card-tooltip {
         position: fixed;
         background: rgba(22, 27, 34, 0.98);
@@ -794,7 +800,6 @@
         border-radius: 8px;
         pointer-events: auto;
         z-index: 2000;
-        /* 幅を広げ、レスポンシブ対応 */
         width: max-content;
         max-width: 340px;
         min-width: 280px;
@@ -803,9 +808,9 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 1);
         font-size: 0.85rem;
         line-height: 1.4;
-        white-space: normal; /* 折り返しを有効に */
+        white-space: normal;
         cursor: pointer;
-        text-align: left; /* 左揃えを強制 */
+        text-align: left;
       }
 
       #card-tooltip::after {
@@ -833,7 +838,6 @@
         margin-right: 8px;
       }
 
-      /* 説明文の左揃えと余白調整 */
       #card-tooltip .tooltip-desc {
         margin-top: 8px;
         color: #e0e0e0;
@@ -923,7 +927,6 @@
     </div>
 
     <div class="game-container">
-      <h1>DUSTFALL - Battle Phase</h1>
       <div class="panel" id="e-panel">
         <div class="status-row">
           <div style="display: flex; align-items: center">
@@ -933,17 +936,24 @@
           <span class="burnout-tag" id="e-burnout">BURNOUT</span>
         </div>
 
-        <div class="bar-label">
-          <span>HP: <span id="e-hp"></span></span>
+        <div class="status-grid">
+          <div>
+            <div class="bar-label">
+              <span>HP: <span id="e-hp"></span></span>
+            </div>
+            <div class="bar-wrap"><div class="hp-bar" id="e-hp-bar"></div></div>
+          </div>
+          <div>
+            <div class="bar-label">
+              <span>姿勢値</span>
+            </div>
+            <div class="bar-wrap">
+              <div class="pos-bar" id="e-pos-bar"></div>
+            </div>
+          </div>
         </div>
-        <div class="bar-wrap"><div class="hp-bar" id="e-hp-bar"></div></div>
 
         <div class="active-tags-container" id="e-tags"></div>
-
-        <div class="bar-label">
-          <span>姿勢値</span>
-        </div>
-        <div class="bar-wrap"><div class="pos-bar" id="e-pos-bar"></div></div>
 
         <div style="font-size: 0.8rem; color: #888; display: flex; gap: 10px">
           <span class="ep-val">EP: <span id="e-ep"></span></span>
@@ -955,8 +965,15 @@
           <span class="intel-val" id="e-pending-cost">0 EP</span>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #30363d; margin: 5px 0" />
-        <div style="font-size: 0.8rem; text-align: center; color: #888">
+        <hr style="border: 0; border-top: 1px solid #30363d; margin: 4px 0" />
+        <div
+          style="
+            font-size: 0.8rem;
+            text-align: center;
+            color: #888;
+            margin-bottom: 2px;
+          "
+        >
           ENEMY HAND
         </div>
         <div class="card-area" id="enemy-hand-view"></div>
@@ -971,7 +988,7 @@
           <div class="slot" id="e-slot1">Enemy<br />Slot 1</div>
           <div class="slot" id="e-slot2">Enemy<br />Slot 2</div>
         </div>
-        <div style="font-weight: bold; color: #888; margin: 5px 0">VS</div>
+        <div style="font-weight: bold; color: #888; margin: 2px 0">VS</div>
         <div class="slots-wrapper">
           <div class="slot" id="p-slot1" onclick="clearSlot(1)">
             Tap Card<br />to Set
@@ -988,15 +1005,22 @@
           <span class="burnout-tag" id="p-burnout">BURNOUT</span>
         </div>
 
-        <div class="bar-label">
-          <span>HP: <span id="p-hp"></span></span>
+        <div class="status-grid">
+          <div>
+            <div class="bar-label">
+              <span>HP: <span id="p-hp"></span></span>
+            </div>
+            <div class="bar-wrap"><div class="hp-bar" id="p-hp-bar"></div></div>
+          </div>
+          <div>
+            <div class="bar-label"><span>姿勢値</span></div>
+            <div class="bar-wrap">
+              <div class="pos-bar" id="p-pos-bar"></div>
+            </div>
+          </div>
         </div>
-        <div class="bar-wrap"><div class="hp-bar" id="p-hp-bar"></div></div>
 
         <div class="active-tags-container" id="p-tags"></div>
-
-        <div class="bar-label"><span>姿勢値</span></div>
-        <div class="bar-wrap"><div class="pos-bar" id="p-pos-bar"></div></div>
 
         <div class="resource-grid">
           <div>
@@ -1019,7 +1043,7 @@
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #30363d; margin: 5px 0" />
+        <hr style="border: 0; border-top: 1px solid #30363d; margin: 4px 0" />
         <div class="card-area" id="player-hand-view"></div>
       </div>
 
