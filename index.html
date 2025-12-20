@@ -2049,11 +2049,22 @@
 
       // シミュレーション＆スコアリング
       function runAdvancedAI(ai, opponent, weights) {
+        // --- ADDED LOGIC: Check for SP Threat ---
+        const playerHasSP =
+          opponent.hand.some((c) => c.isSP) && opponent.sp >= MAX_SP;
+
         // 1. カウンター判断 (INFJなどは高確率)
         if (!ai.hasUsedCounter && ai.ep >= 4) {
+          let counterChance = weights.counterBias;
+
+          // SP脅威がある場合、カウンターの優先度を劇的に上げる
+          if (playerHasSP) {
+            counterChance = Math.max(counterChance, 0.6); // 最低でも60%で警戒
+          }
+
           if (opponent.sp >= MAX_SP || opponent.pos < 5) {
             // 相手がSP使いそう、または自分がピンチ
-            if (Math.random() < weights.counterBias) {
+            if (Math.random() < counterChance) {
               return { slots: [null, null], action: "COUNTER" };
             }
           }
@@ -2112,6 +2123,19 @@
           let score = 0;
           const card1 = pair[0];
           const card2 = pair[1];
+          const cost =
+            (card1 ? getRealCost(ai, card1.cost) : 0) +
+            (card2 ? getRealCost(ai, card2.cost) : 0);
+
+          // --- ADDED LOGIC: BLUFFING ---
+          // プレイヤーにSPの脅威があり、AIの残EPが4以上ある場合
+          // 消費EPが4未満になる組み合わせ（カウンターでないことがバレる）を避ける
+          if (playerHasSP && ai.ep >= 4) {
+            if (cost < 4 && !card1?.isSP && !card2?.isSP) {
+              // コスト4未満でSP技でもない場合、大きなペナルティ
+              score -= 60;
+            }
+          }
 
           // 基本: Trinity Mission ボーナス
           if (
@@ -2124,9 +2148,6 @@
           }
 
           // 基本: EP効率 (残EP)
-          const cost =
-            (card1 ? getRealCost(ai, card1.cost) : 0) +
-            (card2 ? getRealCost(ai, card2.cost) : 0);
           const remainingEP = ai.ep - cost;
           if (remainingEP === 0) score -= 10 * weights.efficiency; // 完売はリスク
           if (remainingEP > 2) score += 5 * weights.efficiency; // 温存ボーナス
