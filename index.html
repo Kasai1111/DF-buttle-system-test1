@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>DUSTFALL - Advanced AI</title>
+    <title>DUSTFALL - Advanced AI (Patched)</title>
     <style>
       :root {
         --bg-color: #0d1117;
@@ -1390,7 +1390,7 @@
           id: "SMOKE",
           type: "INSTANT",
           name: "煙幕",
-          desc: "【単発】Slot1勝利時、2ターンの間 敵の手札を強制的に隠す。",
+          desc: "【単発】Slot1勝利時、2ターンの間 相手の手札を強制的に隠す。",
         },
         FEINT: {
           id: "FEINT",
@@ -1408,7 +1408,7 @@
           id: "PREDICTION",
           type: "INSTANT",
           name: "未来予測",
-          desc: "【単発】Slot1勝利時、次ターンの敵のセットカードを可視化する。",
+          desc: "【単発】Slot1勝利時、次ターンの相手のセットカードを可視化する。",
         },
         ARMOR_BREAK: {
           id: "ARMOR_BREAK",
@@ -1416,14 +1416,14 @@
           name: "装甲溶解",
           tag: "ARMOR_BROKEN",
           tagName: "装甲劣化",
-          desc: "【設置】Slot1勝利時: 敵に『装甲劣化』タグを付与。",
+          desc: "【設置】Slot1勝利時: 相手に『装甲劣化』タグを付与。",
         },
         FATAL_THRUST: {
           id: "FATAL_THRUST",
           type: "EXECUTE",
           name: "急所突き",
           reqTag: "ARMOR_BROKEN",
-          desc: "【実行】Slot2勝利時: 敵が『装甲劣化』ならダメージ3倍。",
+          desc: "【実行】Slot2勝利時: 相手が『装甲劣化』ならダメージ3倍。",
         },
         OIL_JAR: {
           id: "OIL_JAR",
@@ -1431,14 +1431,14 @@
           name: "燃料散布",
           tag: "OILED",
           tagName: "引火性",
-          desc: "【設置】Slot1勝利時: 敵に『引火性』タグを付与。",
+          desc: "【設置】Slot1勝利時: 相手に『引火性』タグを付与。",
         },
         FIRE_BLAST: {
           id: "FIRE_BLAST",
           type: "EXECUTE",
           name: "点火",
           reqTag: "OILED",
-          desc: "【実行】Slot2勝利時: 敵が『引火性』ならDmg 2倍 + 敵Burnout付与。",
+          desc: "【実行】Slot2勝利時: 相手が『引火性』ならDmg 2倍 + 相手Burnout付与。",
         },
         PURIFY: {
           id: "PURIFY",
@@ -1452,7 +1452,7 @@
           name: "リミッター解除",
           tag: "OVERLOAD",
           tagName: "暴走",
-          desc: "【設置】Slot1勝利時: 自身に『暴走』付与(3T)。全コスト0になるが、終了時に強制Burnout。",
+          desc: "【設置】Slot1勝利時: 自身に『暴走』付与(3ターン)。全コスト0になるが、終了時に強制Burnout。",
         },
         VIRUS_INSTALL: {
           id: "VIRUS_INSTALL",
@@ -1460,7 +1460,7 @@
           name: "ウイルス送信",
           tag: "INFECTED",
           tagName: "感染",
-          desc: "【設置】Slot1勝利時: 敵に『感染』付与(3T)。毎ターン開始時にEP-2。",
+          desc: "【設置】Slot1勝利時: 相手に『感染』付与(3T)。毎ターン開始時にEP-2。",
         },
         POLARITY_SHIFT: {
           id: "POLARITY_SHIFT",
@@ -1472,7 +1472,7 @@
           id: "GRAVITY",
           type: "INSTANT",
           name: "グラビティ",
-          desc: "【単発】Slot1勝利時、敵Slot2のコスト+3。EP不足なら強制破壊。",
+          desc: "【単発】Slot1勝利時、相手Slot2のコスト+3。EP不足なら強制的にバーンアウトさせる。",
         },
         IRON_WILL: {
           id: "IRON_WILL",
@@ -1490,13 +1490,13 @@
           id: "PHANTOM_WEIGHT",
           type: "INSTANT",
           name: "幻影質量",
-          desc: "【単発】次ターン、Slot1の判定コストを6として扱う(EP消費はそのまま)。",
+          desc: "【単発】次ターン、使用者のSlot1の判定コストを6として扱う(EP消費はそのまま)。",
         },
         JAMMING: {
           id: "JAMMING",
           type: "INSTANT",
           name: "ジャミング",
-          desc: "【単発】次ターン、敵の手札1枚を使用不可にする。",
+          desc: "【単発】次ターン、相手の手札1枚を使用不可にする。",
         },
         MANA_BARRIER: {
           id: "MANA_BARRIER",
@@ -1514,19 +1514,19 @@
           id: "ENERGY_DRAIN",
           type: "INSTANT",
           name: "EP吸収",
-          desc: "【単発】敵EP-3。",
+          desc: "【単発】相手EP-3。",
         },
         STUN_SHOT: {
           id: "STUN_SHOT",
           type: "INSTANT",
           name: "重めの一手",
-          desc: "【単発】敵手札の最大コストカードのコスト+3。",
+          desc: "【単発】相手手札の最大コストのカードをコスト+3。",
         },
         CORROSION: {
           id: "CORROSION",
           type: "INSTANT",
           name: "有毒ガス",
-          desc: "【単発】敵に毒付与(2T)。毎ターンHP-3。",
+          desc: "【単発】相手に毒付与(2ターン)。毎ターンHP-3。",
         },
         SCAN: {
           id: "SCAN",
@@ -1534,7 +1534,7 @@
           name: "スキャン",
           tag: "DETECTED",
           tagName: "解析済",
-          desc: "【設置】Slot1勝利時: 敵に『解析済』タグを付与。",
+          desc: "【設置】Slot1勝利時: 相手に『解析済』タグを付与。",
         },
         SONAR: {
           id: "SONAR",
@@ -1542,35 +1542,35 @@
           name: "ソナー",
           tag: "RESONANCE",
           tagName: "共鳴",
-          desc: "【設置】Slot1勝利時: 敵に『共鳴』タグを付与。",
+          desc: "【設置】Slot1勝利時: 相手に『共鳴』タグを付与。",
         },
         DATA_DRAIN: {
           id: "DATA_DRAIN",
           type: "EXECUTE",
           name: "SP強奪",
           reqTag: "DETECTED",
-          desc: "【実行】Slot2勝利時: 敵が『解析済』ならSPを全て奪う。",
+          desc: "【実行】Slot2勝利時: 相手が『解析済』ならSPを全て奪う。",
         },
         POSTURE_BREAK_EXEC: {
           id: "POSTURE_BREAK_EXEC",
           type: "EXECUTE",
           name: "クラッシュ",
           reqTag: "ARMOR_BROKEN",
-          desc: "【実行】Slot2勝利時: 敵が『装甲劣化』なら強制ブレイク(姿勢0)。",
+          desc: "【実行】Slot2勝利時: 相手が『装甲劣化』なら強制ブレイク(姿勢0)。",
         },
         ECHO_STRIKE: {
           id: "ECHO_STRIKE",
           type: "EXECUTE",
           name: "二連撃",
           reqTag: "RESONANCE",
-          desc: "【実行】Slot2勝利時: 敵が『共鳴』ならダメージを2回与える(x2)。",
+          desc: "【実行】Slot2勝利時: 相手が『共鳴』ならダメージを2回与える(x2)。",
         },
         MEMORY_LEAK: {
           id: "MEMORY_LEAK",
           type: "EXECUTE",
           name: "SP破壊",
           reqTag: "INFECTED",
-          desc: "【実行】Slot2勝利時: 敵が『感染』なら与ダメの50%分SP減少。",
+          desc: "【実行】Slot2勝利時: 相手が『感染』なら与ダメの50%分SP減少。",
         },
       };
 
@@ -2089,7 +2089,15 @@
         validPairs = validPairs.filter((pair) => {
           let c1 = pair[0] ? getRealCost(ai, pair[0].cost) : 0;
           let c2 = pair[1] ? getRealCost(ai, pair[1].cost) : 0;
-          return c1 + c2 <= ai.ep;
+          if (c1 + c2 > ai.ep) return false;
+
+          // --- FIXED LOGIC: SP CHECK ---
+          // 手札にSPカードが含まれている場合、ゲージ不足なら除外する
+          if (pair[0] && pair[0].isSP && ai.sp < MAX_SP) return false;
+          if (pair[1] && pair[1].isSP && ai.sp < MAX_SP) return false;
+          // -----------------------------
+
+          return true;
         });
 
         if (validPairs.length === 0)
@@ -2503,7 +2511,7 @@
             ctxBanner.style.border = "1px solid #fff";
           } else if (player.isTrinityReady) {
             ctxBanner.style.background =
-              "linear-gradient(90deg, #003d8d, #3f5ad1)";
+              "linear-gradient(90deg, #082954, #3f5ad1)";
             ctxBanner.style.border = "1px solid #91c4ff";
             ctxBanner.style.color = "#fff";
           } else {
@@ -2668,10 +2676,12 @@
             (pSlots[1] ? getRealCost(player, pSlots[1].cost) : 0);
         }
 
+        /* --- REMOVED FOR EMPTY TURN FIX ---
         if (!player.burnout && !isCounterMode && !pSlots[0] && !pSlots[1]) {
           alert("カードを選択するか、カウンターを選択してください。");
           return;
         }
+        ----------------------------------- */
 
         isAnimating = true;
 
@@ -2710,19 +2720,31 @@
 
         if (pSP && eSP) {
           log("!!! SP CLASH !!! 双方がSPを使用 -> 相殺！");
+          await showAbilityAnnouncement(
+            "SYSTEM",
+            "SP CLASH!!",
+            "双方のSP技が衝突し、霧散した！"
+          );
           pCards = [null, null];
           eCards = [null, null];
-          await sleep(1000);
         } else if (eSP && isCounterMode) {
           log("!!! PLAYER COUNTER SUCCESS !!!");
+          await showAbilityAnnouncement(
+            "PLAYER",
+            "SP COUNTER!!",
+            "敵のSP技を見切り、無効化した！"
+          );
           hasUsedCounter = true;
           eCards = [null, null];
-          await sleep(1000);
         } else if (pSP && enemy.isCounterMode) {
           log("!!! ENEMY COUNTER SUCCESS !!!");
+          await showAbilityAnnouncement(
+            "ENEMY",
+            "SP COUNTER!!",
+            "プレイヤーのSP技が妨害された！"
+          );
           enemy.hasUsedCounter = true;
           pCards = [null, null];
-          await sleep(1000);
         } else {
           if (isCounterMode) {
             log("Player Counter Missed... (EP consumed)");
@@ -2750,14 +2772,34 @@
         if (res1 === "WIN" && pCards[0]?.ability === "GRAVITY" && eCards[1]) {
           log(">> GRAVITY Effect: Enemy Slot 2 Cost +3!");
           eCards[1].cost += 3;
+          // BUG FIX: Gravity burnout logic
           if (enemy.ep < 3) {
-            log(
-              ">> GRAVITY: Enemy lacks EP for increased weight! Slot 2 Crushed!"
-            );
+            log(">> GRAVITY: Enemy EP insufficient! Slot 2 CRUSHED & BURNOUT!");
             eCards[1] = null;
+            enemy.burnout = true;
           } else {
             enemy.ep -= 3;
             log(">> GRAVITY: Enemy pays 3 extra EP to maintain stance.");
+          }
+          render();
+          await sleep(800);
+        } else if (
+          res1 === "LOSE" &&
+          eCards[0]?.ability === "GRAVITY" &&
+          pCards[1]
+        ) {
+          // BUG FIX: Enemy Gravity Logic
+          log(">> GRAVITY Effect: Player Slot 2 Cost +3!");
+          pCards[1].cost += 3;
+          if (player.ep < 3) {
+            log(
+              ">> GRAVITY: Player EP insufficient! Slot 2 CRUSHED & BURNOUT!"
+            );
+            pCards[1] = null;
+            player.burnout = true;
+          } else {
+            player.ep -= 3;
+            log(">> GRAVITY: Player pays 3 extra EP to maintain stance.");
           }
           render();
           await sleep(800);
@@ -3184,9 +3226,14 @@
             log(`>> [Jamming] Opponent card will be disabled next turn!`);
             break;
           case "MANA_BARRIER":
-            user.isManaBarrier = true;
-            user.ep = Math.max(0, user.ep - 3);
-            log(`>> [Mana Barrier] Barrier Active! (Cost 3 EP)`);
+            // BUG FIX: EP Check
+            if (user.ep >= 3) {
+              user.isManaBarrier = true;
+              user.ep -= 3;
+              log(`>> [Mana Barrier] Barrier Active! (Consumed 3 EP)`);
+            } else {
+              log(`>> [Mana Barrier] FAILED! Not enough EP (Need 3).`);
+            }
             break;
           case "EMERGENCY_REPAIR":
             user.hp = Math.min(user.maxHp, user.hp + 10);
@@ -3239,7 +3286,7 @@
 
           setTimeout(() => {
             resolve();
-          }, 1800);
+          }, 3000);
         });
       }
 
