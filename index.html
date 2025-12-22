@@ -3331,8 +3331,14 @@
             log(`>> [Repair] Recovered 10 HP!`);
             break;
           case "ENERGY_DRAIN":
-            opponent.ep = Math.max(0, opponent.ep - 3);
-            log(`>> [Energy Drain] Drained 3 EP from opponent!`);
+            // 相手のEPから最大3を減らす（相手が3未満ならその分だけ）
+            const drainAmount = Math.min(opponent.ep, 3);
+            opponent.ep -= drainAmount;
+
+            // 自分のEPに加算する（最大値MAX_EPを超えないように）
+            user.ep = Math.min(MAX_EP, user.ep + drainAmount);
+
+            log(`>> [Energy Drain] Drained ${drainAmount} EP from opponent!`);
             break;
           case "STUN_SHOT":
             let maxCost = -1;

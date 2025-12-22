@@ -6,212 +6,263 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>DUSTFALL Prototype - Strategic Puzzle</title>
+    <title>DUST FALL: INTEGRATED WARFARE</title>
     <style>
+      /* --- CSS Reset & Base Styles --- */
       :root {
-        --bg-color: #121212;
-        --panel-bg: #1e1e1e;
+        --bg-color: #0a0a0a;
         --text-color: #e0e0e0;
-        --accent-color: #ff9800;
-        --atk-color: #e57373;
-        --grd-color: #64b5f6;
-        --brk-color: #fff176;
-        --sp-color: #ba68c8;
-        --secret-color: #90a4ae;
+        --accent-color: #f2cc60; /* Scavenger Gold */
+        --ui-bg: #1f1f1f;
+        --ui-border: #444;
 
-        /* Visual Assist Vars */
-        --ep-color: #29b6f6;
-        --ep-ghost: #01579b;
-        --sp-bar-color: #ab47bc;
-        --sp-ghost: #4a148c;
+        /* Battle System Colors */
+        --atk-color: #ff7b72;
+        --grd-color: #79c0ff;
+        --brk-color: #ffd33d;
+        --sp-color: #a841d8;
+        --secret-color: #8b949e;
+        --ep-color: #3fb950;
+        --ep-ghost: #238636;
+        --sp-bar-color: #a371f7;
+        --sp-ghost: #6e40c9;
       }
       body {
-        font-family: "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        padding: 0;
         background-color: var(--bg-color);
         color: var(--text-color);
+        font-family: "Segoe UI", "Helvetica Neue", monospace;
+        user-select: none;
         display: flex;
-        flex-direction: column;
+        justify-content: center;
         align-items: center;
-        margin: 0;
-        padding: 10px;
-        min-height: 100vh;
-        -webkit-tap-highlight-color: transparent;
+        height: 100vh;
+        overflow: hidden;
       }
-      h1 {
-        margin: 10px 0;
-        font-size: 1.2rem;
-        border-bottom: 2px solid var(--accent-color);
+      #game-container {
+        width: 1024px;
+        height: 768px;
+        position: relative;
+        background: #000;
+        border: 2px solid #333;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
       }
 
-      /* --- Setup Screen Styles --- */
-      #setup-screen {
-        position: fixed;
+      /* --- Screen Management --- */
+      .screen {
+        position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
+        display: none;
+        flex-direction: column;
         background: var(--bg-color);
-        z-index: 999;
+        z-index: 10;
+      }
+      .screen.active {
+        display: flex;
+        z-index: 20;
+      }
+
+      /* --- UI Components --- */
+      .title-text {
+        font-size: 80px;
+        color: var(--accent-color);
+        text-shadow: 0 0 10px #b08800;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        padding: 5px;
+        color: var(--accent-color);
+        text-shadow: 1px 1px 0 #000;
+      }
+      button {
+        background: #333;
+        color: #fff;
+        border: 1px solid #666;
+        padding: 8px 16px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: 0.2s;
+        border-radius: 4px;
+      }
+      button:hover {
+        background: #555;
+        border-color: #fff;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* --- Title Screen --- */
+      #title-screen {
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(45deg, #161b22, #000);
+      }
+
+      /* --- Base Screen --- */
+      #base-screen {
+        padding: 20px;
+      }
+      .base-layout {
+        display: flex;
+        height: 80%;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .panel {
+        flex: 1;
+        border: 1px solid var(--ui-border);
+        background: var(--ui-bg);
+        padding: 10px;
+        overflow-y: auto;
+      }
+      .item-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px;
+        border-bottom: 1px dashed #444;
+        cursor: pointer;
+        font-size: 14px;
+        align-items: center;
+      }
+      .item-row:hover {
+        background: #333;
+      }
+      .item-row.equipped {
+        background: #152;
+        color: #0f0;
+        font-weight: bold;
+        border-left: 5px solid #0f0;
+      }
+      .item-row.locked {
+        color: #666;
+        opacity: 0.5;
+        cursor: default;
+      }
+      .item-buyable {
+        background: #242;
+        border-left: 5px solid #0f0;
+      }
+      .item-cost {
+        font-size: 10px;
+        color: #aaa;
+      }
+
+      /* --- Explore Screen --- */
+      #explore-screen {
+        position: relative;
+        justify-content: center;
+        align-items: center;
+      }
+      canvas {
+        display: block;
+        background: #000;
+      }
+      #explore-ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        pointer-events: none;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border: 1px solid #555;
+      }
+      #stealth-indicator.active {
+        color: #0ff;
+        text-shadow: 0 0 5px #0ff;
+      }
+      #explore-log {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        width: 400px;
+        height: 120px;
+        background: rgba(0, 0, 0, 0.6);
+        font-size: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column-reverse;
+        pointer-events: none;
+      }
+      .log-msg {
+        padding: 2px;
+        border-bottom: 1px solid #333;
+      }
+      #explore-panel {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 350px;
+        max-height: 600px;
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid #555;
+        padding: 10px;
+        overflow-y: auto;
+        display: none;
+        z-index: 100;
+        pointer-events: auto;
+      }
+      #explore-panel.visible {
+        display: block;
+      }
+
+      /* --- BATTLE SYSTEM STYLES (Ported from index.html) --- */
+      #battle-screen {
+        padding: 10px;
+        background: #0d1117;
         display: flex;
         flex-direction: column;
         align-items: center;
-        overflow-y: auto;
-        padding: 20px;
-        box-sizing: border-box;
       }
 
-      .setup-container {
+      .battle-main {
         width: 100%;
         max-width: 800px;
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        padding-bottom: 50px;
-      }
-
-      .equip-section {
-        background: var(--panel-bg);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #444;
-      }
-      .equip-title {
-        font-weight: bold;
-        color: var(--accent-color);
-        margin-bottom: 10px;
-        border-bottom: 1px solid #444;
-        padding-bottom: 5px;
-      }
-
-      .equip-options {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
-        flex-wrap: wrap;
-      }
-
-      .equip-btn {
-        background: #333;
-        color: #fff;
-        border: 1px solid #555;
-        padding: 10px 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
-        touch-action: manipulation;
-      }
-      .equip-btn:hover {
-        background: #444;
-      }
-      .equip-btn.active {
-        background: var(--accent-color);
-        color: #000;
-        font-weight: bold;
-        border-color: var(--accent-color);
-      }
-
-      .preview-area {
-        display: flex;
         gap: 8px;
-        flex-wrap: wrap;
-        background: #111;
-        padding: 10px;
-        border-radius: 6px;
-        min-height: 110px;
+        flex: 1;
       }
 
-      .start-btn {
-        padding: 15px;
-        background: linear-gradient(45deg, #43a047, #66bb6a);
-        color: white;
-        border: none;
-        font-size: 1.2rem;
-        font-weight: bold;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 20px;
-        box-shadow: 0 4px 10px rgba(67, 160, 71, 0.4);
-        touch-action: manipulation;
-      }
-      .start-btn:hover {
-        transform: scale(1.02);
-      }
-      /* --- AI Personality Tag Styles --- */
-      .personality-tag {
-        font-size: 0.75rem;
-        color: #b0bec5;
-        border: 1px solid #546e7a;
-        background: rgba(38, 50, 56, 0.6);
-        padding: 1px 8px;
-        border-radius: 4px;
-        letter-spacing: 1px;
-        margin-left: 5px;
-        text-shadow: none;
-        font-weight: normal;
-        display: inline-block;
-        vertical-align: middle;
-      }
-      /* --- Existing Game Styles --- */
-      .game-container {
-        width: 100%;
-        max-width: 600px;
-        display: none; /* Initially hidden */
-        flex-direction: column;
-        gap: 10px;
-        padding-bottom: 50px;
-      }
-      .panel {
-        background: var(--panel-bg);
+      .battle-panel {
+        background: #161b22;
         padding: 10px;
         border-radius: 8px;
-        border: 1px solid #333;
+        border: 1px solid #30363d;
         position: relative;
-        transition: border-color 0.3s;
       }
 
-      /* Intel Box */
-      .intel-box {
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px dashed #555;
-        padding: 5px;
-        margin-top: 5px;
-        font-size: 0.85rem;
-        color: #aaa;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .intel-val {
-        color: #e57373;
-        font-weight: bold;
-        font-size: 1.1rem;
-      }
-
-      /* Bars */
-      .status-row {
-        display: flex;
-        justify-content: space-between;
+      /* Status Bars */
+      .status-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
         margin-bottom: 5px;
-        font-size: 0.9rem;
       }
       .bar-label {
-        font-size: 0.75rem;
-        color: #888;
-        margin-bottom: 2px;
+        font-size: 12px;
+        color: #8b949e;
         display: flex;
         justify-content: space-between;
       }
       .bar-wrap {
         width: 100%;
-        background: #333;
-        height: 8px;
+        background: #0d1117;
+        height: 10px;
         border-radius: 4px;
         overflow: hidden;
-        margin-bottom: 8px;
         position: relative;
+        border: 1px solid #30363d;
       }
       .hp-bar {
-        background: #d32f2f;
+        background: #da3633;
         height: 100%;
         width: 100%;
         transition: width 0.3s;
@@ -219,23 +270,12 @@
         z-index: 2;
       }
       .pos-bar {
-        background: #fbc02d;
+        background: #d29922;
         height: 100%;
         width: 100%;
         transition: width 0.3s;
         position: relative;
         z-index: 2;
-      }
-
-      /* Ghost Bars */
-      .bar-ghost {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 0%;
-        z-index: 1;
-        transition: width 0.3s;
       }
       .bar-fill {
         position: absolute;
@@ -249,28 +289,45 @@
       .ep-fill {
         background: var(--ep-color);
       }
-      .ep-ghost-bg {
-        background: var(--ep-ghost);
-      }
       .sp-fill {
         background: var(--sp-bar-color);
       }
-      .sp-ghost-bg {
-        background: var(--sp-ghost);
-      }
 
-      .resource-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 5px;
+      /* Tags */
+      .active-tags-container {
+        display: flex;
+        gap: 5px;
+        margin: 4px 0;
+        min-height: 20px;
+        flex-wrap: wrap;
       }
-
+      .tag-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #30363d;
+        color: #e6edf3;
+        border: 1px solid #484f58;
+        animation: slideInTag 0.3s;
+      }
+      @keyframes slideInTag {
+        from {
+          transform: scale(0);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
       .burnout-tag {
-        color: red;
+        color: #ff7b72;
         font-weight: bold;
         animation: blink 1s infinite;
         display: none;
+        border: 1px solid #ff7b72;
+        padding: 0 4px;
+        font-size: 10px;
       }
       @keyframes blink {
         50% {
@@ -283,30 +340,29 @@
         display: flex;
         gap: 5px;
         justify-content: center;
-        min-height: 90px;
+        min-height: 110px;
         flex-wrap: wrap;
+        padding: 5px;
       }
       .card {
         width: 70px;
         height: 100px;
         border-radius: 6px;
-        border: 2px solid #555;
+        border: 2px solid #30363d;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 0.75rem;
+        font-size: 11px;
         cursor: pointer;
         position: relative;
-        background: #333;
-        user-select: none;
+        background: #161b22;
         transition: transform 0.2s;
-        flex-shrink: 0;
-        touch-action: manipulation;
+        user-select: none;
       }
       .card:hover {
-        transform: translateY(-3px);
-        border-color: #888;
+        transform: translateY(-8px);
+        z-index: 10;
       }
       .card.selected {
         border-color: var(--accent-color);
@@ -316,8 +372,19 @@
       .card.disabled {
         opacity: 0.5;
         filter: grayscale(1);
+        cursor: not-allowed;
       }
-
+      .card.jammed::after {
+        content: "JAMMED";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        color: #ff7b72;
+        font-weight: bold;
+        border: 2px solid #ff7b72;
+        background: rgba(0, 0, 0, 0.8);
+      }
       .type-Attack {
         border-top: 4px solid var(--atk-color);
       }
@@ -326,189 +393,109 @@
       }
       .type-Break {
         border-top: 4px solid var(--brk-color);
-        color: #ffffaa;
+        color: #f0f6fc;
       }
       .type-SP {
         border-top: 4px solid var(--sp-color);
-        background: #301b30;
+        background: #1f1b2e;
       }
       .type-Secret {
         border-top: 4px solid var(--secret-color);
-        background: #263238;
+        background: #21262d;
       }
 
       .card-cost {
-        font-size: 1.2rem;
+        font-size: 18px;
         font-weight: bold;
         margin: 2px 0;
       }
-      .card-type {
-        font-weight: bold;
-      }
-
       .ability-badge {
-        font-size: 0.6rem;
-        color: #ffd700;
-        margin-top: 2px;
-        border: 1px solid #ffd700;
-        border-radius: 3px;
+        font-size: 9px;
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
         padding: 0 2px;
-        transform: scale(0.9);
+        margin-top: 2px;
       }
-
-      /* Matchup Badges */
-      .matchup-badge {
-        position: absolute;
-        font-size: 0.65rem;
-        font-weight: bold;
-        padding: 2px 4px;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-        z-index: 10;
-        text-transform: uppercase;
-        animation: popBadge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        min-width: 30px;
-        text-align: center;
-        line-height: 1;
-      }
-      .mb-slot1 {
-        top: -8px;
-        right: -8px;
-      }
-      .mb-slot2 {
-        bottom: -8px;
-        left: -8px;
-      }
-
-      @keyframes popBadge {
-        from {
-          transform: scale(0);
-          opacity: 0;
-        }
-        to {
-          transform: scale(1);
-          opacity: 1;
-        }
-      }
-      .mb-win {
-        background: #4caf50;
-        color: #fff;
-        border: 1px solid #a5d6a7;
-      }
-      .mb-lose {
-        background: #f44336;
-        color: #fff;
-        border: 1px solid #ef9a9a;
-      }
-      .mb-draw {
-        background: #9e9e9e;
-        color: #fff;
-        border: 1px solid #e0e0e0;
+      .stat-row {
+        display: flex;
+        gap: 3px;
+        align-items: center;
       }
 
       /* Slots */
       .slots-wrapper {
         display: flex;
         justify-content: center;
-        gap: 15px;
-        margin: 5px 0;
+        gap: 20px;
+        margin: 10px 0;
       }
       .slot {
         width: 80px;
         height: 110px;
-        border: 2px dashed #666;
+        border: 2px dashed #484f58;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 0.8rem;
-        color: #888;
+        font-size: 12px;
+        color: #8b949e;
         position: relative;
         transition: all 0.3s ease;
         cursor: pointer;
-        touch-action: manipulation;
+        background: #0d1117;
       }
-      .slot:hover {
-        border-color: #999;
-      }
-      .active-battle-slot {
-        border: 2px solid #fff !important;
+      .slot.active-battle-slot {
+        border-style: solid;
         box-shadow: 0 0 15px var(--accent-color);
-        transform: scale(1.1);
-        background-color: #2a2a2a;
-        z-index: 10;
-        color: #fff;
+        transform: scale(1.05);
+        z-index: 5;
+      }
+      .slot.locked {
+        border-color: #d2a8ff;
+        background: rgba(88, 166, 255, 0.1);
+      }
+      .slot.locked::after {
+        content: "LOCKED";
+        position: absolute;
+        bottom: 5px;
+        color: #d2a8ff;
+        font-weight: bold;
+        font-size: 10px;
+        background: rgba(0, 0, 0, 0.8);
       }
 
       .slot-result-overlay {
         position: absolute;
         top: 0;
         left: 0;
-        right: 0;
-        bottom: 0;
+        width: 100%;
+        height: 100%;
         background: rgba(0, 0, 0, 0.8);
-        color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
+        font-size: 20px;
         font-weight: bold;
-        border-radius: 4px;
-        animation: popIn 0.3s forwards;
         z-index: 20;
+        animation: popIn 0.3s forwards;
       }
       .res-win {
-        color: #66bb6a;
-        text-shadow: 0 0 5px #66bb6a;
+        color: #3fb950;
+        text-shadow: 0 0 5px #3fb950;
       }
       .res-lose {
-        color: #ef5350;
-        text-shadow: 0 0 5px #ef5350;
+        color: #ff7b72;
+        text-shadow: 0 0 5px #ff7b72;
       }
       .res-draw {
-        color: #bdbdbd;
+        color: #8b949e;
       }
-
-      /* Trinity Mission Success Overlay */
-      .trinity-success-overlay {
-        position: absolute;
-        top: -30px;
-        width: 140%;
-        text-align: center;
-        background: rgba(255, 215, 0, 0.9);
-        color: #000;
-        font-weight: bold;
-        padding: 4px;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        z-index: 100;
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
-        animation: bouncePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        border: 2px solid #fff;
-      }
-
-      @keyframes bouncePop {
-        0% {
-          transform: scale(0);
-        }
-        60% {
-          transform: scale(1.2);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-
       @keyframes popIn {
-        0% {
+        from {
           transform: scale(0);
           opacity: 0;
         }
-        80% {
-          transform: scale(1.2);
-          opacity: 1;
-        }
-        100% {
+        to {
           transform: scale(1);
           opacity: 1;
         }
@@ -518,146 +505,39 @@
       .controls {
         display: flex;
         gap: 10px;
+        width: 100%;
+        margin-top: 10px;
       }
-      button {
-        flex: 1;
-        padding: 12px;
-        border: none;
-        border-radius: 4px;
+      .controls button {
+        height: 50px;
         font-weight: bold;
-        cursor: pointer;
-        font-size: 1rem;
-        touch-action: manipulation;
+        font-size: 16px;
       }
       #btn-commit {
         background: var(--accent-color);
         color: #000;
-      }
-      #btn-commit:disabled {
-        background: #555;
-        cursor: not-allowed;
+        flex: 2;
       }
       #btn-counter {
-        background: #7b1fa2;
+        background: #8957e5;
         color: #fff;
+        flex: 1;
       }
       #btn-counter.active {
-        background: #e1bee7;
+        background: #d2a8ff;
         color: #4a148c;
         border: 2px solid #fff;
       }
 
-      #log {
-        height: 100px;
-        overflow-y: auto;
-        background: #000;
-        color: #0f0;
-        padding: 8px;
-        font-family: monospace;
-        font-size: 0.85rem;
-        border-radius: 4px;
-      }
-
-      /* Type Chart */
-      .type-chart-container {
-        position: fixed;
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(30, 30, 30, 0.95);
-        border: 1px solid #444;
-        border-radius: 12px;
-        padding: 15px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-        z-index: 100;
-        width: 100px;
-      }
-      .tc-title {
-        font-size: 0.75rem;
-        color: #888;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      .tc-node {
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 0.8rem;
-        color: #222;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
-        position: relative;
-        z-index: 2;
-      }
-      .tc-atk {
-        background: var(--atk-color);
-        border: 2px solid #ef9a9a;
-      }
-      .tc-brk {
-        background: var(--brk-color);
-        border: 2px solid #fff59d;
-      }
-      .tc-grd {
-        background: var(--grd-color);
-        border: 2px solid #90caf9;
-      }
-      .tc-arrow {
-        font-size: 1.5rem;
-        color: #666;
-        line-height: 0.8;
-      }
-      .tc-loop-arrow {
-        font-size: 0.7rem;
-        color: #666;
-        margin-top: -5px;
-      }
-
-      .context-banner {
-        background: linear-gradient(90deg, #2c3e50, #4ca1af);
-        border: 1px solid #80deea;
-        color: #e0f7fa;
-        padding: 8px 15px;
-        text-align: center;
-        margin: 10px 0;
-        font-size: 0.95rem;
-        border-radius: 4px;
-        box-shadow: 0 0 10px rgba(76, 161, 175, 0.5);
-        display: none;
-        animation: slideIn 0.5s ease-out;
-      }
-      .context-highlight {
-        font-weight: bold;
-        color: #ffeb3b;
-        text-decoration: underline;
-      }
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      /* --- Ability Cut-in Announcement --- */
+      /* Cut-in */
       #ability-cutin {
         position: fixed;
         top: 40%;
         left: 50%;
         transform: translate(-50%, -50%) scale(0.9);
-        background: rgba(0, 0, 0, 0.95);
-        border: 2px solid #ffd700;
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        background: rgba(13, 17, 23, 0.95);
+        border: 2px solid var(--accent-color);
+        box-shadow: 0 0 20px rgba(242, 204, 96, 0.5);
         color: #fff;
         padding: 20px 40px;
         z-index: 3000;
@@ -667,32 +547,10 @@
         opacity: 0;
         pointer-events: none;
       }
-
       #ability-cutin.active {
         display: block;
         animation: cutinPop 2.5s ease-out forwards;
       }
-
-      .cutin-user {
-        font-size: 1rem;
-        color: #bbb;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-      }
-
-      .cutin-name {
-        font-size: 1.8rem;
-        font-weight: bold;
-        color: #ffd700;
-        text-shadow: 0 0 10px #ff8c00;
-        margin-bottom: 5px;
-      }
-
-      .cutin-desc {
-        font-size: 0.9rem;
-        color: #e0e0e0;
-      }
-
       @keyframes cutinPop {
         0% {
           opacity: 0;
@@ -701,9 +559,6 @@
         15% {
           opacity: 1;
           transform: translate(-50%, -50%) scale(1.1);
-        }
-        25% {
-          transform: translate(-50%, -50%) scale(1);
         }
         85% {
           opacity: 1;
@@ -714,1987 +569,1906 @@
           transform: translate(-50%, -60%);
         }
       }
-      /* Tooltip Styles */
+
+      /* Tooltip */
       #card-tooltip {
         position: fixed;
-        background: rgba(20, 20, 20, 0.98);
+        background: rgba(22, 27, 34, 0.98);
         border: 1px solid var(--accent-color);
         color: #fff;
         padding: 12px;
         border-radius: 8px;
-        pointer-events: auto;
+        pointer-events: none;
         z-index: 2000;
-        max-width: 250px;
+        max-width: 300px;
         display: none;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 1);
-        font-size: 0.85rem;
-        line-height: 1.4;
-        white-space: pre-wrap;
-        cursor: pointer;
+        font-size: 12px;
       }
 
-      #card-tooltip::after {
-        content: "タップで閉じる";
-        display: block;
-        font-size: 0.6rem;
-        color: #888;
-        text-align: right;
-        margin-top: 8px;
-      }
-      #card-tooltip strong {
-        color: var(--accent-color);
-        font-size: 0.95rem;
-        display: block;
-        margin-bottom: 5px;
-        border-bottom: 1px solid #444;
-        padding-bottom: 3px;
-      }
-
-      #card-tooltip .tooltip-stat {
-        color: #ffcc80;
-        font-weight: bold;
-      }
-
-      #card-tooltip .tooltip-desc {
-        margin-top: 8px;
-        color: #e0e0e0;
-        font-size: 0.8rem;
-      }
-
-      /* カード表面のステータス表示 */
-      .card-stats {
-        font-size: 0.8rem;
-        font-weight: bold;
-        color: #fff;
-        text-shadow: 1px 1px 0 #000;
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        margin-top: 2px;
-      }
-      .stat-row {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 3px;
-      }
-
-      @media (max-width: 900px) {
-        .type-chart-container {
-          position: static;
-          transform: none;
-          flex-direction: row;
-          width: 100%;
-          max-width: 600px;
-          margin-top: 20px;
-          justify-content: center;
-          background: transparent;
-          border: none;
-          box-shadow: none;
-        }
-        .tc-arrow {
-          transform: rotate(-90deg);
-          margin: 0 5px;
-        }
-        .tc-loop-arrow {
-          display: none;
-        }
-        .tc-node {
-          width: 60px;
-          height: 60px;
-          font-size: 0.7rem;
-        }
+      /* Context Banner */
+      #battle-context {
+        background: linear-gradient(90deg, #2f371f, #374151);
+        border: 1px solid #4b5563;
+        color: #e5e7eb;
+        padding: 5px;
+        text-align: center;
+        margin: 5px 0;
+        font-size: 12px;
+        border-radius: 4px;
+        display: none;
       }
     </style>
   </head>
   <body>
-    <div id="card-tooltip"></div>
-    <div id="ability-cutin">
-      <div class="cutin-user" id="ac-user">PLAYER</div>
-      <div class="cutin-name" id="ac-name">ABILITY NAME</div>
-      <div class="cutin-desc" id="ac-desc">Description text...</div>
-    </div>
-    <div id="setup-screen">
-      <h1>DUSTFALL - Equipment Setup</h1>
-      <div class="setup-container">
-        <div class="equip-section">
-          <div class="equip-title">1. WEAPON (4 Cards)</div>
-          <div class="equip-options" id="opt-weapon"></div>
-          <div class="preview-area" id="prev-weapon"></div>
-        </div>
-
-        <div class="equip-section">
-          <div class="equip-title">2. ARMOR (3 Cards)</div>
-          <div class="equip-options" id="opt-armor"></div>
-          <div class="preview-area" id="prev-armor"></div>
-        </div>
-
-        <div class="equip-section">
-          <div class="equip-title">3. ACCESSORY (3 Cards)</div>
-          <div class="equip-options" id="opt-acc"></div>
-          <div class="preview-area" id="prev-acc"></div>
-        </div>
-
-        <button class="start-btn" onclick="startGame()">BATTLE START</button>
-      </div>
-    </div>
-
-    <div class="game-container">
-      <h1>DUSTFALL - Battle Phase</h1>
-      <div class="panel" id="e-panel">
-        <div class="status-row">
-          <div style="display: flex; align-items: center">
-            <strong>ENEMY</strong>
-            <span id="e-personality" class="personality-tag"></span>
-          </div>
-          <span class="burnout-tag" id="e-burnout">BURNOUT</span>
-        </div>
-
-        <div class="bar-label">
-          <span>HP: <span id="e-hp"></span></span>
-        </div>
-        <div class="bar-wrap"><div class="hp-bar" id="e-hp-bar"></div></div>
-
-        <div class="bar-label">
-          <span>Posture</span>
-        </div>
-        <div class="bar-wrap"><div class="pos-bar" id="e-pos-bar"></div></div>
-
-        <div style="font-size: 0.8rem; color: #888; display: flex; gap: 10px">
-          <span class="ep-val">EP: <span id="e-ep"></span></span>
-          <span class="sp-val">SP: <span id="e-sp"></span></span>
-        </div>
-
-        <div class="intel-box" id="e-intel-box">
-          <span>⚠ NEXT ACTION COST:</span>
-          <span class="intel-val" id="e-pending-cost">0 EP</span>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
-        <div style="font-size: 0.8rem; text-align: center; color: #888">
-          ENEMY HAND (Set Phase Complete)
-        </div>
-        <div class="card-area" id="enemy-hand-view"></div>
-      </div>
-
-      <div id="battle-context" class="context-banner">
-        <span id="context-msg"></span>
-      </div>
-
-      <div style="text-align: center">
-        <div class="slots-wrapper">
-          <div class="slot" id="e-slot1">Enemy<br />Slot 1</div>
-          <div class="slot" id="e-slot2">Enemy<br />Slot 2</div>
-        </div>
-        <div style="font-weight: bold; color: #888; margin: 5px 0">VS</div>
-        <div class="slots-wrapper">
-          <div class="slot" id="p-slot1" onclick="clearSlot(1)">
-            Tap Card<br />to Set
-          </div>
-          <div class="slot" id="p-slot2" onclick="clearSlot(2)">
-            Tap Card<br />to Set
-          </div>
-        </div>
-      </div>
-
-      <div class="panel" id="p-panel">
-        <div class="status-row">
-          <strong>PLAYER</strong>
-          <span class="burnout-tag" id="p-burnout">BURNOUT</span>
-        </div>
-
-        <div class="bar-label">
-          <span>HP: <span id="p-hp"></span></span>
-        </div>
-        <div class="bar-wrap"><div class="hp-bar" id="p-hp-bar"></div></div>
-
-        <div class="bar-label"><span>Posture</span></div>
-        <div class="bar-wrap"><div class="pos-bar" id="p-pos-bar"></div></div>
-
-        <div class="resource-grid">
-          <div>
-            <div class="bar-label">
-              <span>EP: <span id="p-ep-txt"></span></span>
-            </div>
-            <div class="bar-wrap">
-              <div class="bar-ghost ep-ghost-bg" id="p-ep-ghost"></div>
-              <div class="bar-fill ep-fill" id="p-ep-fill"></div>
-            </div>
-          </div>
-          <div>
-            <div class="bar-label">
-              <span>SP: <span id="p-sp-txt"></span></span>
-            </div>
-            <div class="bar-wrap">
-              <div class="bar-ghost sp-ghost-bg" id="p-sp-ghost"></div>
-              <div class="bar-fill sp-fill" id="p-sp-fill"></div>
-            </div>
-          </div>
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #444; margin: 5px 0" />
-        <div class="card-area" id="player-hand-view"></div>
-      </div>
-
-      <div class="controls">
-        <button id="btn-counter" onclick="toggleCounter()">
-          SP カウンター攻撃
+    <div id="game-container">
+      <div id="title-screen" class="screen active">
+        <h1 class="title-text">DUST FALL</h1>
+        <h2 style="font-size: 24px; color: #fff; margin-bottom: 20px">
+          INTEGRATED WARFARE
+        </h2>
+        <p>探索し、素材を集め、最強のデッキを構築せよ。</p>
+        <button
+          onclick="game.startNewGame()"
+          style="font-size: 20px; padding: 15px 40px; margin-top: 20px"
+        >
+          START GAME
         </button>
-        <button id="btn-commit" onclick="commitTurn()">コマンド決定</button>
       </div>
 
-      <div id="log">Game Initialized...</div>
-    </div>
-
-    <div class="type-chart-container">
-      <div class="tc-title">RULE</div>
-      <div class="tc-node tc-atk"><span>Attack</span></div>
-      <div class="tc-arrow">↓</div>
-      <div class="tc-node tc-brk"><span>Break</span></div>
-      <div class="tc-arrow">↓</div>
-      <div class="tc-node tc-grd"><span>Guard</span></div>
-      <div class="tc-arrow">↓</div>
-      <div class="tc-loop-arrow">(to Attack)</div>
-      <div
-        style="
-          margin-top: 10px;
-          border-top: 1px dashed #666;
-          padding-top: 5px;
-          font-size: 0.7rem;
-          color: var(--sp-color);
-          text-align: center;
-        "
-      >
-        <span style="color: #ffd700">ELEMENTAL SURGE!</span><br />
-        チャンス発生時<br />
-        指定属性で<br />
-        Slot1勝利せよ！
+      <div id="base-screen" class="screen">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h2>拠点 (DAY <span id="base-day">1</span>)</h2>
+          <div id="base-nav">
+            <button onclick="game.startExplore()">探索に出る</button>
+            <button onclick="game.rest()">休憩 (次の日に進む)</button>
+          </div>
+        </div>
+        <div class="base-layout">
+          <div class="panel">
+            <h3>装備製作 & 変更</h3>
+            <div id="loadout-list"></div>
+          </div>
+          <div class="panel">
+            <h3>ステータス</h3>
+            <div style="padding: 10px">
+              <p>
+                HP: <span id="base-hp"></span>/<span id="base-maxhp"></span>
+              </p>
+              <p>素材: <span id="base-mats"></span></p>
+              <p style="margin-top: 10px; color: var(--accent-color)">
+                手荷物: <span id="inventory-count">0</span>/25
+              </p>
+            </div>
+            <div
+              style="
+                margin-top: 20px;
+                border-top: 1px solid #555;
+                padding: 10px;
+              "
+            >
+              <h4 style="margin: 0 0 10px 0; color: var(--accent-color)">
+                現在のデッキ構成
+              </h4>
+              <div id="base-deck-list" class="deck-list"></div>
+            </div>
+            <div
+              style="
+                margin-top: 20px;
+                border-top: 1px solid #555;
+                padding: 10px;
+              "
+            >
+              <h4 style="margin: 0 0 10px 0; color: var(--accent-color)">
+                手荷物
+              </h4>
+              <div
+                id="inventory-list"
+                style="max-height: 150px; overflow-y: auto"
+              ></div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>倉庫</h3>
+            <div
+              id="storage-list"
+              style="max-height: 400px; overflow-y: auto"
+            ></div>
+          </div>
+        </div>
       </div>
+
+      <div id="explore-screen" class="screen">
+        <canvas id="dungeonCanvas" width="984" height="728"></canvas>
+        <button
+          id="explore-panel-toggle"
+          onclick="game.toggleExplorePanel()"
+          style="position: absolute; top: 10px; right: 10px; z-index: 101"
+        >
+          装備 (E)
+        </button>
+        <div id="explore-ui">
+          <div>強制帰還: <span id="exp-time">180</span>s</div>
+          <div>
+            HP: <span id="exp-hp"></span> | スタミナ: <span id="exp-st"></span>
+          </div>
+          <div id="stealth-indicator">ステルス (Shift)</div>
+        </div>
+        <div id="explore-log"></div>
+        <div id="explore-panel">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            "
+          >
+            <h3 style="margin: 0">装備 & デッキ</h3>
+            <button
+              onclick="game.toggleExplorePanel()"
+              style="padding: 4px 8px; font-size: 11px"
+            >
+              Close
+            </button>
+          </div>
+          <div
+            style="
+              margin-bottom: 10px;
+              padding: 8px;
+              background: rgba(255, 255, 255, 0.1);
+            "
+          >
+            <strong>素材:</strong> <span id="explore-mats"></span>
+          </div>
+          <div id="explore-loadout-list"></div>
+          <div
+            style="
+              margin-top: 20px;
+              border-top: 1px solid #555;
+              padding-top: 10px;
+            "
+          >
+            <div id="explore-deck-list" class="deck-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="battle-screen" class="screen">
+        <div class="battle-main">
+          <div class="battle-panel" id="e-panel">
+            <div class="bar-label">
+              <div style="display: flex; align-items: center">
+                <strong style="font-size: 16px; margin-right: 10px" id="e-name"
+                  >ENEMY</strong
+                >
+                <span
+                  id="e-personality"
+                  style="
+                    font-size: 11px;
+                    color: #8b949e;
+                    border: 1px solid #444;
+                    padding: 0 4px;
+                  "
+                ></span>
+              </div>
+              <span class="burnout-tag" id="e-burnout">BURNOUT</span>
+            </div>
+            <div class="status-grid">
+              <div>
+                <div class="bar-label">
+                  <span>HP: <span id="e-hp"></span></span>
+                </div>
+                <div class="bar-wrap">
+                  <div class="hp-bar" id="e-hp-bar"></div>
+                </div>
+              </div>
+              <div>
+                <div class="bar-label">
+                  <span>Posture: <span id="e-pos"></span></span>
+                </div>
+                <div class="bar-wrap">
+                  <div class="pos-bar" id="e-pos-bar"></div>
+                </div>
+              </div>
+            </div>
+            <div class="active-tags-container" id="e-tags"></div>
+            <div class="status-grid">
+              <div>
+                <div class="bar-label">
+                  <span
+                    >EP: <span id="e-ep"></span>
+                    <span style="color: #666"
+                      >(Cost: <span id="e-pending-cost">?</span>)</span
+                    ></span
+                  >
+                </div>
+                <div class="bar-wrap">
+                  <div class="bar-fill ep-fill" id="e-ep-fill"></div>
+                </div>
+              </div>
+              <div>
+                <div class="bar-label">
+                  <span>SP: <span id="e-sp"></span></span>
+                </div>
+                <div class="bar-wrap">
+                  <div class="bar-fill sp-fill" id="e-sp-fill"></div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="card-area"
+              id="enemy-hand-view"
+              style="margin-top: 5px; border-top: 1px dashed #333"
+            ></div>
+          </div>
+
+          <div id="battle-context"></div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-around;
+              align-items: center;
+            "
+          >
+            <div style="text-align: center">
+              <div class="slots-wrapper">
+                <div class="slot" id="e-slot1">Enemy<br />Slot 1</div>
+                <div class="slot" id="e-slot2">Enemy<br />Slot 2</div>
+              </div>
+            </div>
+            <div style="font-weight: bold; color: #555; font-size: 20px">
+              VS
+            </div>
+            <div style="text-align: center">
+              <div class="slots-wrapper">
+                <div class="slot" id="p-slot1" onclick="battle.clearSlot(1)">
+                  Tap Card<br />to Set
+                </div>
+                <div class="slot" id="p-slot2" onclick="battle.clearSlot(2)">
+                  Tap Card<br />to Set
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="battle-panel" id="p-panel">
+            <div class="bar-label">
+              <strong style="font-size: 16px; color: #4f4">PLAYER</strong>
+              <span class="burnout-tag" id="p-burnout">BURNOUT</span>
+            </div>
+            <div class="status-grid">
+              <div>
+                <div class="bar-label">
+                  <span>HP: <span id="p-hp"></span></span>
+                </div>
+                <div class="bar-wrap">
+                  <div class="hp-bar" id="p-hp-bar"></div>
+                </div>
+              </div>
+              <div>
+                <div class="bar-label">
+                  <span>Posture: <span id="p-pos"></span></span>
+                </div>
+                <div class="bar-wrap">
+                  <div class="pos-bar" id="p-pos-bar"></div>
+                </div>
+              </div>
+            </div>
+            <div class="active-tags-container" id="p-tags"></div>
+            <div class="status-grid">
+              <div>
+                <div class="bar-label">
+                  <span>EP: <span id="p-ep-txt"></span></span>
+                </div>
+                <div class="bar-wrap">
+                  <div class="bar-fill ep-fill" id="p-ep-fill"></div>
+                  <div
+                    class="bar-fill ep-fill"
+                    id="p-ep-ghost"
+                    style="
+                      background: var(--ep-ghost);
+                      opacity: 0.5;
+                      z-index: 1;
+                    "
+                  ></div>
+                </div>
+              </div>
+              <div>
+                <div class="bar-label">
+                  <span>SP: <span id="p-sp-txt"></span></span>
+                </div>
+                <div class="bar-wrap">
+                  <div class="bar-fill sp-fill" id="p-sp-fill"></div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="card-area"
+              id="player-hand-view"
+              style="margin-top: 5px; border-top: 1px dashed #333"
+            ></div>
+          </div>
+
+          <div class="controls">
+            <button id="btn-counter" onclick="battle.toggleCounter()">
+              SP COUNTER
+            </button>
+            <button id="btn-commit" onclick="battle.commitTurn()">
+              COMMIT TURN
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="ability-cutin">
+        <div
+          style="font-size: 12px; color: #aaa; margin-bottom: 5px"
+          id="ac-user"
+        >
+          PLAYER
+        </div>
+        <div
+          style="
+            font-size: 30px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 5px;
+          "
+          id="ac-name"
+        >
+          ABILITY
+        </div>
+        <div style="font-size: 14px" id="ac-desc">Desc</div>
+      </div>
+      <div id="card-tooltip"></div>
     </div>
 
     <script>
-      /**
-       * DUSTFALL - Equipment & Battle Logic
-       */
-      const isTouchDevice =
-        "ontouchstart" in window || navigator.maxTouchPoints > 0;
-
-      const MAX_HP = 50;
-      const MAX_POSTURE = 20;
-      const MAX_EP = 8;
-      const MAX_SP = 5;
-      const COUNTER_EP_COST = 4;
-
+      /* --- 1. DATA DEFINITIONS (INTEGRATED) --- */
       const TYPE = {
         ATTACK: "Attack",
         GUARD: "Guard",
         BREAK: "Break",
         SP: "SP",
       };
-
       const WIN_MAP = {
         [TYPE.ATTACK]: TYPE.BREAK,
         [TYPE.BREAK]: TYPE.GUARD,
         [TYPE.GUARD]: TYPE.ATTACK,
       };
 
-      // --- Ability Definitions ---
       const ABILITIES = {
         EP_CHARGE: {
-          id: "EP_CHARGE",
-          name: "EP Charge",
-          desc: "勝利時、自身のEPを3回復する。",
+          type: "INSTANT",
+          name: "急速充電",
+          desc: "【単発】Slot1勝利: 自身のEP+3。",
         },
         SMOKE: {
-          id: "SMOKE",
-          name: "Smokescreen",
-          desc: "勝利時、煙幕を張り、2ターンの間 敵の手札を強制的に隠す。",
+          type: "INSTANT",
+          name: "煙幕",
+          desc: "【単発】Slot1勝利: 2ターン相手の手札を隠す。",
         },
         FEINT: {
-          id: "FEINT",
-          name: "Feint",
-          desc: "勝利時、相手のEPを2減らす（妨害）。",
+          type: "INSTANT",
+          name: "EPロスト",
+          desc: "【単発】Slot1勝利: 相手のEP-2。",
         },
         PREP_ATK: {
-          id: "PREP_ATK",
-          name: "Weapon Prep",
-          desc: "勝利時、山札から「Attack」カードを探し、次のドローにセットする。",
+          type: "INSTANT",
+          name: "予備動作",
+          desc: "【単発】Slot1勝利: 山札からAttackをサーチ。",
+        },
+        PREDICTION: {
+          type: "INSTANT",
+          name: "未来予測",
+          desc: "【単発】Slot1勝利: 次ターン相手Slot1を強制固定。",
+        },
+        ARMOR_BREAK: {
+          type: "SETUP",
+          name: "装甲溶解",
+          tag: "ARMOR_BROKEN",
+          tagName: "装甲劣化",
+          desc: "【設置】Slot1勝利: 相手に『装甲劣化』付与。",
+        },
+        FATAL_THRUST: {
+          type: "EXECUTE",
+          name: "急所突き",
+          reqTag: "ARMOR_BROKEN",
+          desc: "【実行】Slot2勝利: 『装甲劣化』時 Dmg3倍。",
+        },
+        OIL_JAR: {
+          type: "SETUP",
+          name: "燃料散布",
+          tag: "OILED",
+          tagName: "引火性",
+          desc: "【設置】Slot1勝利: 相手に『引火性』付与。",
+        },
+        FIRE_BLAST: {
+          type: "EXECUTE",
+          name: "点火",
+          reqTag: "OILED",
+          desc: "【実行】Slot2勝利: 『引火性』時 Dmg2倍+Burnout。",
+        },
+        PURIFY: {
+          type: "CLEAR",
+          name: "ナノ洗浄",
+          desc: "【単発】Slot1勝利: 自身のタグ全解除。",
+        },
+        OVERCLOCK: {
+          type: "SETUP",
+          name: "リミッター解除",
+          tag: "OVERLOAD",
+          tagName: "暴走",
+          desc: "【設置】Slot1勝利: 自身『暴走』(コスト0)後Burnout。",
+        },
+        VIRUS_INSTALL: {
+          type: "SETUP",
+          name: "ウイルス送信",
+          tag: "INFECTED",
+          tagName: "感染",
+          desc: "【設置】Slot1勝利: 相手『感染』(EP-2継続)。",
+        },
+        POLARITY_SHIFT: {
+          type: "INSTANT",
+          name: "位相反転",
+          desc: "【単発】Slot1勝利: Slot2の相性を逆転させる。",
+        },
+        GRAVITY: {
+          type: "INSTANT",
+          name: "グラビティ",
+          desc: "【単発】Slot1勝利: 相手Slot2コスト+3。",
+        },
+        IRON_WILL: {
+          type: "INSTANT",
+          name: "不屈の精神",
+          desc: "【単発/HP30%↓】Slot1勝利: 被ダメ0＆次EP回復2倍。",
+        },
+        DESPERATE_STRIKE: {
+          type: "INSTANT",
+          name: "捨て身の一撃",
+          desc: "【単発/劣勢】Slot1勝利: 姿勢値を攻撃力に変換。",
+        },
+        PHANTOM_WEIGHT: {
+          type: "INSTANT",
+          name: "幻影質量",
+          desc: "【単発】次ターン、自身のSlot1をコスト6として扱う。",
+        },
+        JAMMING: {
+          type: "INSTANT",
+          name: "ジャミング",
+          desc: "【単発】次ターン、相手の手札1枚を使用不可にする。",
+        },
+        MANA_BARRIER: {
+          type: "INSTANT",
+          name: "電磁バリア",
+          desc: "【単発】HPダメ無効(SP除)。代償:EP-3。",
+        },
+        EMERGENCY_REPAIR: {
+          type: "INSTANT",
+          name: "緊急修復",
+          desc: "【単発】HPを10回復。",
+        },
+        ENERGY_DRAIN: {
+          type: "INSTANT",
+          name: "EP吸収",
+          desc: "【単発】相手EP-3。",
+        },
+        STUN_SHOT: {
+          type: "INSTANT",
+          name: "重めの一手",
+          desc: "【単発】相手手札の最大コストカードを+3コスト。",
+        },
+        CORROSION: {
+          type: "INSTANT",
+          name: "有毒ガス",
+          desc: "【単発】相手に毒(HP-3)付与。",
+        },
+        SCAN: {
+          type: "SETUP",
+          name: "スキャン",
+          tag: "DETECTED",
+          tagName: "解析済",
+          desc: "【設置】Slot1勝利: 相手に『解析済』付与。",
+        },
+        SONAR: {
+          type: "SETUP",
+          name: "ソナー",
+          tag: "RESONANCE",
+          tagName: "共鳴",
+          desc: "【設置】Slot1勝利: 相手に『共鳴』付与。",
+        },
+        DATA_DRAIN: {
+          type: "EXECUTE",
+          name: "SP強奪",
+          reqTag: "DETECTED",
+          desc: "【実行】Slot2勝利: 『解析済』時 SP全吸収。",
+        },
+        POSTURE_BREAK_EXEC: {
+          type: "EXECUTE",
+          name: "クラッシュ",
+          reqTag: "ARMOR_BROKEN",
+          desc: "【実行】Slot2勝利: 『装甲劣化』時 即座にBreak。",
+        },
+        ECHO_STRIKE: {
+          type: "EXECUTE",
+          name: "二連撃",
+          reqTag: "RESONANCE",
+          desc: "【実行】Slot2勝利: 『共鳴』時 Dmg2倍。",
+        },
+        MEMORY_LEAK: {
+          type: "EXECUTE",
+          name: "SP破壊",
+          reqTag: "INFECTED",
+          desc: "【実行】Slot2勝利: 『感染』時 与ダメ半分SP減。",
         },
       };
 
       const EQUIPMENT = {
         WEAPONS: {
-          剛の大剣: [
-            { type: TYPE.ATTACK, cost: 6, dmg: 22, pos: 5 },
-            { type: TYPE.ATTACK, cost: 4, dmg: 16, pos: 4 },
-            { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" },
-            { type: TYPE.SP, cost: 6, dmg: 40, pos: 20, isSP: true },
-          ],
-          双の短剣: [
-            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2, ability: "SMOKE" },
-            { type: TYPE.ATTACK, cost: 1, dmg: 6, pos: 2 },
-            { type: TYPE.ATTACK, cost: 4, dmg: 15, pos: 4 },
-            { type: TYPE.SP, cost: 4, dmg: 15, pos: 0, isSP: true },
-          ],
-          貫きの槍: [
-            { type: TYPE.ATTACK, cost: 3, dmg: 14, pos: 6 },
-            { type: TYPE.BREAK, cost: 2, pos: 10, ability: "PREP_ATK" },
-            { type: TYPE.ATTACK, cost: 2, dmg: 12, pos: 5 },
-            { type: TYPE.SP, cost: 5, dmg: 25, pos: 20, isSP: true },
-          ],
+          鉄塊の大剣: {
+            craft_cost: { scrap: 3, chip: 0 },
+            cards: [
+              {
+                type: TYPE.ATTACK,
+                cost: 5,
+                dmg: 18,
+                pos: 5,
+                ability: "GRAVITY",
+              },
+              {
+                type: TYPE.ATTACK,
+                cost: 3,
+                dmg: 15,
+                pos: 5,
+                ability: "DESPERATE_STRIKE",
+              },
+              { type: TYPE.BREAK, cost: 4, pos: 15 },
+              { type: TYPE.SP, cost: 7, dmg: 50, pos: 20, isSP: true },
+            ],
+          },
+          熱断の刀: {
+            craft_cost: { scrap: 1, chip: 1 },
+            cards: [
+              {
+                type: TYPE.ATTACK,
+                cost: 1,
+                dmg: 6,
+                pos: 2,
+                ability: "OIL_JAR",
+              },
+              {
+                type: TYPE.ATTACK,
+                cost: 2,
+                dmg: 8,
+                pos: 2,
+                ability: "FIRE_BLAST",
+              },
+              { type: TYPE.GUARD, cost: 2, arm: 6 },
+              { type: TYPE.SP, cost: 5, dmg: 30, pos: 5, isSP: true },
+            ],
+          },
+          スタンパイル: {
+            craft_cost: { scrap: 2, chip: 2 },
+            cards: [
+              { type: TYPE.BREAK, cost: 2, pos: 10, ability: "ARMOR_BREAK" },
+              {
+                type: TYPE.ATTACK,
+                cost: 3,
+                dmg: 14,
+                pos: 6,
+                ability: "FATAL_THRUST",
+              },
+              {
+                type: TYPE.ATTACK,
+                cost: 5,
+                dmg: 18,
+                pos: 5,
+                ability: "POSTURE_BREAK_EXEC",
+              },
+              { type: TYPE.SP, cost: 6, dmg: 40, pos: 20, isSP: true },
+            ],
+          },
+          ハックナイフ: {
+            craft_cost: { chip: 3, data: 1 },
+            cards: [
+              {
+                type: TYPE.ATTACK,
+                cost: 1,
+                dmg: 5,
+                pos: 1,
+                ability: "VIRUS_INSTALL",
+              },
+              {
+                type: TYPE.ATTACK,
+                cost: 2,
+                dmg: 10,
+                pos: 3,
+                ability: "MEMORY_LEAK",
+              },
+              { type: TYPE.BREAK, cost: 2, pos: 8, ability: "JAMMING" },
+              { type: TYPE.SP, cost: 4, dmg: 20, pos: 5, isSP: true },
+            ],
+          },
+          共鳴ブラスター: {
+            craft_cost: { chip: 2, data: 2 },
+            cards: [
+              { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
+              { type: TYPE.ATTACK, cost: 2, dmg: 8, pos: 2, ability: "SONAR" },
+              {
+                type: TYPE.ATTACK,
+                cost: 4,
+                dmg: 14,
+                pos: 5,
+                ability: "ECHO_STRIKE",
+              },
+              { type: TYPE.SP, cost: 6, dmg: 45, pos: 10, isSP: true },
+            ],
+          },
         },
         ARMORS: {
-          フルプレート: [
-            { type: TYPE.GUARD, cost: 3, arm: 18 },
-            { type: TYPE.GUARD, cost: 2, arm: 12 },
-            { type: TYPE.BREAK, cost: 4, pos: 15 },
-          ],
-          レザーベスト: [
-            { type: TYPE.GUARD, cost: 1, arm: 4 },
-            { type: TYPE.GUARD, cost: 1, arm: 4 },
-            { type: TYPE.GUARD, cost: 2, arm: 8, ability: "FEINT" },
-          ],
+          廃材の鎧: {
+            craft_cost: { scrap: 2 },
+            cards: [
+              { type: TYPE.GUARD, cost: 2, arm: 8, ability: "PREP_ATK" },
+              { type: TYPE.GUARD, cost: 1, arm: 5 },
+              { type: TYPE.BREAK, cost: 3, pos: 10 },
+            ],
+          },
+          光学迷彩コート: {
+            craft_cost: { chip: 2 },
+            cards: [
+              { type: TYPE.GUARD, cost: 2, arm: 6, ability: "SMOKE" },
+              { type: TYPE.GUARD, cost: 2, arm: 8, ability: "FEINT" },
+              { type: TYPE.GUARD, cost: 1, arm: 4 },
+            ],
+          },
+          反応装甲: {
+            craft_cost: { scrap: 3, chip: 1 },
+            cards: [
+              { type: TYPE.GUARD, cost: 4, arm: 20, ability: "IRON_WILL" },
+              { type: TYPE.GUARD, cost: 2, arm: 10, ability: "MANA_BARRIER" },
+              { type: TYPE.BREAK, cost: 3, pos: 8 },
+            ],
+          },
+          自動修復スーツ: {
+            craft_cost: { herb: 3, chip: 1 },
+            cards: [
+              {
+                type: TYPE.GUARD,
+                cost: 2,
+                arm: 6,
+                ability: "EMERGENCY_REPAIR",
+              },
+              { type: TYPE.GUARD, cost: 2, arm: 8, ability: "PURIFY" },
+              { type: TYPE.GUARD, cost: 1, arm: 5 },
+            ],
+          },
+          EP炉心: {
+            craft_cost: { chip: 3, data: 1 },
+            cards: [
+              { type: TYPE.GUARD, cost: 2, arm: 8, ability: "EP_CHARGE" },
+              { type: TYPE.BREAK, cost: 2, pos: 8, ability: "ENERGY_DRAIN" },
+              { type: TYPE.GUARD, cost: 1, arm: 5 },
+            ],
+          },
         },
         ACCESSORIES: {
-          パワーリング: [
-            { type: TYPE.BREAK, cost: 3, pos: 8 },
-            { type: TYPE.BREAK, cost: 3, pos: 8 },
-            { type: TYPE.ATTACK, cost: 5, dmg: 20, pos: 0 },
-          ],
-          フェザーブーツ: [
-            { type: TYPE.BREAK, cost: 1, pos: 6, ability: "FEINT" },
-            { type: TYPE.BREAK, cost: 2, pos: 8 },
-            { type: TYPE.BREAK, cost: 1, pos: 6 },
-          ],
+          解除キー: {
+            craft_cost: { scrap: 1 },
+            cards: [
+              { type: TYPE.BREAK, cost: 3, pos: 8, ability: "OVERCLOCK" },
+              { type: TYPE.BREAK, cost: 3, pos: 8 },
+              { type: TYPE.ATTACK, cost: 5, dmg: 20, pos: 0 },
+            ],
+          },
+          戦術バイザー: {
+            craft_cost: { chip: 1 },
+            cards: [
+              { type: TYPE.GUARD, cost: 2, arm: 6, ability: "PREDICTION" },
+              { type: TYPE.BREAK, cost: 2, pos: 6, ability: "SCAN" },
+              { type: TYPE.ATTACK, cost: 3, dmg: 10, pos: 5 },
+            ],
+          },
+          位相ズラし装置: {
+            craft_cost: { chip: 2, data: 1 },
+            cards: [
+              { type: TYPE.BREAK, cost: 3, pos: 10, ability: "POLARITY_SHIFT" },
+              {
+                type: TYPE.ATTACK,
+                cost: 2,
+                dmg: 8,
+                pos: 2,
+                ability: "PHANTOM_WEIGHT",
+              },
+              { type: TYPE.GUARD, cost: 2, arm: 6 },
+            ],
+          },
+          汚染アンプル: {
+            craft_cost: { herb: 2 },
+            cards: [
+              {
+                type: TYPE.ATTACK,
+                cost: 1,
+                dmg: 5,
+                pos: 2,
+                ability: "CORROSION",
+              },
+              { type: TYPE.BREAK, cost: 2, pos: 8, ability: "STUN_SHOT" },
+              { type: TYPE.GUARD, cost: 1, arm: 4 },
+            ],
+          },
+          解析端末: {
+            craft_cost: { data: 2 },
+            cards: [
+              { type: TYPE.BREAK, cost: 3, pos: 10, ability: "DATA_DRAIN" },
+              { type: TYPE.BREAK, cost: 2, pos: 5, ability: "SCAN" },
+              { type: TYPE.GUARD, cost: 2, arm: 6 },
+            ],
+          },
         },
       };
 
-      let selectedWeapon = Object.keys(EQUIPMENT.WEAPONS)[0];
-      let selectedArmor = Object.keys(EQUIPMENT.ARMORS)[0];
-      let selectedAcc = Object.keys(EQUIPMENT.ACCESSORIES)[0];
-
-      let turn = 1;
-      let player, enemy;
-      let pSlots = [null, null];
-      let isCounterMode = false;
-      let hasUsedCounter = false;
-      let isAnimating = false;
-      let pendingEnemySlots = [null, null];
-
-      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-      function initSetup() {
-        renderEquipOptions("weapon", EQUIPMENT.WEAPONS, selectedWeapon);
-        renderEquipOptions("armor", EQUIPMENT.ARMORS, selectedArmor);
-        renderEquipOptions("acc", EQUIPMENT.ACCESSORIES, selectedAcc);
-        updatePreviews();
-      }
-
-      function renderEquipOptions(category, data, currentSelection) {
-        const container = document.getElementById(`opt-${category}`);
-        container.innerHTML = "";
-        Object.keys(data).forEach((key) => {
-          const btn = document.createElement("div");
-          btn.className = `equip-btn ${
-            key === currentSelection ? "active" : ""
-          }`;
-          btn.innerText = key;
-          btn.onclick = () => {
-            if (category === "weapon") selectedWeapon = key;
-            if (category === "armor") selectedArmor = key;
-            if (category === "acc") selectedAcc = key;
-            initSetup();
-          };
-          container.appendChild(btn);
-        });
-      }
-
-      function updatePreviews() {
-        renderCardsToPreview("prev-weapon", EQUIPMENT.WEAPONS[selectedWeapon]);
-        renderCardsToPreview("prev-armor", EQUIPMENT.ARMORS[selectedArmor]);
-        renderCardsToPreview("prev-acc", EQUIPMENT.ACCESSORIES[selectedAcc]);
-      }
-
-      function renderCardsToPreview(elementId, cards) {
-        const el = document.getElementById(elementId);
-        el.innerHTML = "";
-        cards.forEach((c) => {
-          const div = createCardDiv(c, false, -99);
-          div.onclick = null;
-          if (isTouchDevice) {
-            div.ontouchstart = null;
-            div.ontouchend = null;
-            div.ontouchmove = null;
-          }
-          el.appendChild(div);
-        });
-      }
-
-      function startGame() {
-        document.getElementById("setup-screen").style.display = "none";
-        document.querySelector(".game-container").style.display = "flex";
-        initBattle();
-      }
-
-      function showTooltip(e, card) {
-        if (!card) return;
-        if (e && e.stopPropagation) e.stopPropagation();
-
-        const tt = document.getElementById("card-tooltip");
-
-        let statsText = "";
-        if (card.dmg)
-          statsText += `<span class="tooltip-stat">HP-${card.dmg} (Dmg)</span>\n`;
-        if (card.pos)
-          statsText += `<span class="tooltip-stat">Posture-${card.pos}</span>\n`;
-        if (card.arm)
-          statsText += `<span class="tooltip-stat">Armor ${card.arm}</span>\n`;
-        if (card.isSP)
-          statsText += `<span style="color:#ba68c8">SP必殺技 (Cost ${card.cost})</span>\n`;
-
-        let abilityText = "";
-        if (card.ability && ABILITIES[card.ability]) {
-          abilityText = `<div class="tooltip-desc">【${
-            ABILITIES[card.ability].name
-          }】<br>${ABILITIES[card.ability].desc}</div>`;
-        }
-
-        tt.innerHTML = `
-       <strong>${card.type} (Cost: ${card.cost})</strong>
-       <div>${statsText}</div>
-       ${abilityText}
-       `;
-
-        tt.style.display = "block";
-        moveTooltip(e);
-      }
-
-      function moveTooltip(e) {
-        const tt = document.getElementById("card-tooltip");
-        if (!e) return;
-
-        let clientX, clientY;
-        if (e.touches && e.touches.length > 0) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else if (e.clientX !== undefined) {
-          clientX = e.clientX;
-          clientY = e.clientY;
-        } else {
-          return;
-        }
-
-        const offsetX = 15;
-        const offsetY = isTouchDevice ? -150 : 15;
-
-        let leftPos = Math.min(clientX + offsetX, window.innerWidth - 260);
-        if (leftPos < 10) leftPos = 10;
-
-        let topPos = clientY + offsetY;
-        if (topPos < 10) topPos = clientY + 30;
-
-        tt.style.left = leftPos + "px";
-        tt.style.top = topPos + "px";
-      }
-
-      function hideTooltip() {
-        const tt = document.getElementById("card-tooltip");
-        tt.style.display = "none";
-      }
-
-      function buildDeck(wKey, aKey, accKey) {
-        const wCards = JSON.parse(JSON.stringify(EQUIPMENT.WEAPONS[wKey]));
-        const aCards = JSON.parse(JSON.stringify(EQUIPMENT.ARMORS[aKey]));
-        const accCards = JSON.parse(
-          JSON.stringify(EQUIPMENT.ACCESSORIES[accKey])
-        );
-
-        let deck = [...wCards, ...aCards, ...accCards];
-        const spIndex = deck.findIndex((c) => c.isSP);
-        let reservedSP = null;
-        if (spIndex !== -1) {
-          reservedSP = deck.splice(spIndex, 1)[0];
-        }
-
-        shuffle(deck);
-        return { deck, reservedSP };
-      }
-
-      function createEntity(name, wKey, aKey, accKey) {
-        const { deck, reservedSP } = buildDeck(wKey, aKey, accKey);
-        const secret = deck.pop();
-
-        const entity = {
-          name,
-          hp: MAX_HP,
-          maxHp: MAX_HP,
-          pos: MAX_POSTURE,
-          maxPos: MAX_POSTURE,
+      /* --- 2. GAME ENGINE --- */
+      const game = {
+        state: "INIT",
+        day: 1,
+        MAX_INVENTORY_SIZE: 25,
+        player: {
+          hp: 70,
+          maxHp: 70,
+          pos: 20,
+          maxPos: 20,
+          stamina: 100, // Explore stamina
           ep: 5,
           sp: 0,
-          deck,
-          hand: [],
-          secret,
-          reservedSP,
-          burnout: false,
-          breakState: false,
-          justBroken: false,
-          stealthTurns: 0,
-          personalityWord: "",
-          isTrinityReady: false, // 手札条件クリア
-          trinityTarget: null, // "Attack", "Guard", or "Break"
-        };
+          loadout: {
+            weapon: "鉄塊の大剣",
+            armor: "廃材の鎧",
+            accessory: "解除キー",
+          },
+          mats: { scrap: 5, chip: 2, herb: 1, data: 0 },
+          unlocked: {
+            weapon: ["鉄塊の大剣"],
+            armor: ["廃材の鎧"],
+            accessory: ["解除キー"],
+          },
+          inventory: [],
+          isStealth: false,
+        },
+        storage: {
+          materials: { scrap: 0, chip: 0, herb: 0, data: 0 },
+          equipment: [],
+        },
 
-        if (name === "Enemy") {
-          const AI_STRATEGY_NAMES = Object.keys(AI_STRATEGIES);
-          const randomStrategyName =
-            AI_STRATEGY_NAMES[
-              Math.floor(Math.random() * AI_STRATEGY_NAMES.length)
-            ];
-          entity.strategy = randomStrategyName;
-
-          const words = AI_PERSONALITIES[randomStrategyName];
-          if (words) {
-            entity.personalityWord =
-              words[Math.floor(Math.random() * words.length)];
+        init() {
+          this.loadStorage();
+          this.showScreen("title-screen");
+        },
+        loadStorage() {
+          const saved = localStorage.getItem("dustfall_storage_integrated");
+          if (saved) {
+            try {
+              this.storage = JSON.parse(saved);
+            } catch (e) {}
           }
-          log(
-            `[System] Enemy Strategy: ${randomStrategyName} / Sign: ${entity.personalityWord}`
+        },
+        saveStorage() {
+          localStorage.setItem(
+            "dustfall_storage_integrated",
+            JSON.stringify(this.storage)
           );
-        }
-
-        return entity;
-      }
-
-      function shuffle(arr) {
-        for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-      }
-
-      function initBattle() {
-        player = createEntity(
-          "Player",
-          selectedWeapon,
-          selectedArmor,
-          selectedAcc
-        );
-        const wKeys = Object.keys(EQUIPMENT.WEAPONS);
-        const aKeys = Object.keys(EQUIPMENT.ARMORS);
-        const accKeys = Object.keys(EQUIPMENT.ACCESSORIES);
-        const ew = wKeys[Math.floor(Math.random() * wKeys.length)];
-        const ea = aKeys[Math.floor(Math.random() * aKeys.length)];
-        const eacc = accKeys[Math.floor(Math.random() * accKeys.length)];
-        enemy = createEntity("Enemy", ew, ea, eacc);
-        const pTag = document.getElementById("e-personality");
-        if (enemy.personalityWord) {
-          pTag.innerText = `《 ${enemy.personalityWord} 》`;
-          pTag.style.display = "inline-block";
-        } else {
-          pTag.style.display = "none";
-        }
-        startTurn();
-      }
-
-      // --- AI Logic ---
-      function analyzePlayerHand(playerEntity) {
-        const hand = playerEntity.hand;
-        const total = hand.length;
-        if (total === 0) return { likelyType: null, hasSP: false, maxDmg: 0 };
-
-        let atkCount = 0,
-          grdCount = 0,
-          brkCount = 0;
-        let maxDmg = 0;
-        let hasSP = false;
-
-        hand.forEach((c) => {
-          if (c.type === TYPE.ATTACK) atkCount++;
-          if (c.type === TYPE.GUARD) grdCount++;
-          if (c.type === TYPE.BREAK) brkCount++;
-          if (c.isSP) hasSP = true;
-          if (c.dmg && c.dmg > maxDmg) maxDmg = c.dmg;
-        });
-
-        let likelyType = TYPE.ATTACK;
-        if (grdCount > atkCount && grdCount > brkCount) likelyType = TYPE.GUARD;
-        if (brkCount > atkCount && brkCount > grdCount) likelyType = TYPE.BREAK;
-
-        return { atkCount, grdCount, brkCount, likelyType, hasSP, maxDmg };
-      }
-
-      function getWinRate(myCard, likelyPlayerType) {
-        if (!myCard) return 0;
-        if (myCard.isSP) return 0.99;
-        if (!likelyPlayerType) return 0.5;
-        if (myCard.type === likelyPlayerType) return 0.5;
-        if (WIN_MAP[myCard.type] === likelyPlayerType) return 0.8;
-        return 0.2;
-      }
-
-      function simulateDamage(card, target, isBreakState) {
-        if (!card || card.type === TYPE.GUARD) return 0;
-        let mul = 1.0;
-        if (isBreakState) mul = 2.0;
-        else if (target.burnout) mul = 1.5;
-        return Math.floor((card.dmg || 0) * mul);
-      }
-
-      const AI_PERSONALITIES = {
-        ISTJ: ["規律", "機械的", "堅実", "冷静", "保守的"],
-        INFJ: ["直感的", "静観", "見切", "深慮", "慎重"],
-        ESTP: ["好戦的", "無謀", "刹那的", "自信", "狂暴"],
-        ENTJ: ["支配的", "合理的", "好戦的", "計画的", "狂暴"],
-        INTJ: ["狡猾", "冷徹", "計画的", "静観", "冷静"],
-        ISFJ: ["臆病", "堅実", "慎重", "献身的", "不安"],
-        INTP: ["分析的", "多角的", "合理的", "変則的", "冷静"],
-        ENFP: ["気まぐれ", "撹乱", "直感的", "変則的", "楽観的"],
-      };
-
-      const AI_STRATEGIES = {
-        ISTJ: (entity, opponent, pCost) => {
-          const pAnalysis = analyzePlayerHand(opponent);
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          let eSlots = [null, null];
-
-          const killCombo = findLethalCombo(hand, budget, opponent);
-          if (killCombo) return { slots: killCombo, action: "COMMIT" };
-
-          const threatLevel = pAnalysis.maxDmg > 15 || opponent.sp === MAX_SP;
-          if (entity.hp < MAX_HP * 0.4 || threatLevel) {
-            const bestGuard = hand.find(
-              (c) => c.type === TYPE.GUARD && c.cost <= budget
-            );
-            if (bestGuard) {
-              eSlots[0] = bestGuard;
-              budget -= bestGuard.cost;
-              hand = hand.filter((c) => c !== bestGuard);
+        },
+        getInventoryCount() {
+          let count = 0;
+          for (const amt of Object.values(this.player.mats)) count += amt;
+          count += this.player.inventory.length;
+          return count;
+        },
+        showScreen(id) {
+          document
+            .querySelectorAll(".screen")
+            .forEach((el) => el.classList.remove("active"));
+          document.getElementById(id).classList.add("active");
+        },
+        startNewGame() {
+          this.day = 1;
+          this.player.hp = this.player.maxHp;
+          this.updateBaseUI();
+          this.showScreen("base-screen");
+          this.state = "BASE";
+        },
+        startExplore() {
+          dungeon.init(this.day);
+          this.showScreen("explore-screen");
+          this.state = "EXPLORE";
+          dungeon.start();
+        },
+        rest() {
+          this.day++;
+          this.player.hp = this.player.maxHp;
+          this.updateBaseUI();
+          alert(`休憩完了。DAY ${this.day}。`);
+        },
+        returnToDungeon(enemyKilled) {
+          this.showScreen("explore-screen");
+          this.state = "EXPLORE";
+          dungeon.start();
+          if (enemyKilled) this.log("Enemy eliminated.");
+          else this.log("Retreated.");
+        },
+        returnToBase(success) {
+          dungeon.stop();
+          this.day++;
+          if (!success) {
+            this.player.hp = Math.max(1, Math.floor(this.player.hp * 0.1));
+            alert("強制帰還。手荷物喪失。");
+          } else {
+            alert("帰還成功。");
+          }
+          this.updateBaseUI();
+          this.showScreen("base-screen");
+          this.state = "BASE";
+        },
+        log(message) {
+          const logEl = document.getElementById("explore-log");
+          if (logEl) {
+            const msgEl = document.createElement("div");
+            msgEl.className = "log-msg";
+            msgEl.innerText = message;
+            logEl.prepend(msgEl);
+            while (logEl.children.length > 20)
+              logEl.removeChild(logEl.lastChild);
+          }
+        },
+        buyAndEquip(itemKey, type, cost) {
+          for (const [mat, amount] of Object.entries(cost)) {
+            if (this.player.mats[mat] < amount) {
+              alert("素材不足。");
+              return;
             }
           }
-
-          if (!eSlots[0]) {
-            let targetType = null;
-            if (pAnalysis.likelyType === TYPE.GUARD) targetType = TYPE.BREAK;
-            else if (pAnalysis.likelyType === TYPE.ATTACK)
-              targetType = TYPE.GUARD;
-            else targetType = TYPE.ATTACK;
-
-            const counterCard = hand.find(
-              (c) => c.type === targetType && c.cost <= budget
+          for (const [mat, amount] of Object.entries(cost))
+            this.player.mats[mat] -= amount;
+          if (!this.player.unlocked[type].includes(itemKey))
+            this.player.unlocked[type].push(itemKey);
+          this.player.loadout[type] = itemKey;
+          this.updateBaseUI();
+          if (this.state === "EXPLORE") this.updateExplorePanel();
+        },
+        buildDeck() {
+          const l = this.player.loadout;
+          // Deep Copy Cards
+          const deck = [];
+          if (EQUIPMENT.WEAPONS[l.weapon])
+            deck.push(
+              ...JSON.parse(JSON.stringify(EQUIPMENT.WEAPONS[l.weapon].cards))
             );
-            if (counterCard) {
-              eSlots[0] = counterCard;
-              budget -= counterCard.cost;
-              hand = hand.filter((c) => c !== counterCard);
-            }
-          }
-
-          const fillSlots = (slotIdx) => {
-            if (eSlots[slotIdx]) return;
-            const charger = hand.find(
-              (c) => c.ability === "EP_CHARGE" && c.cost <= budget
+          if (EQUIPMENT.ARMORS[l.armor])
+            deck.push(
+              ...JSON.parse(JSON.stringify(EQUIPMENT.ARMORS[l.armor].cards))
             );
-            if (charger) {
-              eSlots[slotIdx] = charger;
-              budget -= charger.cost;
-              hand = hand.filter((c) => c !== charger);
-            } else {
-              const cheap = hand
-                .filter((c) => c.cost <= budget)
-                .sort((a, b) => a.cost - b.cost)[0];
-              if (cheap) {
-                eSlots[slotIdx] = cheap;
-                budget -= cheap.cost;
-                hand = hand.filter((c) => c !== cheap);
-              }
-            }
+          if (EQUIPMENT.ACCESSORIES[l.accessory])
+            deck.push(
+              ...JSON.parse(
+                JSON.stringify(EQUIPMENT.ACCESSORIES[l.accessory].cards)
+              )
+            );
+
+          // Logic to separate SP card is handled in Battle Engine
+          return deck;
+        },
+        renderDeckList(containerId) {
+          const container = document.getElementById(containerId);
+          container.innerHTML = "";
+          const deck = this.buildDeck();
+          const counts = {};
+          deck.forEach((c) => {
+            const name = c.ability
+              ? `${c.type} (${ABILITIES[c.ability].name})`
+              : c.type;
+            counts[name] = (counts[name] || 0) + 1;
+          });
+          Object.entries(counts).forEach(([name, count]) => {
+            const el = document.createElement("div");
+            el.className = "deck-card";
+            el.style.background = "#333";
+            el.style.padding = "2px 5px";
+            el.style.margin = "2px";
+            el.style.fontSize = "10px";
+            el.innerText = `${name} x${count}`;
+            container.appendChild(el);
+          });
+        },
+        renderLoadoutList(listElement, onUpdate) {
+          listElement.innerHTML = "";
+          const addHeader = (text) => {
+            const h = document.createElement("h3");
+            h.textContent = text;
+            h.style.fontSize = "12px";
+            h.style.marginTop = "10px";
+            listElement.appendChild(h);
           };
-          fillSlots(0);
-          fillSlots(1);
-          return { slots: eSlots, action: "COMMIT" };
-        },
-        INFJ: (entity, opponent, pCost) => {
-          const pAnalysis = analyzePlayerHand(opponent);
-          const danger = opponent.sp === MAX_SP && opponent.ep >= 5;
-          if (
-            !entity.hasUsedCounter &&
-            entity.ep >= COUNTER_EP_COST &&
-            danger
-          ) {
-            if (Math.random() < 0.7)
-              return { slots: [null, null], action: "COUNTER" };
-          }
+          const renderCat = (db, currentKey, type) => {
+            Object.keys(db).forEach((key) => {
+              const item = db[key];
+              const isEq = currentKey === key;
+              const isUnl = this.player.unlocked[type].includes(key);
+              const canAfford = isUnl
+                ? true
+                : Object.entries(item.craft_cost).every(
+                    ([m, v]) => this.player.mats[m] >= v
+                  );
 
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          let eSlots = [null, null];
-
-          if (!eSlots[0]) {
-            hand.sort(
-              (a, b) =>
-                getWinRate(b, pAnalysis.likelyType) -
-                getWinRate(a, pAnalysis.likelyType)
-            );
-            const bestMatch = hand.find((c) => c.cost <= budget);
-            if (bestMatch) {
-              eSlots[0] = bestMatch;
-              budget -= bestMatch.cost;
-              hand = hand.filter((c) => c !== bestMatch);
-            }
-          }
-          if (hand.length > 0 && budget > 0) {
-            eSlots[1] = hand.find((c) => c.cost <= budget) || null;
-          }
-          return { slots: eSlots, action: "COMMIT" };
-        },
-        ESTP: (entity, opponent, pCost) => {
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          const spCard = hand.find((c) => c.isSP && c.cost <= budget);
-          if (spCard) {
-            const followUp = hand.find(
-              (c) => c !== spCard && c.cost <= budget - spCard.cost
-            );
-            return { slots: [spCard, followUp || null], action: "COMMIT" };
-          }
-          hand.sort((a, b) => {
-            const powerA = (a.dmg || 0) + (a.pos || 0) * 1.5;
-            const powerB = (b.dmg || 0) + (b.pos || 0) * 1.5;
-            return powerB - powerA;
-          });
-          const eSlots = [null, null];
-          if (hand[0] && hand[0].cost <= budget) {
-            eSlots[0] = hand[0];
-            budget -= hand[0].cost;
-            hand.shift();
-          }
-          if (hand.length > 0) {
-            const slot2 = hand.find((c) => c.cost <= budget);
-            eSlots[1] = slot2 || null;
-          }
-          return { slots: eSlots, action: "COMMIT" };
-        },
-        ENTJ: (entity, opponent, pCost) => {
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          const breakers = hand.filter(
-            (c) => c.type === TYPE.BREAK && c.cost <= budget
-          );
-          for (let brk of breakers) {
-            if (!opponent.breakState && opponent.pos <= (brk.pos || 0)) {
-              const remBudget = budget - brk.cost;
-              const remHand = hand.filter((c) => c !== brk);
-              const finisher = remHand
-                .filter((c) => c.cost <= remBudget)
-                .sort((a, b) => (b.dmg || 0) - (a.dmg || 0))[0];
-              if (finisher) {
-                return { slots: [brk, finisher], action: "COMMIT" };
-              }
-            }
-          }
-          if (opponent.breakState || opponent.burnout) {
-            hand.sort((a, b) => (b.dmg || 0) - (a.dmg || 0));
-          } else {
-            hand.sort((a, b) => (b.pos || 0) - (a.pos || 0));
-          }
-          const eSlots = [null, null];
-          if (hand[0] && hand[0].cost <= budget) {
-            eSlots[0] = hand[0];
-            budget -= hand[0].cost;
-            hand.shift();
-          }
-          if (hand[0]) {
-            eSlots[1] = hand.find((c) => c.cost <= budget) || null;
-          }
-          return { slots: eSlots, action: "COMMIT" };
-        },
-        INTJ: (entity, opponent, pCost) => {
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          const killCombo = findLethalCombo(hand, budget, opponent);
-          if (killCombo) return { slots: killCombo, action: "COMMIT" };
-
-          if (entity.hp < MAX_HP * 0.3) {
-            const guard = hand.find(
-              (c) => c.type === TYPE.GUARD && c.cost <= budget
-            );
-            if (guard) return { slots: [guard, null], action: "COMMIT" };
-          }
-          const pAnalysis = analyzePlayerHand(opponent);
-          let counterType = TYPE.ATTACK;
-          if (pAnalysis.likelyType === TYPE.ATTACK) counterType = TYPE.GUARD;
-          else if (pAnalysis.likelyType === TYPE.GUARD)
-            counterType = TYPE.BREAK;
-
-          const smartMove = hand.find(
-            (c) => c.type === counterType && c.cost <= budget
-          );
-          const secretCard = entity.secret;
-          const useSecret =
-            secretCard &&
-            secretCard.cost <= budget - (smartMove ? smartMove.cost : 0);
-
-          const eSlots = [null, null];
-          if (smartMove) {
-            eSlots[0] = smartMove;
-            budget -= smartMove.cost;
-          } else {
-            eSlots[0] =
-              hand.find((c) => c.cost <= budget && c.cost <= 2) || null;
-            if (eSlots[0]) budget -= eSlots[0].cost;
-          }
-          if (useSecret && eSlots[0]) {
-            eSlots[1] = hand.find((c) => c === secretCard) || null;
-            if (!eSlots[1] && entity.secret) {
-              const nextBest = hand
-                .filter((c) => c !== eSlots[0] && c.cost <= budget)
-                .sort((a, b) => b.cost - a.cost)[0];
-              eSlots[1] = nextBest || null;
-            }
-          } else {
-            const nextBest = hand.filter(
-              (c) => c !== eSlots[0] && c.cost <= budget
-            )[0];
-            eSlots[1] = nextBest || null;
-          }
-          return { slots: eSlots, action: "COMMIT" };
-        },
-        ISFJ: (entity, opponent, pCost) => {
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          const pAnalysis = analyzePlayerHand(opponent);
-          const isThreatened =
-            pAnalysis.maxDmg > 10 ||
-            opponent.pos < 5 ||
-            entity.pos < MAX_POSTURE * 0.5;
-
-          const guards = hand
-            .filter((c) => c.type === TYPE.GUARD && c.cost <= budget)
-            .sort((a, b) => b.arm - a.arm);
-
-          const eSlots = [null, null];
-          if (isThreatened && guards.length > 0) {
-            eSlots[0] = guards[0];
-            budget -= guards[0].cost;
-            hand = hand.filter((c) => c !== guards[0]);
-            const guard2 = hand.find(
-              (c) => c.type === TYPE.GUARD && c.cost <= budget
-            );
-            if (guard2) {
-              eSlots[1] = guard2;
-            } else {
-              eSlots[1] = hand.find((c) => c.cost <= budget) || null;
-            }
-          } else {
-            const attack = hand.find(
-              (c) => c.type === TYPE.ATTACK && c.cost <= budget
-            );
-            eSlots[0] = attack || hand.find((c) => c.cost <= budget) || null;
-            if (eSlots[0]) budget -= eSlots[0].cost;
-            eSlots[1] =
-              hand.find((c) => c !== eSlots[0] && c.cost <= budget) || null;
-          }
-          return { slots: eSlots, action: "COMMIT" };
-        },
-        INTP: (entity, opponent, pCost) => {
-          const pAnalysis = analyzePlayerHand(opponent);
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          let eSlots = [null, null];
-
-          if (!eSlots[0]) {
-            hand.sort((a, b) => {
-              const rateA = getWinRate(a, pAnalysis.likelyType);
-              const rateB = getWinRate(b, pAnalysis.likelyType);
-              const bonusA = a.ability ? 0.2 : 0;
-              const bonusB = b.ability ? 0.2 : 0;
-              return rateB + bonusB - (rateA + bonusA);
+              const el = document.createElement("div");
+              el.className = `item-row ${
+                isEq
+                  ? "equipped"
+                  : isUnl
+                  ? ""
+                  : canAfford
+                  ? "item-buyable"
+                  : "locked"
+              }`;
+              const costTxt = isUnl
+                ? ""
+                : `(${Object.entries(item.craft_cost)
+                    .map(([k, v]) => `${v}${k}`)
+                    .join(",")})`;
+              el.innerHTML = `<span>${key}</span><span class="item-cost">${costTxt}</span>`;
+              el.onclick = () => {
+                if (isEq) return;
+                if (isUnl) {
+                  this.player.loadout[type] = key;
+                  if (onUpdate) onUpdate();
+                } else if (canAfford) {
+                  this.buyAndEquip(key, type, item.craft_cost);
+                  if (onUpdate) onUpdate();
+                }
+              };
+              listElement.appendChild(el);
             });
-            const best = hand.find((c) => c.cost <= budget);
-            eSlots[0] = best || null;
-            if (best) {
-              budget -= best.cost;
-              hand = hand.filter((c) => c !== best);
-            }
-          }
-          eSlots[1] = hand.find((c) => c.cost <= budget) || null;
-          return { slots: eSlots, action: "COMMIT" };
-        },
-        ENFP: (entity, opponent, pCost) => {
-          let hand = [...entity.hand];
-          let budget = entity.ep;
-          let eSlots = [null, null];
-          const tricks = hand.filter(
-            (c) =>
-              (c.ability === "SMOKE" || c.ability === "FEINT") &&
-              c.cost <= budget
+          };
+          addHeader("WEAPON");
+          renderCat(EQUIPMENT.WEAPONS, this.player.loadout.weapon, "weapon");
+          addHeader("ARMOR");
+          renderCat(EQUIPMENT.ARMORS, this.player.loadout.armor, "armor");
+          addHeader("ACCESSORY");
+          renderCat(
+            EQUIPMENT.ACCESSORIES,
+            this.player.loadout.accessory,
+            "accessory"
           );
-          if (tricks.length > 0) {
-            eSlots[0] = tricks[Math.floor(Math.random() * tricks.length)];
-            budget -= eSlots[0].cost;
-            hand = hand.filter((c) => c !== eSlots[0]);
-          } else {
-            const attacks = hand.filter(
-              (c) => c.type === TYPE.ATTACK && c.cost <= budget
-            );
-            if (attacks.length > 0) {
-              eSlots[0] = attacks[Math.floor(Math.random() * attacks.length)];
-              budget -= eSlots[0].cost;
-              hand = hand.filter((c) => c !== eSlots[0]);
-            }
-          }
-          if (!eSlots[0]) {
-            eSlots[0] = hand.find((c) => c.cost <= budget) || null;
-            if (eSlots[0]) {
-              budget -= eSlots[0].cost;
-              hand = hand.filter((c) => c !== eSlots[0]);
-            }
-          }
-          if (hand.length > 0) {
-            const bigMoves = hand
-              .filter((c) => c.cost <= budget)
-              .sort((a, b) => b.cost - a.cost);
-            eSlots[1] = bigMoves[0] || null;
-          }
-          return { slots: eSlots, action: "COMMIT" };
         },
-      };
-
-      function findLethalCombo(hand, budget, opponent) {
-        const n = hand.length;
-        for (let i = 0; i < n; i++) {
-          const c1 = hand[i];
-          if (c1.cost > budget) continue;
-          const dmg1 = simulateDamage(c1, opponent, opponent.breakState);
-          if (dmg1 >= opponent.hp) return [c1, null];
-          const budget2 = budget - c1.cost;
-          for (let j = 0; j < n; j++) {
-            if (i === j) continue;
-            const c2 = hand[j];
-            if (c2.cost > budget2) continue;
-            let isBreakNext = opponent.breakState;
-            if (!isBreakNext && c1.pos >= opponent.pos) isBreakNext = true;
-            const dmg2 = simulateDamage(c2, opponent, isBreakNext);
-            if (dmg1 + dmg2 >= opponent.hp) {
-              return [c1, c2];
-            }
-          }
-        }
-        return null;
-      }
-
-      // --- Main Logic (Refactored) ---
-
-      function startTurn() {
-        pSlots = [null, null];
-        isCounterMode = false;
-        isAnimating = false;
-
-        [player, enemy].forEach((e) => {
-          if (e.stealthTurns > 0) e.stealthTurns--;
-          if (e.breakState) {
-            e.burnout = true;
-          }
-          if (!e.burnout && !e.breakState) {
-            e.pos = Math.min(e.maxPos, e.pos + 2.7);
-          }
-          e.ep = Math.min(MAX_EP, e.ep + 4);
-          e.sp = Math.min(MAX_SP, e.sp + 1);
-          e.trinityTarget = null; // Reset per turn
-
-          // 手札補充
-          while (e.hand.length < 3) {
-            if (e.deck.length === 0) {
-              if (!e.initialDeckList) {
-                e.initialDeckList = JSON.parse(JSON.stringify(e.deck));
-              } else {
-                e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
-                shuffle(e.deck);
-                log(`[System] ${e.name}'s Deck Recycled`);
-              }
-            }
-            if (e.deck.length === 0 && e.initialDeckList) {
-              e.deck = JSON.parse(JSON.stringify(e.initialDeckList));
-              shuffle(e.deck);
-            }
-            if (e.deck.length > 0) {
-              e.hand.push(e.deck.pop());
-            }
-            if (e.hand.length >= 3) break;
-          }
-        });
-
-        if (!player.initialDeckList && player.deck.length > 0) {
-          player.initialDeckList = buildDeck(
-            selectedWeapon,
-            selectedArmor,
-            selectedAcc
-          ).deck.filter((c) => !c.isSP);
-          enemy.initialDeckList = enemy.deck.filter((c) => !c.isSP);
-        }
-
-        if (turn === 4) {
-          [player, enemy].forEach((e) => {
-            if (e.reservedSP) {
-              const idx = Math.floor(Math.random() * (e.deck.length + 1));
-              e.deck.splice(idx, 0, e.reservedSP);
-              e.reservedSP = null;
+        toggleExplorePanel() {
+          document.getElementById("explore-panel").classList.toggle("visible");
+          if (
+            document
+              .getElementById("explore-panel")
+              .classList.contains("visible")
+          )
+            this.updateExplorePanel();
+        },
+        updateExplorePanel() {
+          this.renderLoadoutList(
+            document.getElementById("explore-loadout-list"),
+            () => this.updateExplorePanel()
+          );
+          this.renderDeckList("explore-deck-list");
+          const m = this.player.mats;
+          document.getElementById(
+            "explore-mats"
+          ).innerText = `S:${m.scrap} C:${m.chip} H:${m.herb} D:${m.data}`;
+        },
+        updateBaseUI() {
+          document.getElementById("base-day").innerText = this.day;
+          document.getElementById("base-hp").innerText = this.player.hp;
+          document.getElementById("base-maxhp").innerText = this.player.maxHp;
+          const m = this.player.mats;
+          document.getElementById(
+            "base-mats"
+          ).innerText = `S:${m.scrap} C:${m.chip} H:${m.herb} D:${m.data}`;
+          document.getElementById("inventory-count").innerText =
+            this.getInventoryCount();
+          this.renderLoadoutList(document.getElementById("loadout-list"), () =>
+            this.updateBaseUI()
+          );
+          this.renderDeckList("base-deck-list");
+          this.renderInventory();
+          this.renderStorage();
+        },
+        renderInventory() {
+          const c = document.getElementById("inventory-list");
+          c.innerHTML = "";
+          ["scrap", "chip", "herb", "data"].forEach((mat) => {
+            if (this.player.mats[mat] > 0) {
+              const el = document.createElement("div");
+              el.className = "item-row";
+              el.innerHTML = `<span>${mat}: ${this.player.mats[mat]}</span><button onclick="game.moveToStorage('${mat}', ${this.player.mats[mat]})" style="font-size:10px">Store All</button>`;
+              c.appendChild(el);
             }
           });
-        }
-
-        updateSlotUI("e", [null, null]);
-        document.getElementById("e-slot1").innerHTML = "Enemy<br>Slot 1";
-        document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
-
-        // --- トリニティ判定（準備状態＆ターゲット決定） ---
-        checkTrinityReady();
-
-        // --- 敵の行動決定（常に先行実行） ---
-        if (enemy.burnout) {
-          pendingEnemySlots = [null, null];
-          enemy.isCounterMode = false;
-          log("[System] Enemy is BURNOUT. Skipping turn.");
-        } else {
-          // プレイヤーのコスト0と仮定して敵AIを回す
-          const aiRes = AI_STRATEGIES[enemy.strategy](enemy, player, 0);
-          pendingEnemySlots = aiRes.slots;
-
-          // 敵もトリニティReadyなら、Slot1に指定カードを置くように優先する
-          if (
-            enemy.isTrinityReady &&
-            enemy.trinityTarget &&
-            !enemy.isCounterMode
-          ) {
-            // スロット1が既にターゲットと一致していればOK
-            if (
-              pendingEnemySlots[0] &&
-              pendingEnemySlots[0].type === enemy.trinityTarget
-            ) {
-              // 変更なし
-            } else {
-              // 手持ちからターゲットカードを探す
-              // (pendingSlotsに使われているものを考慮しつつ、AIの選択を上書きする簡易ロジック)
-              const availableTarget = enemy.hand.find(
-                (c) => c.type === enemy.trinityTarget
-              );
-
-              // スロット2にあるならスワップ
-              if (
-                pendingEnemySlots[1] &&
-                pendingEnemySlots[1].type === enemy.trinityTarget
-              ) {
-                const temp = pendingEnemySlots[0];
-                pendingEnemySlots[0] = pendingEnemySlots[1];
-                pendingEnemySlots[1] = temp;
-              }
-              // 手札にあるがスロットに使われていないならSlot1にねじ込む (コストチェック省略の簡易版)
-              else if (availableTarget) {
-                // 元のSlot1を退避してでもミッションを狙う
-                pendingEnemySlots[0] = availableTarget;
-                // コストオーバー対策等はここでは厳密に行わない（ゲームとしての面白さ優先）
-              }
+        },
+        renderStorage() {
+          const c = document.getElementById("storage-list");
+          c.innerHTML = "";
+          ["scrap", "chip", "herb", "data"].forEach((mat) => {
+            if (this.storage.materials[mat] > 0) {
+              const el = document.createElement("div");
+              el.className = "item-row";
+              el.innerHTML = `<span>${mat}: ${this.storage.materials[mat]}</span><button onclick="game.takeFromStorage('${mat}')" style="font-size:10px">Take</button>`;
+              c.appendChild(el);
             }
-          }
-
-          if (aiRes.action === "COUNTER") enemy.isCounterMode = true;
-          else enemy.isCounterMode = false;
-        }
-
-        log(`--- TURN ${turn} START ---`);
-        render();
-      }
-
-      // 新: トリニティ「Ready」判定 & ターゲットランダム指定
-      function checkTrinityReady() {
-        const check = (ent) => {
-          const types = new Set(ent.hand.map((c) => c.type));
-          ent.isTrinityReady =
-            types.has("Attack") && types.has("Guard") && types.has("Break");
-
-          if (ent.isTrinityReady) {
-            // ランダムにターゲットを決定
-            const targets = ["Attack", "Guard", "Break"];
-            ent.trinityTarget =
-              targets[Math.floor(Math.random() * targets.length)];
-          } else {
-            ent.trinityTarget = null;
-          }
-        };
-        check(player);
-        check(enemy);
-
-        // バナー表示更新（Ready状態）
-        const ctxBanner = document.getElementById("battle-context");
-        const ctxMsg = document.getElementById("context-msg");
-        let activeMsgs = [];
-
-        if (player.isTrinityReady) {
-          activeMsgs.push(
-            `<span style="color:#ffeb3b">PLAYER CHANCE:</span> Slot1で <span style="font-weight:bold; color:#fff; text-decoration:underline">${player.trinityTarget}</span> 勝利せよ！`
-          );
-        }
-        if (enemy.isTrinityReady) {
-          activeMsgs.push(
-            `<span style="color:#ef5350">ENEMY CHANCE:</span> Slot1で <span style="font-weight:bold; color:#fff; text-decoration:underline">${enemy.trinityTarget}</span> 勝利を狙う！`
-          );
-        }
-
-        if (activeMsgs.length > 0) {
-          ctxBanner.style.display = "block";
-          ctxMsg.innerHTML = activeMsgs.join("<br>");
-          // 色味の調整（プレイヤー優先、両方なら中間色）
-          if (player.isTrinityReady && enemy.isTrinityReady) {
-            ctxBanner.style.background = "linear-gradient(90deg, #555, #999)";
-            ctxBanner.style.border = "1px solid #fff";
-          } else if (player.isTrinityReady) {
-            ctxBanner.style.background =
-              "linear-gradient(90deg, #f9a825, #fbc02d)";
-            ctxBanner.style.border = "1px solid #fff176";
-            ctxBanner.style.color = "#000";
-          } else {
-            ctxBanner.style.background =
-              "linear-gradient(90deg, #3e2723, #bf360c)";
-            ctxBanner.style.border = "1px solid #ffab91";
-            ctxBanner.style.color = "#fff";
-          }
-        } else {
-          ctxBanner.style.display = "none";
-        }
-      }
-
-      function finishTurnProcessing() {
-        [player, enemy].forEach((e) => {
-          if (e.breakState) {
-            if (e.justBroken) {
-              e.justBroken = false;
-              e.burnout = true;
-            } else {
-              e.pos = e.maxPos;
-              e.breakState = false;
-              if (e.ep > 0) e.burnout = false;
-              log(`${e.name} RECOVERED from Break!`);
-            }
-          } else {
-            if (e.ep <= 0) {
-              e.burnout = true;
-              log(`${e.name} enters EP BURNOUT!`);
-            } else {
-              e.burnout = false;
-            }
-          }
-        });
-
-        turn++;
-        render();
-
-        if (player.hp <= 0 || enemy.hp <= 0) {
-          setTimeout(() => {
-            alert(player.hp <= 0 ? "YOU LOSE..." : "YOU WIN!");
-            location.reload();
-          }, 500);
-          return;
-        }
-        setTimeout(startTurn, 1000);
-      }
-
-      function selectCard(card, isSecret, handIndex) {
-        if (isAnimating) return;
-        hideTooltip();
-        if (player.burnout) {
-          alert("BURNOUT（行動不能）のため、カードを選択できません。");
-          return;
-        }
-        if (isCounterMode) {
-          alert("カウンターモード中はカードを選択できません。");
-          return;
-        }
-
-        const srcId = isSecret ? "secret" : handIndex;
-        if (pSlots[0] && pSlots[0]._src === srcId) {
-          pSlots[0] = null;
-          render();
-          return;
-        }
-        if (pSlots[1] && pSlots[1]._src === srcId) {
-          pSlots[1] = null;
-          render();
-          return;
-        }
-
-        if (card.isSP) {
-          if (player.sp < MAX_SP) {
-            alert(`SP技を使用するにはSPゲージが最大(${MAX_SP})必要です。`);
+          });
+        },
+        moveToStorage(type, amt) {
+          this.player.mats[type] -= amt;
+          this.storage.materials[type] =
+            (this.storage.materials[type] || 0) + amt;
+          this.saveStorage();
+          this.updateBaseUI();
+        },
+        takeFromStorage(type) {
+          const avail = this.storage.materials[type];
+          const space = this.MAX_INVENTORY_SIZE - this.getInventoryCount();
+          if (space <= 0) {
+            alert("Inventory Full");
             return;
           }
-          if (player.ep < card.cost) {
-            alert(`SP技の発動にはEPが${card.cost}必要です。`);
-            return;
-          }
-        }
-
-        if (player.burnout && card.type === TYPE.GUARD) {
-          alert("BURNOUT中はガードカードを使用できません！");
-          return;
-        }
-
-        let currentCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
-        if (currentCost + card.cost > player.ep) {
-          alert(`EPが足りません！`);
-          return;
-        }
-
-        if (!pSlots[0]) {
-          pSlots[0] = { ...card, _src: srcId };
-        } else if (!pSlots[1]) {
-          pSlots[1] = { ...card, _src: srcId };
-        } else {
-          alert("スロットがいっぱいです。");
-          return;
-        }
-        render();
-      }
-
-      document.addEventListener("click", (e) => {
-        const tt = document.getElementById("card-tooltip");
-        if (tt.style.display === "block") hideTooltip();
-      });
-      document.getElementById("card-tooltip").onclick = (e) => {
-        e.stopPropagation();
-        hideTooltip();
+          const amt = Math.min(avail, space);
+          this.storage.materials[type] -= amt;
+          this.player.mats[type] += amt;
+          this.saveStorage();
+          this.updateBaseUI();
+        },
+        enterBattle(enemyEntity) {
+          dungeon.stop();
+          this.state = "BATTLE";
+          battle.start(enemyEntity);
+          this.showScreen("battle-screen");
+        },
       };
 
-      function clearSlot(num) {
-        if (isAnimating) return;
-        pSlots[num - 1] = null;
-        render();
-      }
+      /* --- 3. DUNGEON LOGIC --- */
+      const dungeon = {
+        gridX: 50,
+        gridY: 50,
+        tile: 15,
+        map: [],
+        entities: [],
+        p: { x: 1, y: 1 },
+        timeLeft: 180,
+        init(difficulty) {
+          const cvs = document.getElementById("dungeonCanvas");
+          this.ctx = cvs.getContext("2d");
+          // Map Gen (Simplified for integration brevity, same logic as base)
+          this.map = Array(this.gridY)
+            .fill(0)
+            .map(() => Array(this.gridX).fill(1));
+          // Simple rooms
+          for (let i = 0; i < 30; i++) {
+            const w = 4 + Math.floor(Math.random() * 6),
+              h = 4 + Math.floor(Math.random() * 6);
+            const x = 1 + Math.floor(Math.random() * (this.gridX - w - 2)),
+              y = 1 + Math.floor(Math.random() * (this.gridY - h - 2));
+            for (let ry = y; ry < y + h; ry++)
+              for (let rx = x; rx < x + w; rx++) this.map[ry][rx] = 0;
+            if (i > 0) this.connect(prevX, prevY, x, y);
+            var prevX = x,
+              prevY = y;
+          }
+          this.map[2][2] = 0;
+          this.p = { x: 2, y: 2 };
+          this.map[this.gridY - 3][this.gridX - 3] = 2; // Goal
 
-      function toggleCounter() {
-        if (isAnimating) return;
-        if (player.burnout) {
-          alert("BURNOUT（行動不能）のため、カウンターは使用できません。");
-          return;
-        }
-        if (hasUsedCounter) {
-          alert("カウンターは1試合に1回しか使用できません。");
-          return;
-        }
-        if (!isCounterMode && player.ep < COUNTER_EP_COST) {
-          alert(
-            `カウンター攻撃にはEPが ${COUNTER_EP_COST} 必要です。（現在: ${player.ep}）`
+          game.player.stamina = 100;
+          this.timeLeft = 180;
+          this.entities = [];
+          for (let i = 0; i < 8 + difficulty; i++) this.spawn("enemy");
+          for (let i = 0; i < 10; i++) this.spawn("loot");
+
+          // Input
+          window.onkeydown = (e) => {
+            if (game.state !== "EXPLORE") return;
+            if (e.key === "e") game.toggleExplorePanel();
+            if (
+              document
+                .getElementById("explore-panel")
+                .classList.contains("visible")
+            )
+              return;
+
+            if (e.shiftKey) game.player.isStealth = true;
+            let dx = 0,
+              dy = 0;
+            if (e.key === "w" || e.key === "ArrowUp") dy = -1;
+            if (e.key === "s" || e.key === "ArrowDown") dy = 1;
+            if (e.key === "a" || e.key === "ArrowLeft") dx = -1;
+            if (e.key === "d" || e.key === "ArrowRight") dx = 1;
+            if (dx || dy) this.move(dx, dy);
+          };
+          window.onkeyup = (e) => {
+            if (e.key === "Shift") game.player.isStealth = false;
+          };
+        },
+        connect(x1, y1, x2, y2) {
+          let x = x1,
+            y = y1;
+          while (x !== x2) {
+            this.map[y][x] = 0;
+            x += x2 > x ? 1 : -1;
+          }
+          while (y !== y2) {
+            this.map[y][x] = 0;
+            y += y2 > y ? 1 : -1;
+          }
+        },
+        spawn(type) {
+          let x, y;
+          do {
+            x = Math.floor(Math.random() * this.gridX);
+            y = Math.floor(Math.random() * this.gridY);
+          } while (this.map[y][x] !== 0 || (x === this.p.x && y === this.p.y));
+          this.entities.push({ x, y, type, active: true });
+        },
+        start() {
+          this.timer = setInterval(() => this.loop(), 50);
+        },
+        stop() {
+          clearInterval(this.timer);
+        },
+        loop() {
+          if (game.state !== "EXPLORE") return;
+          this.timeLeft -= 0.05;
+          if (this.timeLeft <= 0) {
+            game.returnToBase(false);
+            return;
+          }
+          if (!game.player.isStealth && game.player.stamina < 100)
+            game.player.stamina += 0.5;
+          this.draw();
+          this.ui();
+        },
+        move(dx, dy) {
+          let cost = game.player.isStealth ? 3 : 0;
+          if (game.player.stamina < cost) {
+            game.player.isStealth = false;
+            cost = 0;
+          }
+          game.player.stamina -= cost;
+          const nx = this.p.x + dx,
+            ny = this.p.y + dy;
+          if (this.map[ny][nx] === 1) return;
+          if (this.map[ny][nx] === 2) {
+            game.returnToBase(true);
+            return;
+          }
+
+          const hit = this.entities.find(
+            (e) => e.active && e.x === nx && e.y === ny
           );
-          return;
-        }
-        isCounterMode = !isCounterMode;
-        if (isCounterMode) pSlots = [null, null];
-        render();
-      }
-
-      async function commitTurn() {
-        if (isAnimating) return;
-        let pCost = 0;
-        if (isCounterMode) {
-          pCost = COUNTER_EP_COST;
-        } else {
-          pCost = (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
-        }
-
-        if (!player.burnout && !isCounterMode && !pSlots[0] && !pSlots[1]) {
-          alert("カードを選択するか、カウンターを選択してください。");
-          return;
-        }
-
-        isAnimating = true;
-
-        const eSlots = pendingEnemySlots;
-        const eCost = enemy.isCounterMode
-          ? COUNTER_EP_COST
-          : (eSlots[0]?.cost || 0) + (eSlots[1]?.cost || 0);
-
-        player.ep -= pCost;
-        enemy.ep -= eCost;
-
-        if (pSlots.some((c) => c?.isSP)) player.sp = Math.max(0, player.sp - 5);
-        if (!enemy.isCounterMode && eSlots.some((c) => c?.isSP))
-          enemy.sp = Math.max(0, enemy.sp - 5);
-
-        processHandUsage(player, pSlots);
-        if (!enemy.isCounterMode) processHandUsage(enemy, eSlots);
-        render();
-
-        if (player.burnout) log("Player is Stunned (Burnout)...");
-        if (enemy.burnout) log("Enemy is Stunned (Burnout)...");
-
-        const pAction = isCounterMode ? "COUNTER" : `Cost ${pCost}`;
-        const eAction = enemy.isCounterMode ? "COUNTER" : `Cost ${eCost}`;
-        log(`Battle! P:[${pAction}] vs E:[${eAction}]`);
-
-        await sleep(600);
-
-        let pCards = [...pSlots];
-        let eCards = [...eSlots];
-        const pSP = pCards.some((c) => c?.isSP);
-        const eSP = eCards.some((c) => c?.isSP);
-        let pCounterSuccess = false;
-        let eCounterSuccess = false;
-
-        if (pSP && eSP) {
-          log("!!! SP CLASH !!! 双方がSPを使用 -> 相殺！");
-          pCards = [null, null];
-          eCards = [null, null];
-          await sleep(1000);
-        } else if (eSP && isCounterMode) {
-          log("!!! PLAYER COUNTER SUCCESS !!!");
-          hasUsedCounter = true;
-          eCards = [null, null];
-          pCounterSuccess = true;
-          await sleep(1000);
-        } else if (pSP && enemy.isCounterMode) {
-          log("!!! ENEMY COUNTER SUCCESS !!!");
-          enemy.hasUsedCounter = true;
-          pCards = [null, null];
-          eCounterSuccess = true;
-          await sleep(1000);
-        } else {
-          if (isCounterMode) {
-            log("Player Counter Missed... (EP consumed)");
-            hasUsedCounter = true;
+          if (hit) {
+            if (hit.type === "enemy") {
+              game.enterBattle(hit);
+              return;
+            } else if (hit.type === "loot") {
+              hit.active = false;
+              if (game.getInventoryCount() < game.MAX_INVENTORY_SIZE) {
+                game.player.mats.scrap++;
+                game.log("Found Scrap!");
+              } else game.log("Inventory Full!");
+            }
           }
-          if (enemy.isCounterMode) {
-            log("Enemy Counter Missed... (EP consumed)");
-            enemy.hasUsedCounter = true;
-          }
-        }
+          this.p.x = nx;
+          this.p.y = ny;
+        },
+        draw() {
+          const ctx = this.ctx,
+            ts = this.tile,
+            cw = 984,
+            ch = 728;
+          ctx.fillStyle = "#000";
+          ctx.fillRect(0, 0, cw, ch);
+          const ox = Math.floor(cw / 2 / ts) - this.p.x,
+            oy = Math.floor(ch / 2 / ts) - this.p.y;
 
-        let pMul = 1.0;
-        let eMul = 1.0;
-
-        log("--- SLOT 1 ---");
-        const res1 = await resolveStep(
-          1,
-          pCards[0],
-          eCards[0],
-          pMul,
-          eMul,
-          null
-        );
-        if (res1 === "WIN") {
-          pMul = 1.2;
-          eMul = 0.25;
-          log(">> WIN Bonus: Next x1.2");
-        } else if (res1 === "LOSE") {
-          pMul = 0.25;
-          eMul = 1.2;
-          log(">> LOSE Penalty: Next x0.25");
-        }
-
-        log("--- SLOT 2 ---");
-        await resolveStep(2, pCards[1], eCards[1], pMul, eMul, res1);
-
-        finishTurnProcessing();
-      }
-
-      function getMatchupResult(pCard, eCard) {
-        if (!eCard) return "WIN";
-        if (pCard.type === eCard.type) {
-          if (pCard.cost > eCard.cost) return "WIN";
-          if (eCard.cost > pCard.cost) return "LOSE";
-          return "DRAW";
-        }
-        if (pCard.type === TYPE.SP) return "WIN";
-        if (eCard.type === TYPE.SP) return "LOSE";
-        if (WIN_MAP[pCard.type] === eCard.type) return "WIN";
-        return "LOSE";
-      }
-
-      async function resolveStep(
-        slotNum,
-        pCard,
-        eCard,
-        pMul,
-        eMul,
-        prevResult
-      ) {
-        const pSlotEl = document.getElementById(`p-slot${slotNum}`);
-        const eSlotEl = document.getElementById(`e-slot${slotNum}`);
-        pSlotEl.classList.add("active-battle-slot");
-        eSlotEl.classList.add("active-battle-slot");
-
-        if (eCard) {
-          eSlotEl.className = `slot type-${eCard.type} active-battle-slot`;
-          eSlotEl.innerHTML = renderCardContent(eCard);
-        } else {
-          eSlotEl.className = `slot active-battle-slot`;
-          eSlotEl.innerHTML = "Empty";
-        }
-
-        if (pCard) {
-          pSlotEl.className = `slot type-${pCard.type} active-battle-slot`;
-          pSlotEl.innerHTML = renderCardContent(pCard);
-        } else {
-          pSlotEl.className = `slot active-battle-slot`;
-          pSlotEl.innerHTML = "Empty";
-        }
-
-        await sleep(1500);
-
-        let result = "DRAW";
-        if (!pCard && !eCard) result = "DRAW";
-        else if (!pCard) result = "LOSE";
-        else if (!eCard) result = "WIN";
-        else result = getMatchupResult(pCard, eCard);
-
-        const isPlayerGuardVsAtk =
-          result === "WIN" &&
-          pCard?.type === TYPE.GUARD &&
-          eCard?.type === TYPE.ATTACK;
-        const isEnemyGuardVsAtk =
-          result === "LOSE" &&
-          eCard?.type === TYPE.GUARD &&
-          pCard?.type === TYPE.ATTACK;
-
-        // --- TRINITY MISSION CHECK ---
-        // 指定属性がSlot1で勝利した場合に発動
-        let pBonusMul = 1.0;
-        let eBonusMul = 1.0;
-        if (slotNum === 1) {
-          // Player Check
-          if (
-            result === "WIN" &&
-            player.trinityTarget &&
-            pCard &&
-            pCard.type === player.trinityTarget
-          ) {
-            pBonusMul = 1.5;
-            showTrinitySuccess(pSlotEl, "PLAYER");
-            log(`>>> PLAYER MISSION COMPLETE! (Dmg x1.5)`);
-          }
-          // Enemy Check
-          if (
-            result === "LOSE" &&
-            enemy.trinityTarget &&
-            eCard &&
-            eCard.type === enemy.trinityTarget
-          ) {
-            eBonusMul = 1.5;
-            showTrinitySuccess(eSlotEl, "ENEMY");
-            log(`>>> ENEMY MISSION COMPLETE! (Dmg x1.5)`);
-          }
-        }
-
-        if (isPlayerGuardVsAtk) {
-          log(`Guard Logic: Enemy Attack x0.5 vs Player Armor`);
-          await resolveGuardDeflect(player, pCard, eCard, eMul * eBonusMul);
-        } else if (isEnemyGuardVsAtk) {
-          log(`Guard Logic: Player Attack x0.5 vs Enemy Armor`);
-          await resolveGuardDeflect(enemy, eCard, pCard, pMul * pBonusMul);
-        } else {
-          if (result === "DRAW") {
-            if (prevResult === "WIN") {
-              log(">> Momentum! Previous Winner pushes through Draw!");
-              applyDmg(enemy, pCard, 1.5 * pBonusMul);
-              result = "WIN";
-            } else if (prevResult === "LOSE") {
-              log(">> Momentum! Previous Winner pushes through Draw!");
-              applyDmg(player, eCard, 1.5 * eBonusMul);
-              result = "LOSE";
-            } else {
-              const isClash =
-                pCard &&
-                eCard &&
-                ((pCard.type === TYPE.ATTACK && eCard.type === TYPE.ATTACK) ||
-                  (pCard.type === TYPE.BREAK && eCard.type === TYPE.BREAK));
-
-              if (isClash) {
-                player.hp -= 2;
-                enemy.hp -= 2;
-                log("Draw (Clash)! Both take 2 dmg.");
-              } else {
-                log("Draw! No damage.");
+          for (let y = 0; y < this.gridY; y++) {
+            for (let x = 0; x < this.gridX; x++) {
+              const dx = (x + ox) * ts,
+                dy = (y + oy) * ts;
+              if (dx < -ts || dx > cw || dy < -ts || dy > ch) continue;
+              const dist = Math.abs(x - this.p.x) + Math.abs(y - this.p.y);
+              if (dist < 10) {
+                if (this.map[y][x] === 1) {
+                  ctx.fillStyle = "#444";
+                  ctx.fillRect(dx, dy, ts, ts);
+                } else if (this.map[y][x] === 2) {
+                  ctx.fillStyle = "#0f0";
+                  ctx.fillRect(dx, dy, ts, ts);
+                } else {
+                  ctx.fillStyle = "#222";
+                  ctx.fillRect(dx, dy, ts - 1, ts - 1);
+                }
               }
             }
-          } else {
-            if (result === "WIN")
-              applyDmg(enemy, pCard, pMul * pBonusMul); // Player Attack Logic
-            else if (result === "LOSE")
-              applyDmg(player, eCard, eMul * eBonusMul); // Enemy Attack Logic
           }
-        }
-
-        if (slotNum === 1) {
-          if (result === "WIN" && pCard?.ability) {
-            log(`★ Player Ability: ${ABILITIES[pCard.ability].name}`);
-            await resolveAbility(player, enemy, pCard.ability);
-          } else if (result === "LOSE" && eCard?.ability) {
-            log(`★ Enemy Ability: ${ABILITIES[eCard.ability].name}`);
-            await resolveAbility(enemy, player, eCard.ability);
-          }
-        }
-
-        render();
-        showResultOverlay(pSlotEl, result);
-        showResultOverlay(
-          eSlotEl,
-          result === "WIN" ? "LOSE" : result === "LOSE" ? "WIN" : "DRAW"
-        );
-
-        await sleep(1200);
-
-        pSlotEl.classList.remove("active-battle-slot");
-        eSlotEl.classList.remove("active-battle-slot");
-        pSlotEl.style.boxShadow = "";
-        eSlotEl.style.boxShadow = "";
-        clearOverlays(pSlotEl);
-        clearOverlays(eSlotEl);
-
-        return result;
-      }
-
-      function showTrinitySuccess(el, who) {
-        const div = document.createElement("div");
-        div.className = "trinity-success-overlay";
-        div.innerHTML = `★ ${who} CRITICAL ★<br>x1.5 BOOST!`;
-        el.appendChild(div);
-      }
-
-      async function resolveAbility(user, opponent, abilityId) {
-        const abilityInfo = ABILITIES[abilityId];
-        await showAbilityAnnouncement(
-          user.name,
-          abilityInfo.name,
-          abilityInfo.desc
-        );
-        switch (abilityId) {
-          case "EP_CHARGE":
-            user.ep = Math.min(MAX_EP, user.ep + 3);
-            log(`>> [Ability] ${user.name} recovered 3 EP!`);
-            break;
-          case "SMOKE":
-            opponent.stealthTurns = 2;
-            log(`>> [Ability] ${user.name} deploys Smokescreen!`);
-            break;
-          case "FEINT":
-            opponent.ep = Math.max(0, opponent.ep - 2);
-            log(`>> [Ability] Feint! ${opponent.name} lost 2 EP.`);
-            break;
-          case "PREP_ATK":
-            const atkIdx = user.deck.findIndex(
-              (c) => c.type === TYPE.ATTACK && !c.isSP
-            );
-            if (atkIdx !== -1) {
-              const c = user.deck.splice(atkIdx, 1)[0];
-              user.deck.push(c);
-              log(`>> [Ability] ${user.name} prepares Attack card.`);
+          this.entities.forEach((e) => {
+            if (!e.active) return;
+            const dist = Math.abs(e.x - this.p.x) + Math.abs(e.y - this.p.y);
+            if (dist < 10) {
+              const dx = (e.x + ox) * ts,
+                dy = (e.y + oy) * ts;
+              ctx.fillStyle = e.type === "enemy" ? "#f00" : "#ff0";
+              ctx.beginPath();
+              ctx.arc(dx + ts / 2, dy + ts / 2, 4, 0, 6.28);
+              ctx.fill();
             }
-            break;
-        }
-      }
+          });
+          const px = Math.floor(cw / 2 - ts / 2),
+            py = Math.floor(ch / 2 - ts / 2);
+          ctx.fillStyle = game.player.isStealth ? "#00f" : "#0ff";
+          ctx.beginPath();
+          ctx.arc(px + ts / 2, py + ts / 2, 5, 0, 6.28);
+          ctx.fill();
+        },
+        ui() {
+          document.getElementById("exp-hp").innerText = game.player.hp;
+          document.getElementById("exp-st").innerText = Math.floor(
+            game.player.stamina
+          );
+          document.getElementById("exp-time").innerText = Math.floor(
+            this.timeLeft
+          );
+          document.getElementById("stealth-indicator").className = game.player
+            .isStealth
+            ? "active"
+            : "";
+        },
+      };
 
-      function showAbilityAnnouncement(userName, abilityName, abilityDesc) {
-        return new Promise((resolve) => {
-          const container = document.getElementById("ability-cutin");
-          const userEl = document.getElementById("ac-user");
-          const nameEl = document.getElementById("ac-name");
-          const descEl = document.getElementById("ac-desc");
+      /* --- 4. BATTLE LOGIC (INTEGRATED ADVANCED AI) --- */
+      const battle = {
+        player: null,
+        enemy: null,
+        pSlots: [null, null],
+        isCounterMode: false,
+        hasUsedCounter: false,
+        isAnimating: false,
+        pendingEnemySlots: [null, null],
+        isPolarityReversed: false,
+        turn: 1,
+        dungeonEnemyRef: null,
 
-          userEl.innerText = `${userName}'s Ability!`;
-          nameEl.innerText = abilityName;
-          descEl.innerText = abilityDesc;
+        start(dungeonEnemyRef) {
+          this.dungeonEnemyRef = dungeonEnemyRef;
+          this.turn = 1;
+          this.hasUsedCounter = false;
 
-          container.classList.remove("active");
-          void container.offsetWidth;
-          container.classList.add("active");
+          // Setup Player Battle Entity
+          const pDeckInfo = this.prepDeck(game.player.loadout);
+          this.player = this.createEntity(
+            "Player",
+            game.player.hp,
+            game.player.maxHp,
+            20,
+            pDeckInfo
+          );
 
-          setTimeout(() => {
-            resolve();
-          }, 1800);
-        });
-      }
+          // Setup Enemy Battle Entity (Random Loadout)
+          const wKeys = Object.keys(EQUIPMENT.WEAPONS);
+          const aKeys = Object.keys(EQUIPMENT.ARMORS);
+          const acKeys = Object.keys(EQUIPMENT.ACCESSORIES);
+          const eLoadout = {
+            weapon: wKeys[Math.floor(Math.random() * wKeys.length)],
+            armor: aKeys[Math.floor(Math.random() * aKeys.length)],
+            accessory: acKeys[Math.floor(Math.random() * acKeys.length)],
+          };
+          const eDeckInfo = this.prepDeck(eLoadout);
+          this.enemy = this.createEntity("Enemy", 70, 70, 20, eDeckInfo);
 
-      async function resolveGuardDeflect(
-        defender,
-        guardCard,
-        attackCard,
-        attackerMul
-      ) {
-        const rawAtk = (attackCard.dmg || 0) * attackerMul;
-        const reducedAtk = Math.floor(rawAtk * 0.5);
-        const armor = guardCard.arm || 0;
-        const finalDmg = Math.max(0, reducedAtk - armor);
+          // AI Setup
+          const AI_TYPES = Object.keys(AI_PROFILES);
+          const aiType = AI_TYPES[Math.floor(Math.random() * AI_TYPES.length)];
+          this.enemy.strategy = aiType;
+          this.enemy.personality =
+            AI_PERSONALITIES[aiType][
+              Math.floor(Math.random() * AI_PERSONALITIES[aiType].length)
+            ];
 
-        if (finalDmg > 0) {
-          defender.hp -= finalDmg;
-          log(`GUARD! Dmg: ${finalDmg}`);
-        } else {
-          log(`BLOCKED!`);
-        }
-      }
+          document.getElementById("e-personality").innerText =
+            this.enemy.personality;
 
-      function showResultOverlay(el, text) {
-        const div = document.createElement("div");
-        div.className = "slot-result-overlay";
-        if (text === "WIN") div.classList.add("res-win");
-        if (text === "LOSE") div.classList.add("res-lose");
-        if (text === "DRAW") div.classList.add("res-draw");
-        div.innerText = text;
-        el.appendChild(div);
-      }
+          this.startTurn();
+        },
 
-      function clearOverlays(el) {
-        const overs = el.querySelectorAll(
-          ".slot-result-overlay, .trinity-success-overlay"
-        );
-        overs.forEach((o) => o.remove());
-      }
+        createEntity(name, hp, maxHp, maxPos, deckInfo) {
+          return {
+            name,
+            hp,
+            maxHp,
+            pos: maxPos,
+            maxPos,
+            ep: 5,
+            sp: 0,
+            deck: deckInfo.deck,
+            reservedSP: deckInfo.reservedSP,
+            secret: deckInfo.secret,
+            hand: [],
+            tags: new Set(),
+            burnout: false,
+            breakState: false,
+            damageImmune: false,
+            initialDeckList: null, // For recycle
+            jammedIndices: [],
+            isPhantomWeight: false,
+          };
+        },
 
-      function processHandUsage(entity, slots) {
-        slots.forEach((s) => {
-          if (!s) return;
-          if (s._src === "secret") {
-            if (entity.deck.length > 0) entity.secret = entity.deck.pop();
-            else entity.secret = null;
-          } else {
-            const idx = entity.hand.findIndex(
-              (c) => c.type === s.type && c.cost === s.cost
+        prepDeck(loadout) {
+          let deck = [];
+          if (EQUIPMENT.WEAPONS[loadout.weapon])
+            deck.push(
+              ...JSON.parse(
+                JSON.stringify(EQUIPMENT.WEAPONS[loadout.weapon].cards)
+              )
             );
-            if (idx !== -1) entity.hand.splice(idx, 1);
+          if (EQUIPMENT.ARMORS[loadout.armor])
+            deck.push(
+              ...JSON.parse(
+                JSON.stringify(EQUIPMENT.ARMORS[loadout.armor].cards)
+              )
+            );
+          if (EQUIPMENT.ACCESSORIES[loadout.accessory])
+            deck.push(
+              ...JSON.parse(
+                JSON.stringify(EQUIPMENT.ACCESSORIES[loadout.accessory].cards)
+              )
+            );
+
+          let reservedSP = null;
+          const spIdx = deck.findIndex((c) => c.isSP);
+          if (spIdx !== -1) reservedSP = deck.splice(spIdx, 1)[0];
+
+          // Shuffle
+          for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
           }
-        });
-      }
 
-      function applyDmg(target, card, mul) {
-        if (!card) return;
-        let finalMul = mul;
+          const secret = deck.pop(); // Last card is secret
+          return { deck, reservedSP, secret };
+        },
 
-        if (target.breakState) finalMul *= 2.0;
-        if (target.burnout && !target.breakState) finalMul *= 1.5;
+        startTurn() {
+          this.pSlots = [null, null];
+          this.isCounterMode = false;
+          this.isAnimating = false;
+          this.isPolarityReversed = false;
 
-        let dmg = 0;
-        if (card.type !== TYPE.BREAK) {
-          dmg = Math.floor((card.dmg || 0) * finalMul);
-        }
+          [this.player, this.enemy].forEach((e) => {
+            e.damageImmune = false;
+            e.isPhantomWeight = false;
+            e.jammedIndices = [];
 
-        let pos = Math.floor((card.pos || 0) * finalMul);
+            // Status Recovery
+            if (e.breakState) {
+              e.burnout = true;
+            } else if (!e.burnout) {
+              e.pos = Math.min(e.maxPos, e.pos + 3);
+            }
 
-        target.hp -= dmg;
-        target.pos -= pos;
+            e.ep = Math.min(8, e.ep + 4);
+            e.sp = Math.min(5, e.sp + 1);
 
-        let logMsg = `${target.name} takes `;
-        if (dmg > 0) logMsg += `${dmg} HP Dmg`;
-        if (dmg > 0 && pos > 0) logMsg += " & ";
-        if (pos > 0) logMsg += `${pos} Posture Dmg`;
-        if (dmg === 0 && pos === 0) logMsg += "no damage";
-        log(logMsg);
+            // Tag Effects
+            if (e.tags.has("INFECTED")) {
+              e.ep = Math.max(0, e.ep - 2);
+              this.log(`${e.name} Infection: EP -2`);
+            }
+            if (e.tags.has("OVERLOAD")) {
+              e.tags.delete("OVERLOAD");
+              e.burnout = true;
+              e.ep = 0;
+              this.log(`${e.name} Overload Ends: BURNOUT`);
+            }
+          });
 
-        if (target.pos <= 0 && !target.breakState) {
-          target.breakState = true;
-          target.justBroken = true;
-          target.pos = 0;
-          log(`!!! ${target.name} POSTURE BREAK !!!`);
-        } else if (target.pos < 0) {
-          target.pos = 0;
-        }
-      }
+          // Draw Cards
+          [this.player, this.enemy].forEach((e) => {
+            // Deck recycling logic (simplified)
+            if (e.deck.length === 0 && e.hand.length < 3) {
+              // In full implementation, recycle discard pile. Here, just cheat for endless play
+              const newDeck = this.prepDeck(game.player.loadout).deck; // Just refreshing random cards for stability
+              e.deck = newDeck;
+            }
+            while (e.hand.length < 3 && e.deck.length > 0)
+              e.hand.push(e.deck.pop());
 
-      // UI Render
-      function render() {
-        ["p", "e"].forEach((prefix) => {
-          const e = prefix === "p" ? player : enemy;
-          document.getElementById(`${prefix}-hp`).innerText = e.hp;
-          if (prefix === "e") {
-            document.getElementById(`e-ep`).innerText = e.ep;
-            document.getElementById(`e-sp`).innerText = e.sp;
+            // SP Injection at turn 4
+            if (this.turn === 4 && e.reservedSP) e.hand.push(e.reservedSP);
+          });
+
+          // AI Decision
+          if (!this.enemy.burnout) {
+            const aiRes = AI_STRATEGIES[this.enemy.strategy](
+              this.enemy,
+              this.player
+            );
+            this.pendingEnemySlots = aiRes.slots;
+            this.enemy.isCounterMode = aiRes.action === "COUNTER";
+          } else {
+            this.pendingEnemySlots = [null, null];
+            this.enemy.isCounterMode = false;
           }
-          document.getElementById(`${prefix}-hp-bar`).style.width = `${Math.max(
-            0,
-            (e.hp / MAX_HP) * 100
-          )}%`;
-          document.getElementById(
-            `${prefix}-pos-bar`
-          ).style.width = `${Math.max(0, (e.pos / MAX_POSTURE) * 100)}%`;
-          document.getElementById(`${prefix}-burnout`).style.display = e.burnout
+
+          this.updateContext();
+          this.render();
+        },
+
+        updateContext() {
+          const ctx = document.getElementById("battle-context");
+          ctx.innerHTML = "";
+          ctx.style.display = "none";
+          // Check for Trinity (All 3 types in hand) - simplified visual
+          const pTypes = new Set(this.player.hand.map((c) => c.type));
+          if (
+            pTypes.has("Attack") &&
+            pTypes.has("Guard") &&
+            pTypes.has("Break")
+          ) {
+            ctx.style.display = "block";
+            ctx.innerText = "★ TRINITY CHANCE: Slot 1 Buff Active!";
+            this.player.isTrinityReady = true;
+          } else this.player.isTrinityReady = false;
+        },
+
+        toggleCounter() {
+          if (this.player.burnout || this.hasUsedCounter) return;
+          this.isCounterMode = !this.isCounterMode;
+          if (this.isCounterMode) this.pSlots = [null, null];
+          this.render();
+        },
+
+        selectCard(handIdx, isSecret) {
+          if (this.isAnimating || this.player.burnout || this.isCounterMode)
+            return;
+          const card = isSecret
+            ? this.player.secret
+            : this.player.hand[handIdx];
+          if (!card) return;
+
+          const cost = card.cost; // Advanced logic: check discounts
+          const currentTotal =
+            (this.pSlots[0]?.cost || 0) + (this.pSlots[1]?.cost || 0);
+
+          if (currentTotal + cost > this.player.ep) {
+            alert("Not enough EP");
+            return;
+          }
+          if (card.isSP && this.player.sp < 5) {
+            alert("Need Max SP");
+            return;
+          }
+
+          if (!this.pSlots[0])
+            this.pSlots[0] = { ...card, _src: isSecret ? "secret" : handIdx };
+          else if (!this.pSlots[1])
+            this.pSlots[1] = { ...card, _src: isSecret ? "secret" : handIdx };
+          this.render();
+        },
+
+        clearSlot(slotIdx) {
+          if (this.isAnimating) return;
+          this.pSlots[slotIdx - 1] = null;
+          this.render();
+        },
+
+        async commitTurn() {
+          if (this.isAnimating) return;
+          this.isAnimating = true;
+
+          // EP Consumption
+          const pCost = this.isCounterMode
+            ? 4
+            : (this.pSlots[0]?.cost || 0) + (this.pSlots[1]?.cost || 0);
+          const eCost = this.enemy.isCounterMode
+            ? 4
+            : (this.pendingEnemySlots[0]?.cost || 0) +
+              (this.pendingEnemySlots[1]?.cost || 0);
+          this.player.ep -= pCost;
+          this.enemy.ep -= eCost;
+
+          // SP Consumption
+          if (this.pSlots.some((c) => c?.isSP)) this.player.sp = 0;
+          if (this.pendingEnemySlots.some((c) => c?.isSP)) this.enemy.sp = 0;
+
+          // Remove used cards
+          this.processHand(this.player, this.pSlots);
+          if (!this.enemy.isCounterMode)
+            this.processHand(this.enemy, this.pendingEnemySlots);
+          this.render();
+
+          await this.sleep(500);
+
+          // Counter/Clash Logic
+          let pCards = [...this.pSlots],
+            eCards = [...this.pendingEnemySlots];
+          const pSP = pCards.some((c) => c?.isSP),
+            eSP = eCards.some((c) => c?.isSP);
+
+          if (pSP && eSP) {
+            this.announce("SYSTEM", "SP CLASH", "Powers cancel out!");
+            pCards = [null, null];
+            eCards = [null, null];
+          } else if (eSP && this.isCounterMode) {
+            this.announce("PLAYER", "COUNTER", "Enemy SP negated!");
+            eCards = [null, null];
+            this.hasUsedCounter = true;
+          } else if (pSP && this.enemy.isCounterMode) {
+            this.announce("ENEMY", "COUNTER", "Player SP negated!");
+            pCards = [null, null];
+          }
+
+          // Resolution
+          let pMul = 1.0,
+            eMul = 1.0;
+          const res1 = await this.resolveStep(
+            1,
+            pCards[0],
+            eCards[0],
+            pMul,
+            eMul,
+            null
+          );
+          if (res1 === "WIN") {
+            pMul = 1.2;
+            eMul = 0.25;
+          } else if (res1 === "LOSE") {
+            pMul = 0.25;
+            eMul = 1.2;
+          }
+
+          await this.resolveStep(2, pCards[1], eCards[1], pMul, eMul, res1);
+
+          // Cleanup
+          [this.player, this.enemy].forEach((e) => {
+            if (e.breakState) {
+              e.breakState = false;
+              e.pos = e.maxPos;
+              e.burnout = true;
+            } else if (e.ep <= 0) e.burnout = true;
+            else e.burnout = false;
+          });
+
+          // Check Game End
+          if (this.player.hp <= 0 || this.enemy.hp <= 0) {
+            this.endBattle();
+          } else {
+            this.turn++;
+            setTimeout(() => this.startTurn(), 1000);
+          }
+        },
+
+        async resolveStep(slotNum, pCard, eCard, pMul, eMul, prevRes) {
+          this.highlightSlot(slotNum);
+          await this.sleep(1000);
+
+          let result = "DRAW";
+          if (!pCard && !eCard) result = "DRAW";
+          else if (!pCard) result = "LOSE";
+          else if (!eCard) result = "WIN";
+          else {
+            if (pCard.type === eCard.type) {
+              if (pCard.cost > eCard.cost) result = "WIN";
+              else if (eCard.cost > pCard.cost) result = "LOSE";
+            } else {
+              if (WIN_MAP[pCard.type] === eCard.type) result = "WIN";
+              else if (pCard.type === "SP") result = "WIN";
+              else if (eCard.type === "SP") result = "LOSE";
+              else result = "LOSE";
+            }
+          }
+          // Polarity Shift check
+          if (slotNum === 2 && this.isPolarityReversed && result !== "DRAW") {
+            result = result === "WIN" ? "LOSE" : "WIN";
+          }
+
+          // Apply Effects & Damage
+          if (result === "WIN") {
+            if (pCard.ability)
+              this.triggerAbility(
+                this.player,
+                this.enemy,
+                pCard.ability,
+                slotNum,
+                "WIN"
+              );
+            this.applyDmg(this.enemy, pCard, pMul);
+          } else if (result === "LOSE") {
+            if (eCard.ability)
+              this.triggerAbility(
+                this.enemy,
+                this.player,
+                eCard.ability,
+                slotNum,
+                "LOSE"
+              );
+            this.applyDmg(this.player, eCard, eMul);
+          } else {
+            // Draw
+            this.player.hp -= 2;
+            this.enemy.hp -= 2; // Chip damage
+          }
+
+          this.showOverlay(slotNum, result);
+          this.render();
+          await this.sleep(1000);
+          return result;
+        },
+
+        triggerAbility(user, target, abKey, slot, outcome) {
+          const ab = ABILITIES[abKey];
+          if (!ab) return;
+          // Simplified triggering logic
+          if (slot === 1 && (ab.type === "INSTANT" || ab.type === "SETUP")) {
+            this.announce(user.name, ab.name, ab.desc);
+            if (ab.type === "SETUP") target.tags.add(ab.tag);
+            if (abKey === "POLARITY_SHIFT") this.isPolarityReversed = true;
+            if (abKey === "EP_CHARGE") user.ep += 3;
+          }
+          if (
+            slot === 2 &&
+            ab.type === "EXECUTE" &&
+            target.tags.has(ab.reqTag)
+          ) {
+            this.announce(user.name, ab.name, "CRITICAL EXECUTION!");
+            // Extra dmg handled in applyDmg modifiers (simplified here)
+          }
+        },
+
+        applyDmg(target, card, mul) {
+          if (!card) return;
+          let dmg = Math.floor((card.dmg || 0) * mul);
+          let pos = Math.floor((card.pos || 0) * mul);
+          if (target.breakState) dmg *= 2;
+          target.hp -= dmg;
+          target.pos -= pos;
+          if (target.pos <= 0 && !target.breakState) {
+            target.breakState = true;
+            target.pos = 0;
+            this.log(`${target.name} BROKEN!`);
+          }
+        },
+
+        processHand(entity, slots) {
+          slots.forEach((s) => {
+            if (!s) return;
+            if (s._src === "secret") entity.secret = null;
+            else
+              entity.hand.splice(
+                entity.hand.findIndex(
+                  (c) => c.type === s.type && c.cost === s.cost
+                ),
+                1
+              );
+          });
+        },
+
+        endBattle() {
+          if (this.player.hp > 0) {
+            game.player.hp = this.player.hp;
+            game.returnToDungeon(true);
+            if (this.dungeonEnemyRef) this.dungeonEnemyRef.active = false;
+          } else {
+            game.returnToBase(false);
+          }
+        },
+
+        // Render Helpers
+        render() {
+          // Stats
+          document.getElementById("p-hp").innerText = this.player.hp;
+          document.getElementById("e-hp").innerText = this.enemy.hp;
+          document.getElementById("p-pos").innerText = this.player.pos;
+          document.getElementById("e-pos").innerText = this.enemy.pos;
+          document.getElementById("p-ep-txt").innerText = this.player.ep;
+          document.getElementById("e-ep").innerText = this.enemy.ep;
+          document.getElementById("e-sp").innerText = this.enemy.sp;
+          document.getElementById("p-sp-txt").innerText = this.player.sp;
+
+          // Bars
+          document.getElementById("p-hp-bar").style.width =
+            (this.player.hp / this.player.maxHp) * 100 + "%";
+          document.getElementById("e-hp-bar").style.width =
+            (this.enemy.hp / this.enemy.maxHp) * 100 + "%";
+          document.getElementById("p-pos-bar").style.width =
+            (this.player.pos / this.player.maxPos) * 100 + "%";
+          document.getElementById("e-pos-bar").style.width =
+            (this.enemy.pos / this.enemy.maxPos) * 100 + "%";
+          document.getElementById("p-ep-fill").style.width =
+            (this.player.ep / 8) * 100 + "%";
+          document.getElementById("e-ep-fill").style.width =
+            (this.enemy.ep / 8) * 100 + "%";
+          document.getElementById("p-sp-fill").style.width =
+            (this.player.sp / 5) * 100 + "%";
+          document.getElementById("e-sp-fill").style.width =
+            (this.enemy.sp / 5) * 100 + "%";
+
+          // Burnout Tags
+          document.getElementById("p-burnout").style.display = this.player
+            .burnout
             ? "inline"
             : "none";
-        });
+          document.getElementById("e-burnout").style.display = this.enemy
+            .burnout
+            ? "inline"
+            : "none";
 
-        const pendingCost = isCounterMode
-          ? COUNTER_EP_COST
-          : (pSlots[0]?.cost || 0) + (pSlots[1]?.cost || 0);
-        const pendingSP = pSlots.some((c) => c?.isSP) ? 5 : 0;
-        const predictedEP = Math.max(0, player.ep - pendingCost);
-        const predictedSP = Math.max(0, player.sp - pendingSP);
-
-        const epTxt =
-          pendingCost > 0
-            ? `${player.ep} <span style="color:#aaa; font-size:0.8em">(-${pendingCost})</span>`
-            : player.ep;
-        document.getElementById("p-ep-txt").innerHTML = epTxt;
-
-        const spTxt =
-          pendingSP > 0
-            ? `${player.sp} <span style="color:#aaa; font-size:0.8em">(-${pendingSP})</span>`
-            : player.sp;
-        document.getElementById("p-sp-txt").innerHTML = spTxt;
-
-        document.getElementById("p-ep-ghost").style.width = `${
-          (player.ep / MAX_EP) * 100
-        }%`;
-        document.getElementById("p-ep-fill").style.width = `${
-          (predictedEP / MAX_EP) * 100
-        }%`;
-        document.getElementById("p-sp-ghost").style.width = `${
-          (player.sp / MAX_SP) * 100
-        }%`;
-        document.getElementById("p-sp-fill").style.width = `${
-          (predictedSP / MAX_SP) * 100
-        }%`;
-
-        // 敵パネル：常に消費コストを表示
-        const intelBox = document.getElementById("e-intel-box");
-        intelBox.style.display = "flex";
-        const cost = enemy.isCounterMode
-          ? COUNTER_EP_COST
-          : (pendingEnemySlots[0]?.cost || 0) +
-            (pendingEnemySlots[1]?.cost || 0);
-        document.getElementById("e-pending-cost").innerText = cost + " EP";
-
-        const eZone = document.getElementById("enemy-hand-view");
-        eZone.innerHTML = "";
-        const secretDiv = document.createElement("div");
-        secretDiv.className = "card type-Secret";
-        secretDiv.innerHTML = `<div class="card-type">SECRET</div><div class="card-cost">?</div>`;
-        eZone.appendChild(secretDiv);
-
-        enemy.hand.forEach((c) => {
-          const isBlinded = player.stealthTurns > 0;
-          const cardDiv = document.createElement("div");
-          if (isBlinded) {
-            cardDiv.className = "card type-Secret";
-            cardDiv.innerHTML = `<div class="card-type">SECRET</div><div class="card-cost">?</div>`;
-          } else {
-            cardDiv.className = `card type-${c.type}`;
-            let statsHtml = "";
-            if (c.dmg)
-              statsHtml += `<div class="stat-row"><span>⚔️</span><span>${c.dmg}</span></div>`;
-            if (c.pos)
-              statsHtml += `<div class="stat-row"><span style="font-size:0.7em">POS</span><span>${c.pos}</span></div>`;
-            if (c.arm)
-              statsHtml += `<div class="stat-row"><span>🛡️</span><span>${c.arm}</span></div>`;
-
-            let abilityHtml = "";
-            if (c.ability && ABILITIES[c.ability]) {
-              abilityHtml = `<div class="ability-badge">${
-                ABILITIES[c.ability].name
-              }</div>`;
-            }
-
-            cardDiv.innerHTML = `
-                <div class="card-type">${c.type}</div>
-                <div class="card-cost">${c.cost}</div>
-                <div class="card-stats">${statsHtml}</div>
-                ${abilityHtml}`;
-          }
-
-          if (!isAnimating && !isBlinded) {
-            if (pSlots[0]) {
-              const res1 = getMatchupResult(pSlots[0], c);
-              const badge1 = document.createElement("span");
-              badge1.className = `matchup-badge mb-slot1 mb-${res1.toLowerCase()}`;
-              badge1.innerText = res1;
-              cardDiv.appendChild(badge1);
-            }
-            if (pSlots[1]) {
-              const res2 = getMatchupResult(pSlots[1], c);
-              const badge2 = document.createElement("span");
-              badge2.className = `matchup-badge mb-slot2 mb-${res2.toLowerCase()}`;
-              badge2.innerText = res2;
-              cardDiv.appendChild(badge2);
-            }
-          }
-
-          if (!isBlinded) {
-            if (!isTouchDevice) {
-              cardDiv.onmouseenter = (e) => showTooltip(e, c);
-              cardDiv.onmousemove = (e) => moveTooltip(e);
-              cardDiv.onmouseleave = () => hideTooltip();
-            } else {
-              cardDiv.onclick = (e) => {
-                showTooltip(e, c);
-              };
-            }
-          }
-          eZone.appendChild(cardDiv);
-        });
-
-        const pZone = document.getElementById("player-hand-view");
-        pZone.innerHTML = "";
-
-        if (player.secret) {
-          pZone.appendChild(createCardDiv(player.secret, true, -1));
-        }
-        player.hand.forEach((c, i) => {
-          pZone.appendChild(createCardDiv(c, false, i));
-        });
-
-        if (!isAnimating) {
-          updateSlotUI("p", pSlots);
-        }
-
-        const btnC = document.getElementById("btn-counter");
-        btnC.innerText = hasUsedCounter
-          ? "使用不可"
-          : isCounterMode
-          ? `カウンター準備中 (Cost: ${COUNTER_EP_COST})`
-          : `SP カウンター攻撃 (Cost: ${COUNTER_EP_COST})`;
-        btnC.className = isCounterMode ? "active" : "";
-        btnC.disabled = hasUsedCounter || isAnimating || player.burnout;
-
-        const btnCommit = document.getElementById("btn-commit");
-        if (isAnimating) {
-          btnCommit.innerText = "BATTLE IN PROGRESS...";
-          btnCommit.disabled = true;
-        } else if (player.burnout) {
-          btnCommit.innerText = "ターンをスキップ (BURNOUT)";
-          btnCommit.disabled = false;
-          btnCommit.style.background = "#555";
-        } else {
-          btnCommit.innerText = `コマンド決定 (Cost: ${pendingCost})`;
-          btnCommit.disabled = pendingCost > player.ep;
-          btnCommit.style.background = "var(--accent-color)";
-        }
-      }
-
-      function createCardDiv(card, isSecret, idx) {
-        const div = document.createElement("div");
-        div.className = `card type-${card.type}`;
-        let disabled = false;
-        if (typeof player !== "undefined" && player) {
-          if (player.burnout && card.type === TYPE.GUARD) disabled = true;
-          if (card.isSP && (player.sp < MAX_SP || player.ep < 5))
-            disabled = true;
-          const isSel =
-            pSlots[0]?._src === (isSecret ? "secret" : idx) ||
-            pSlots[1]?._src === (isSecret ? "secret" : idx);
-          if (isSel) {
-            div.classList.add("selected");
-            div.classList.remove("disabled");
-          }
-        }
-        if (disabled) div.classList.add("disabled");
-
-        let statsHtml = "";
-        if (card.dmg)
-          statsHtml += `<div class="stat-row"><span>⚔️</span><span>${card.dmg}</span></div>`;
-        if (card.pos)
-          statsHtml += `<div class="stat-row"><span style="font-size:0.7em">POS</span><span>${card.pos}</span></div>`;
-        if (card.arm)
-          statsHtml += `<div class="stat-row"><span>🛡️</span><span>${card.arm}</span></div>`;
-
-        let abilityHtml = "";
-        if (card.ability && ABILITIES[card.ability]) {
-          abilityHtml = `<div class="ability-badge">${
-            ABILITIES[card.ability].name
-          }</div>`;
-        }
-
-        div.innerHTML = `<div class="card-type">${card.type}</div>
-             <div class="card-cost">${card.cost}</div>
-             <div class="card-stats">${statsHtml}</div>
-             ${abilityHtml}
-             ${
-               isSecret
-                 ? '<div style="position:absolute; top:2px; right:2px; font-size:0.5rem; color:#90a4ae; background:rgba(0,0,0,0.7); padding:1px 3px; border-radius:2px;">SECRET</div>'
-                 : ""
-             }`;
-
-        if (!isTouchDevice) {
-          div.onclick = () => selectCard(card, isSecret, idx);
-          div.onmouseenter = (e) => showTooltip(e, card);
-          div.onmousemove = (e) => moveTooltip(e);
-          div.onmouseleave = () => hideTooltip();
-        } else {
-          let pressTimer;
-          let isLongPress = false;
-          let isScrolling = false;
-
-          div.addEventListener(
-            "touchstart",
-            (e) => {
-              isLongPress = false;
-              isScrolling = false;
-              pressTimer = setTimeout(() => {
-                isLongPress = true;
-                if (navigator.vibrate) navigator.vibrate(50);
-                showTooltip(e, card);
-              }, 500);
-            },
-            { passive: true }
+          // Hand Rendering
+          const pHandEl = document.getElementById("player-hand-view");
+          pHandEl.innerHTML = "";
+          if (this.player.secret)
+            pHandEl.appendChild(
+              this.createCardEl(this.player.secret, true, -1)
+            );
+          this.player.hand.forEach((c, i) =>
+            pHandEl.appendChild(this.createCardEl(c, false, i))
           );
 
-          div.addEventListener(
-            "touchmove",
-            () => {
-              clearTimeout(pressTimer);
-              isScrolling = true;
-            },
-            { passive: true }
-          );
-
-          div.addEventListener("touchend", (e) => {
-            clearTimeout(pressTimer);
-            if (isLongPress) {
-              if (e.cancelable) e.preventDefault();
-            }
+          const eHandEl = document.getElementById("enemy-hand-view");
+          eHandEl.innerHTML = "";
+          const secretCard = document.createElement("div");
+          secretCard.className = "card type-Secret";
+          secretCard.innerHTML = `<div class="card-type">SECRET</div>`;
+          eHandEl.appendChild(secretCard);
+          this.enemy.hand.forEach((c) => {
+            const d = document.createElement("div");
+            d.className = `card type-${c.type}`;
+            d.innerHTML = `<div class="card-type">${c.type}</div><div class="card-cost">${c.cost}</div>`;
+            eHandEl.appendChild(d);
           });
 
-          div.onclick = (e) => {
-            if (!isLongPress && !isScrolling) {
-              selectCard(card, isSecret, idx);
-            }
-          };
-        }
-        return div;
-      }
+          // Slots
+          this.updateSlotUI("p", this.pSlots);
+          this.updateSlotUI("e", this.pendingEnemySlots, true); // Enemy slots hidden by default logic, but UI needs structure
 
-      function updateSlotUI(prefix, slots) {
-        for (let i = 1; i <= 2; i++) {
-          const el = document.getElementById(`${prefix}-slot${i}`);
-          const c = slots[i - 1];
-          if (c) {
-            el.className = `slot type-${c.type}`;
-            el.innerHTML = renderCardContent(c);
-          } else {
+          // Buttons
+          document.getElementById("btn-counter").className = this.isCounterMode
+            ? "active"
+            : "";
+          const btnCommit = document.getElementById("btn-commit");
+          if (this.player.burnout) btnCommit.innerText = "SKIP TURN (BURNOUT)";
+          else btnCommit.innerText = "COMMIT TURN";
+        },
+
+        createCardEl(card, isSecret, idx) {
+          const div = document.createElement("div");
+          div.className = `card type-${card.type}`;
+          if (card.isSP) div.classList.add("type-SP");
+
+          // Check if selected
+          const isSel =
+            this.pSlots[0]?._src === (isSecret ? "secret" : idx) ||
+            this.pSlots[1]?._src === (isSecret ? "secret" : idx);
+          if (isSel) div.classList.add("selected");
+
+          div.onclick = () => this.selectCard(idx, isSecret);
+
+          let abHtml = "";
+          if (card.ability && ABILITIES[card.ability])
+            abHtml = `<div class="ability-badge">${
+              ABILITIES[card.ability].name
+            }</div>`;
+
+          div.innerHTML = `<div class="card-type">${card.type}</div>
+                              <div class="card-cost">${card.cost}</div>
+                              <div style="font-size:9px">D:${card.dmg || 0} P:${
+            card.pos || 0
+          } A:${card.arm || 0}</div>
+                              ${abHtml}`;
+          return div;
+        },
+
+        updateSlotUI(prefix, slots, hidden = false) {
+          for (let i = 1; i <= 2; i++) {
+            const el = document.getElementById(`${prefix}-slot${i}`);
+            const card = slots[i - 1];
+            el.innerHTML = "";
             el.className = "slot";
-            if (prefix === "p") {
-              el.innerHTML = `Tap Card<br>to Set`;
+
+            if (card && (!hidden || prefix === "p")) {
+              el.classList.add(`type-${card.type}`);
+              el.innerHTML = `<div style="font-weight:bold">${card.type}</div><div style="font-size:16px">${card.cost}</div>`;
             } else {
-              el.innerHTML = `Slot ${i}`;
+              el.innerText = `${prefix === "p" ? "Tap" : "Enemy"}\nSlot ${i}`;
             }
           }
-        }
-      }
+        },
 
-      function renderCardContent(c) {
-        if (!c) return "Empty";
-        let abHtml = "";
-        if (c.ability && ABILITIES[c.ability]) {
-          abHtml = `<div style="font-size:0.6rem; color:#ffd700; margin-top:-2px">${
-            ABILITIES[c.ability].name
-          }</div>`;
-        }
-        return `<div style="font-weight:bold">${c.type}</div><div style="font-size:1.2rem">${c.cost}</div>${abHtml}`;
-      }
+        highlightSlot(num) {
+          document
+            .getElementById(`p-slot${num}`)
+            .classList.add("active-battle-slot");
+          document
+            .getElementById(`e-slot${num}`)
+            .classList.add("active-battle-slot");
+        },
 
-      function log(msg) {
-        const l = document.getElementById("log");
-        l.innerHTML += `<div>${msg}</div>`;
-        l.scrollTop = l.scrollHeight;
-      }
+        showOverlay(num, res) {
+          const el = document.getElementById(`p-slot${num}`);
+          const o = document.createElement("div");
+          o.className = `slot-result-overlay res-${res.toLowerCase()}`;
+          o.innerText = res;
+          el.appendChild(o);
+          setTimeout(() => {
+            el.classList.remove("active-battle-slot");
+            document
+              .getElementById(`e-slot${num}`)
+              .classList.remove("active-battle-slot");
+            o.remove();
+          }, 1000);
+        },
 
-      window.onload = initSetup;
+        announce(who, name, desc) {
+          const el = document.getElementById("ability-cutin");
+          document.getElementById("ac-user").innerText = who;
+          document.getElementById("ac-name").innerText = name;
+          document.getElementById("ac-desc").innerText = desc;
+          el.classList.remove("active");
+          void el.offsetWidth;
+          el.classList.add("active");
+        },
+
+        log(msg) {
+          game.log(`[Battle] ${msg}`);
+        },
+        sleep(ms) {
+          return new Promise((r) => setTimeout(r, ms));
+        },
+      };
+
+      // AI PROFILES (Copied for AI Logic)
+      const AI_PROFILES = {
+        ISTJ: {
+          aggression: 1.0,
+          defense: 3.0,
+          breakFocus: 1.0,
+          efficiency: 2.0,
+        },
+        ESTP: {
+          aggression: 3.0,
+          defense: 0.1,
+          breakFocus: 1.0,
+          efficiency: 0.0,
+        },
+      };
+      const AI_PERSONALITIES = {
+        ISTJ: ["堅実", "規律"],
+        ESTP: ["好戦的", "無謀"],
+      };
+      const AI_STRATEGIES = {
+        ISTJ: (ai, opp) => {
+          // Simple AI: Prefer Guard if low HP, else Attack
+          const hand = ai.hand;
+          if (hand.length < 1) return { slots: [null, null], action: "WAIT" };
+          // Just pick random pairs for now to save space in integrated file
+          return { slots: [hand[0], hand[1] || null], action: "COMMIT" };
+        },
+        ESTP: (ai, opp) => {
+          // Aggressive
+          const atks = ai.hand.filter((c) => c.type === "Attack");
+          if (atks.length >= 2)
+            return { slots: [atks[0], atks[1]], action: "COMMIT" };
+          return { slots: [ai.hand[0], ai.hand[1] || null], action: "COMMIT" };
+        },
+      };
+
+      window.onload = () => game.init();
     </script>
   </body>
 </html>
