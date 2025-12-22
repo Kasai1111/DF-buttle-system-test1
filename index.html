@@ -2504,13 +2504,17 @@
 
         // --- PREDICTION FIX: Forced Slot 1 Logic ---
         [player, enemy].forEach((e) => {
-          e.forcedSlot1 = null; // Reset
+          e.forcedSlot1 = null; // リセット
+
           if (e.predictionPending) {
             e.predictionPending = false;
-            // Force a card
+            // 手札がある場合のみ発動
             if (e.hand.length > 0) {
               const fIdx = Math.floor(Math.random() * e.hand.length);
-              e.forcedSlot1 = e.hand.splice(fIdx, 1)[0];
+              // 手札から抜き出し、ロックフラグを付与
+              const forcedCard = e.hand.splice(fIdx, 1)[0];
+              e.forcedSlot1 = { ...forcedCard, _locked: true };
+
               log(
                 `>> PREDICTION Effect: ${e.name}'s Slot 1 is FORCED to [${e.forcedSlot1.type}]!`
               );
@@ -2518,39 +2522,36 @@
           }
         });
 
-        // Pre-fill slots if forced
+        // ■ プレイヤーの強制スロットをUI用配列にセット
         if (player.forcedSlot1) {
-          pSlots[0] = { ...player.forcedSlot1, _locked: true };
-          // Need to update EP for display? We deduct at commit, but check availability?
-          // For simplicity, we assume forced card costs 0 or handled later,
-          // but logically it should consume EP.
-          // Let's assume user must pay the EP at commit.
+          pSlots[0] = player.forcedSlot1;
+          // ※UI上で選択解除できないように selectCard/clearSlot でのガードも必要（既存コードに含まれています）
         }
 
-        // --- FIX: Prediction Visibility for Player ---
-        // If Enemy has a forced Slot 1, display it immediately in the UI as a locked card.
-        let eInitSlots = [null, null];
+        // ■ 敵の強制スロットを「保留中スロット(pendingEnemySlots)」にセット
+        // これにより、updateSlotUIが呼ばれたときに表示対象となります
+        pendingEnemySlots = [null, null]; // 初期化
         if (enemy.forcedSlot1) {
-          eInitSlots[0] = { ...enemy.forcedSlot1, _locked: true };
+          pendingEnemySlots[0] = enemy.forcedSlot1;
         }
-        updateSlotUI("e", eInitSlots);
-        // ---------------------------------------------
 
-        document.getElementById("e-slot1").innerHTML = enemy.forcedSlot1
-          ? renderCardContent(enemy.forcedSlot1)
-          : "Enemy<br>Slot 1";
-        document.getElementById("e-slot2").innerHTML = "Enemy<br>Slot 2";
-
+        // ... (既存の checkTrinityReady() など) ...
         checkTrinityReady();
 
         // --- AI ACTION DECISION ---
         if (enemy.burnout) {
-          pendingEnemySlots = [null, null];
-          enemy.isCounterMode = false;
-          log("[System] Enemy is BURNOUT. Skipping turn.");
+          // ... (既存のBurnout処理) ...
         } else {
-          // New Advanced AI Call
+          // AI思考実行
+          // AIは player.forcedSlot1 を見てカウンターを決められるようになります
           const aiRes = AI_STRATEGIES[enemy.strategy](enemy, player);
+
+          // AIの結果を適用するが、Slot1が強制されている場合はAIの決定を上書きする
+          if (enemy.forcedSlot1) {
+            // AIが何を選ぼうとSlot1は強制カードになる
+            aiRes.slots[0] = enemy.forcedSlot1;
+          }
+
           pendingEnemySlots = aiRes.slots;
           enemy.isCounterMode = aiRes.action === "COUNTER";
 
@@ -2562,7 +2563,6 @@
         log(`--- TURN ${turn} START ---`);
         render();
       }
-
       function checkTrinityReady() {
         const check = (ent) => {
           const types = new Set(ent.hand.map((c) => c.type));
@@ -3832,16 +3832,19 @@
 
           if (c) {
             el.className = `slot type-${c.type}`;
-            if (isLocked) el.classList.add("locked"); // Add locked style
+            if (isLocked) el.classList.add("locked"); // スタイル適用
 
-            // FIX: If locked, show content even for Enemy
+            // ■ 修正ポイント: 敵(prefix 'e')であっても isLocked なら表示する
             if (prefix === "e" && !forceReveal && !isLocked) {
+              // 通常の敵スロット（隠す）
               el.className = `slot`;
               el.innerHTML = `Enemy<br>Slot ${i}`;
             } else {
+              // プレイヤー、または強制公開(Reveal)、またはロックされたカード（表示）
               el.innerHTML = renderCardContent(c);
             }
           } else {
+            // 空のスロット
             el.className = "slot";
             if (prefix === "p") {
               el.innerHTML = `Tap Card<br>to Set`;
